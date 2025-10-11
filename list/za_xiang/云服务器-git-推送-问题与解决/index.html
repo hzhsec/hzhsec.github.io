@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式） - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-11T15:30:00+09:00" />
+<meta property="article:modified_time" content="2025-10-11T15:30:00+09:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "杂项",
+      "item": "https://hzhsec.github.io/list/za_xiang/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）",
+      "item": "https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）",
+  "name": "云服务器 Git 推送 问题与解决（Clash 代理 \/ 本地上传 \/ SSH 方式）",
+  "description": "",
+  "keywords": [
+    "Clash", "Git", "SSH", "上传", "云服务器"
+  ],
+  "articleBody": "概要 本文总结了在国内云服务器上遇到 Git 推送或拉取受限时的三种可行方案：\n在云服务器上借助 Clash 启动代理（可行但可能出现网络不稳定） 把云上生成的文件拉回本地，在本地完成 Git 提交与推送（推荐） 直接在云服务器上使用 SSH key 或 Deploy Key 将仓库通过 SSH 推送到 GitHub（推荐长期方案） 下面把三种方案的步骤、注意事项和常见问题整理得更清晰、易操作。\n方案一：在云服务器上安装并使用 Clash（临时代理） 说明：此法适合你需要临时让云服务器具备外网访问能力时使用。但由于要先下载 Clash 及其资源（例如 Country.mmdb）可能本身就需要代理，建议先在本地下载好再上传到云端。\n1. 系统更新 sudo apt-get update sudo apt-get upgrade -y 2. 下载并安装 Clash（离线或本地上传更可靠） 创建工作目录： mkdir -p ~/clash \u0026\u0026 cd ~/clash 从本地或可信网络下载 Clash 二进制与资源（建议先在本地下载好再通过 scp 上传）： # 本地先下载，再上传到服务器： # 本地：wget https://github.com/doreamon-design/clash/releases/download/v2.0.24/clash_2.0.24_linux_amd64.tar.gz # 本地：scp clash_2.0.24_linux_amd64.tar.gz root@your-server:/root/clash/ # 服务器上解压： tar -zxvf clash_2.0.24_linux_amd64.tar.gz mv clash-linux-amd64 clash chmod +x clash ⚠️ 请根据 uname -m / uname -a 确定架构（amd64 / arm64）。\n配置文件（config.yaml） 推荐在本地使用订阅或配置生成器下载好 config.yaml 与 Country.mmdb，然后通过 scp 上传到服务器 ~/clash 目录。 如果选择服务器直接 curl，请务必把 URL 用引号括起来： curl -f \"https://free.datiya.com/\" -o config.yaml 启动 Clash： # 在当前目录使用本地 config.yaml ./clash -d ./ 如果希望后台运行，可用 nohup 或 systemd：\nnohup ./clash -d ./ \u003e clash.log 2\u003e\u00261 \u0026 3. 配置系统代理（仅命令行进程生效） export http_proxy=\"http://127.0.0.1:7890\" export https_proxy=\"http://127.0.0.1:7890\" # 测试 curl -I https://www.google.com || curl -I https://github.com # 取消代理 unset http_proxy https_proxy 常见问题与建议 下载 Country.mmdb / config.yaml 时仍需代理：先在本地下载并上传。 网络不稳定 / 超时：考虑使用本地上拉取、或用 SSH 隧道（见下文）替代。 端口被占用：确认 7890/7891 等端口未被占用。 权限/路径问题：检查 chmod +x、路径是否正确。 方案二：本地拉取云文件，然后在本地完成 Git 提交/推送（最稳妥） 场景：云服务器能稳定生成静态文件（例如 Hugo 的 public/），但无法直接推送到 GitHub。\n步骤 在本地克隆仓库（如果还没有本地仓库）： git clone https://github.com/yourname/your-repo.git cd your-repo 从云端把生成的静态文件拉到本地（可用 scp 或 rsync）： # 使用 scp（递归复制）： scp -r root@your-server:/usr/local/nginx/html/my-site/public/* ./ # 或使用 rsync（推荐，支持断点续传与增量）： rsync -avz --progress root@your-server:/usr/local/nginx/html/my-site/public/ ./ 在本地添加、提交并推送： git add . git commit -m \"update site files\" git push origin main # 或 master，根据仓库分支而定 优势 本地网络稳定、可以使用本地代理加速。 可以在本地预览、校验再推送。 无需在云服务器上配置复杂的代理或修改 SSH 设置。 方案三：在云服务器上使用 SSH Key / Deploy Key 直接通过 SSH 推送（长期推荐） 说明：通过 SSH key 或仓库的 Deploy Key，让云服务器具有对目标 GitHub 仓库的写权限，这是长期稳定且被广泛采纳的做法。\nA. 作为个人账号的 SSH Key 在云服务器上生成 SSH 密钥（不设置 passphrase 或使用 ssh-agent）： # 在云服务器上（或本地根据需要） ssh-keygen -t ed25519 -C \"your-server-identifier\" -f ~/.ssh/id_ed25519 # 如果系统不支持 ed25519，可用 rsa：ssh-keygen -t rsa -b 4096 将公钥复制并添加到你的 GitHub 账户 “Settings → SSH and GPG keys → New SSH key”： # 在服务器上打印公钥并复制 cat ~/.ssh/id_ed25519.pub 测试 SSH 连接： ssh -T git@github.com # 你应该看到类似：Hi ! You've successfully authenticated... 在服务器上使用 SSH 方式克隆或修改 remote： # 克隆（SSH） git clone git@github.com:yourname/your-repo.git # 或修改已存在仓库的 remote 为 SSH cd /path/to/your/repo git remote set-url origin git@github.com:yourname/your-repo.git git add . git commit -m \"update\" git push origin main B. 使用仓库 Deploy Key（更适合 CI / 单仓库写入） Deploy Key 是绑定到单个仓库的公钥，适用于服务器只需要访问（read/write）该仓库的场景。\n在服务器上生成密钥对（如上）。 在 GitHub 仓库页面 → Settings → Deploy keys → Add deploy key，粘贴公钥并勾选 “Allow write access”（如果需要推送）。 在服务器上使用 SSH 克隆仓库（与个人 SSH key 一样）： git clone git@github.com:yourname/your-repo.git 优点：权限最小化、便于审计；适合自动化部署场景。\n常见问题与排查 Permission denied (publickey)：检查公钥是否正确添加到 GitHub、私钥权限是否受限（chmod 600 ~/.ssh/id_ed25519），以及 ssh-agent 是否正确加载。\nSSH 走代理/墙内问题：若服务器网络到 GitHub 的 SSH (port 22) 被阻断，可尝试：\n使用 HTTPS + PAT（个人访问令牌）作为备选推送方法； 使用 ssh -T -p 443 git@ssh.github.com 连接到端口 443（若网络允许）； 使用跳板机或本地端口转发（SSH 隧道）。 CI/自动化推送失败：确认私钥仅能被部署用户读取，并考虑使用 Deploy Key。\n附：通过 HTTPS + PAT 在服务器上推送（替代方案） 如果你不想配置 SSH，也可使用 HTTPS + GitHub Personal Access Token（PAT）：\n# 给 Git remote 设置包含 TOKEN 的 URL（不建议把 TOKEN 明文写入脚本） git remote set-url origin https://@github.com/yourname/your-repo.git git push origin main 建议将 TOKEN 存在环境变量或使用 git-credential-store 管理。\n小结与建议 临时：如果只需临时访问外网，Clash 可试，但稳定性不保证。 稳妥（推荐）：在本地拉取云端产物再推送到 GitHub，操作简单、可靠。 长期（推荐）：为云服务器配置 SSH Key 或 Deploy Key，使其能直接以安全方式将变更推送到 GitHub。 ",
+  "wordCount" : "437",
+  "inLanguage": "en",
+  "datePublished": "2025-10-11T15:30:00+09:00",
+  "dateModified": "2025-10-11T15:30:00+09:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>云服务器 Git 推送 问题与解决（Clash 代理 / 本地上传 / SSH 方式）</h1>
+  </header>
+
+  <p>
+  <small>
+    October 11, 2025&nbsp;· 437 words&nbsp;· 3 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#方案一在云服务器上安装并使用-clash临时代理">方案一：在云服务器上安装并使用 Clash（临时代理）</a>
+      <ul>
+        <li><a href="#1-系统更新">1. 系统更新</a></li>
+        <li><a href="#2-下载并安装-clash离线或本地上传更可靠">2. 下载并安装 Clash（离线或本地上传更可靠）</a></li>
+        <li><a href="#3-配置系统代理仅命令行进程生效">3. 配置系统代理（仅命令行进程生效）</a></li>
+        <li><a href="#常见问题与建议">常见问题与建议</a></li>
+      </ul>
+    </li>
+    <li><a href="#方案二本地拉取云文件然后在本地完成-git-提交推送最稳妥">方案二：本地拉取云文件，然后在本地完成 Git 提交/推送（最稳妥）</a>
+      <ul>
+        <li><a href="#步骤">步骤</a></li>
+        <li><a href="#优势">优势</a></li>
+      </ul>
+    </li>
+    <li><a href="#方案三在云服务器上使用-ssh-key--deploy-key-直接通过-ssh-推送长期推荐">方案三：在云服务器上使用 SSH Key / Deploy Key 直接通过 SSH 推送（长期推荐）</a>
+      <ul>
+        <li><a href="#a-作为个人账号的-ssh-key">A. 作为个人账号的 SSH Key</a></li>
+        <li><a href="#b-使用仓库-deploy-key更适合-ci--单仓库写入">B. 使用仓库 Deploy Key（更适合 CI / 单仓库写入）</a></li>
+        <li><a href="#常见问题与排查">常见问题与排查</a></li>
+      </ul>
+    </li>
+    <li><a href="#附通过-https--pat-在服务器上推送替代方案">附：通过 HTTPS + PAT 在服务器上推送（替代方案）</a></li>
+    <li><a href="#小结与建议">小结与建议</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="概要">概要</h1>
+<p>本文总结了在国内云服务器上遇到 Git 推送或拉取受限时的三种可行方案：</p>
+<ol>
+<li>在云服务器上借助 Clash 启动代理（可行但可能出现网络不稳定）</li>
+<li>把云上生成的文件拉回本地，在本地完成 Git 提交与推送（推荐）</li>
+<li>直接在云服务器上使用 SSH key 或 Deploy Key 将仓库通过 SSH 推送到 GitHub（推荐长期方案）</li>
+</ol>
+<p>下面把三种方案的步骤、注意事项和常见问题整理得更清晰、易操作。</p>
+<hr>
+<h2 id="方案一在云服务器上安装并使用-clash临时代理">方案一：在云服务器上安装并使用 Clash（临时代理）</h2>
+<blockquote>
+<p>说明：此法适合你需要临时让云服务器具备外网访问能力时使用。但由于要先下载 Clash 及其资源（例如 Country.mmdb）可能本身就需要代理，建议先在本地下载好再上传到云端。</p>
+</blockquote>
+<h3 id="1-系统更新">1. 系统更新</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt-get update
+</span></span><span style="display:flex;"><span>sudo apt-get upgrade -y
+</span></span></code></pre></div><h3 id="2-下载并安装-clash离线或本地上传更可靠">2. 下载并安装 Clash（离线或本地上传更可靠）</h3>
+<ol>
+<li>创建工作目录：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir -p ~/clash <span style="color:#f92672">&amp;&amp;</span> cd ~/clash
+</span></span></code></pre></div><ol start="2">
+<li>从本地或可信网络下载 Clash 二进制与资源（建议先在本地下载好再通过 scp 上传）：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 本地先下载，再上传到服务器：</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 本地：wget https://github.com/doreamon-design/clash/releases/download/v2.0.24/clash_2.0.24_linux_amd64.tar.gz</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 本地：scp clash_2.0.24_linux_amd64.tar.gz root@your-server:/root/clash/</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 服务器上解压：</span>
+</span></span><span style="display:flex;"><span> tar -zxvf clash_2.0.24_linux_amd64.tar.gz
+</span></span><span style="display:flex;"><span> mv clash-linux-amd64 clash
+</span></span><span style="display:flex;"><span> chmod +x clash
+</span></span></code></pre></div><blockquote>
+<p>⚠️ 请根据 <code>uname -m</code> / <code>uname -a</code> 确定架构（amd64 / arm64）。</p>
+</blockquote>
+<ol start="3">
+<li>配置文件（config.yaml）</li>
+</ol>
+<ul>
+<li>推荐在本地使用订阅或配置生成器下载好 <code>config.yaml</code> 与 <code>Country.mmdb</code>，然后通过 <code>scp</code> 上传到服务器 <code>~/clash</code> 目录。</li>
+<li>如果选择服务器直接 curl，请务必把 URL 用引号括起来：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -f <span style="color:#e6db74">&#34;https://free.datiya.com/&#34;</span> -o config.yaml
+</span></span></code></pre></div><ol start="4">
+<li>启动 Clash：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 在当前目录使用本地 config.yaml</span>
+</span></span><span style="display:flex;"><span>./clash -d ./
+</span></span></code></pre></div><p>如果希望后台运行，可用 <code>nohup</code> 或 systemd：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nohup ./clash -d ./ &gt; clash.log 2&gt;&amp;<span style="color:#ae81ff">1</span> &amp;
+</span></span></code></pre></div><h3 id="3-配置系统代理仅命令行进程生效">3. 配置系统代理（仅命令行进程生效）</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>export http_proxy<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:7890&#34;</span>
+</span></span><span style="display:flex;"><span>export https_proxy<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:7890&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 测试</span>
+</span></span><span style="display:flex;"><span>curl -I https://www.google.com <span style="color:#f92672">||</span> curl -I https://github.com
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 取消代理</span>
+</span></span><span style="display:flex;"><span>unset http_proxy https_proxy
+</span></span></code></pre></div><h3 id="常见问题与建议">常见问题与建议</h3>
+<ul>
+<li><strong>下载 Country.mmdb / config.yaml 时仍需代理</strong>：先在本地下载并上传。</li>
+<li><strong>网络不稳定 / 超时</strong>：考虑使用本地上拉取、或用 SSH 隧道（见下文）替代。</li>
+<li><strong>端口被占用</strong>：确认 7890/7891 等端口未被占用。</li>
+<li><strong>权限/路径问题</strong>：检查 <code>chmod +x</code>、路径是否正确。</li>
+</ul>
+<hr>
+<h2 id="方案二本地拉取云文件然后在本地完成-git-提交推送最稳妥">方案二：本地拉取云文件，然后在本地完成 Git 提交/推送（最稳妥）</h2>
+<blockquote>
+<p>场景：云服务器能稳定生成静态文件（例如 Hugo 的 <code>public/</code>），但无法直接推送到 GitHub。</p>
+</blockquote>
+<h3 id="步骤">步骤</h3>
+<ol>
+<li>在本地克隆仓库（如果还没有本地仓库）：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone https://github.com/yourname/your-repo.git
+</span></span><span style="display:flex;"><span>cd your-repo
+</span></span></code></pre></div><ol start="2">
+<li>从云端把生成的静态文件拉到本地（可用 scp 或 rsync）：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 使用 scp（递归复制）：</span>
+</span></span><span style="display:flex;"><span>scp -r root@your-server:/usr/local/nginx/html/my-site/public/* ./
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 或使用 rsync（推荐，支持断点续传与增量）：</span>
+</span></span><span style="display:flex;"><span>rsync -avz --progress root@your-server:/usr/local/nginx/html/my-site/public/ ./
+</span></span></code></pre></div><ol start="3">
+<li>在本地添加、提交并推送：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git add .
+</span></span><span style="display:flex;"><span>git commit -m <span style="color:#e6db74">&#34;update site files&#34;</span>
+</span></span><span style="display:flex;"><span>git push origin main   <span style="color:#75715e"># 或 master，根据仓库分支而定</span>
+</span></span></code></pre></div><h3 id="优势">优势</h3>
+<ul>
+<li>本地网络稳定、可以使用本地代理加速。</li>
+<li>可以在本地预览、校验再推送。</li>
+<li>无需在云服务器上配置复杂的代理或修改 SSH 设置。</li>
+</ul>
+<hr>
+<h2 id="方案三在云服务器上使用-ssh-key--deploy-key-直接通过-ssh-推送长期推荐">方案三：在云服务器上使用 SSH Key / Deploy Key 直接通过 SSH 推送（长期推荐）</h2>
+<blockquote>
+<p>说明：通过 SSH key 或仓库的 Deploy Key，让云服务器具有对目标 GitHub 仓库的写权限，这是长期稳定且被广泛采纳的做法。</p>
+</blockquote>
+<h3 id="a-作为个人账号的-ssh-key">A. 作为个人账号的 SSH Key</h3>
+<ol>
+<li>在云服务器上生成 SSH 密钥（不设置 passphrase 或使用 ssh-agent）：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 在云服务器上（或本地根据需要）</span>
+</span></span><span style="display:flex;"><span>ssh-keygen -t ed25519 -C <span style="color:#e6db74">&#34;your-server-identifier&#34;</span> -f ~/.ssh/id_ed25519
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 如果系统不支持 ed25519，可用 rsa：ssh-keygen -t rsa -b 4096</span>
+</span></span></code></pre></div><ol start="2">
+<li>将公钥复制并添加到你的 GitHub 账户 &ldquo;Settings → SSH and GPG keys → New SSH key&rdquo;：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 在服务器上打印公钥并复制</span>
+</span></span><span style="display:flex;"><span>cat ~/.ssh/id_ed25519.pub
+</span></span></code></pre></div><ol start="3">
+<li>测试 SSH 连接：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ssh -T git@github.com
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 你应该看到类似：Hi &lt;username&gt;! You&#39;ve successfully authenticated...</span>
+</span></span></code></pre></div><ol start="4">
+<li>在服务器上使用 SSH 方式克隆或修改 remote：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 克隆（SSH）</span>
+</span></span><span style="display:flex;"><span>git clone git@github.com:yourname/your-repo.git
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 或修改已存在仓库的 remote 为 SSH</span>
+</span></span><span style="display:flex;"><span>cd /path/to/your/repo
+</span></span><span style="display:flex;"><span>git remote set-url origin git@github.com:yourname/your-repo.git
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>git add .
+</span></span><span style="display:flex;"><span>git commit -m <span style="color:#e6db74">&#34;update&#34;</span>
+</span></span><span style="display:flex;"><span>git push origin main
+</span></span></code></pre></div><h3 id="b-使用仓库-deploy-key更适合-ci--单仓库写入">B. 使用仓库 Deploy Key（更适合 CI / 单仓库写入）</h3>
+<p>Deploy Key 是绑定到单个仓库的公钥，适用于服务器只需要访问（read/write）该仓库的场景。</p>
+<ol>
+<li>在服务器上生成密钥对（如上）。</li>
+<li>在 GitHub 仓库页面 → Settings → Deploy keys → Add deploy key，粘贴公钥并勾选 &ldquo;Allow write access&rdquo;（如果需要推送）。</li>
+<li>在服务器上使用 SSH 克隆仓库（与个人 SSH key 一样）：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>git clone git@github.com:yourname/your-repo.git
+</span></span></code></pre></div><blockquote>
+<p>优点：权限最小化、便于审计；适合自动化部署场景。</p>
+</blockquote>
+<h3 id="常见问题与排查">常见问题与排查</h3>
+<ul>
+<li>
+<p><strong><code>Permission denied (publickey)</code></strong>：检查公钥是否正确添加到 GitHub、私钥权限是否受限（<code>chmod 600 ~/.ssh/id_ed25519</code>），以及 <code>ssh-agent</code> 是否正确加载。</p>
+</li>
+<li>
+<p><strong>SSH 走代理/墙内问题</strong>：若服务器网络到 GitHub 的 SSH (port 22) 被阻断，可尝试：</p>
+<ul>
+<li>使用 HTTPS + PAT（个人访问令牌）作为备选推送方法；</li>
+<li>使用 <code>ssh -T -p 443 git@ssh.github.com</code> 连接到端口 443（若网络允许）；</li>
+<li>使用跳板机或本地端口转发（SSH 隧道）。</li>
+</ul>
+</li>
+<li>
+<p><strong>CI/自动化推送失败</strong>：确认私钥仅能被部署用户读取，并考虑使用 Deploy Key。</p>
+</li>
+</ul>
+<hr>
+<h2 id="附通过-https--pat-在服务器上推送替代方案">附：通过 HTTPS + PAT 在服务器上推送（替代方案）</h2>
+<p>如果你不想配置 SSH，也可使用 HTTPS + GitHub Personal Access Token（PAT）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 给 Git remote 设置包含 TOKEN 的 URL（不建议把 TOKEN 明文写入脚本）</span>
+</span></span><span style="display:flex;"><span>git remote set-url origin https://&lt;TOKEN&gt;@github.com/yourname/your-repo.git
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>git push origin main
+</span></span></code></pre></div><p>建议将 TOKEN 存在环境变量或使用 git-credential-store 管理。</p>
+<hr>
+<h2 id="小结与建议">小结与建议</h2>
+<ul>
+<li><strong>临时</strong>：如果只需临时访问外网，Clash 可试，但稳定性不保证。</li>
+<li><strong>稳妥（推荐）</strong>：在本地拉取云端产物再推送到 GitHub，操作简单、可靠。</li>
+<li><strong>长期（推荐）</strong>：为云服务器配置 SSH Key 或 Deploy Key，使其能直接以安全方式将变更推送到 GitHub。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>sqlmap 使用速查与进阶技巧</span></a>
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/"><span>WinRAR 目录穿越漏洞（CVE-2025-8088）复现与防护</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

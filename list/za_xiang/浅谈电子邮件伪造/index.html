@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浅谈电子邮件伪造</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@浅谈电子邮件伪造 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="浅谈电子邮件伪造" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-09T15:00:00+08:00" />
+<meta property="article:modified_time" content="2025-10-09T15:00:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="浅谈电子邮件伪造"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "杂项",
+      "item": "https://hzhsec.github.io/list/za_xiang/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "浅谈电子邮件伪造",
+      "item": "https://hzhsec.github.io/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "浅谈电子邮件伪造",
+  "name": "浅谈电子邮件伪造",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "SMTP 简介 电子邮件协议主要包括 SMTP、POP3 和 IMAP。 SMTP（Simple Mail Transfer Protocol）是用于在客户端与服务器、以及服务器之间发送和转发电子邮件的应用层协议，本文聚焦 SMTP 协议 及其被伪造时的原理与防护。\nSMTP 大致通信过程 建立连接 客户端与服务器在 TCP 层建立连接，默认使用 25 号端口（另有 587/465 等常用端口用于提交/auth/加密）。 建立成功后，服务器发回 220 状态码，表示服务就绪。 客户端发送 EHLO（或 HELO）命令，告诉服务器自己的域名。 服务器回应 250 状态码，表示命令成功，并（在 EHLO 情况下）返回支持的扩展功能列表（如 STARTTLS、AUTH 等）。 发送邮件 客户端发送 MAIL FROM:\u003c发件人地址\u003e，指定邮件的发件人。 服务器返回 250，确认发件人地址合法（或接受该命令）。 客户端发送一个或多个 RCPT TO:\u003c收件人地址\u003e，指定收件人。 服务器对每个收件人均返回 250，确认其合法。 客户端发送 DATA 命令，服务器返回 354，提示可以开始输入邮件数据。 客户端逐行发送邮件头和正文，最后以单独一行的句点 . 结束输入。 服务器返回 250，表示邮件已成功接收并排队等待投递。 关闭连接 客户端发送 QUIT 命令，请求断开会话。 服务器返回 221，表示连接已正常关闭。 邮件伪造原理 在 SMTP 协议中，邮件的头部（例如 From:、To:、Subject:）是可以由发信方声明的，这就导致了伪造（spoofing）的可能性。下面给出一个示例邮件头与正文：\nDate: Wed, 06 Aug 2025 14:57:55 +0800 To: example@example.com From: 110@110.com Subject: test Wed, 06 Aug 2025 14:57:55 +0800 Message-Id: \u003c...\u003e X-Mailer: ... Content-Type: text/html This is a test 其中：\nMessage-Id：消息 ID，用于区分邮件。 X-Mailer：发送客户端/工具标识。 Subject：邮件标题。 To：收件人邮箱地址。 From：发件人邮箱地址（可被任意伪装）。 因此，仅凭 From 字段并不能证明邮件来源的真实性，必须依靠后端的认证机制来验证来源。\n防范机制（SPF / DKIM / DMARC） 为了解决邮件伪造问题，业界广泛采用了以下三种 DNS 记录/机制：\nSPF（Sender Policy Framework）：声明哪些主机/IP 被允许代表某一域发送邮件。通常以 DNS TXT 记录形式存在。 DKIM（DomainKeys Identified Mail）：使用公/私钥对邮件进行签名；公钥放在 DNS 中，收件方用公钥验证签名以确认邮件未被篡改并确认为该域所签发。 DMARC（Domain-based Message Authentication, Reporting \u0026 Conformance）：在 SPF 与 DKIM 之上提供策略和报告机制，告知收件方在验证失败时如何处理（reject/quarantine/none），并可接收送达/验证报告。 下面具体介绍 SPF 与其解析格式。\nSPF 简介与解析示例 SPF 通常以 DNS TXT 记录存在，示例：\nv=spf1 ip4:192.0.2.0/24 include:_spf.example.com redirect=example.net -all 字段说明：\nv=spf1：协议版本，必须且且仅此。 ip4 / ip6：允许的 IP 段，例如 ip4:192.0.2.0/24。 a / mx：允许与域名 A 记录或 MX 记录匹配的主机。 include:：引入并复用其它域的 SPF 规则。 redirect=：当本域所有机制都未匹配时，改去检查指定域的 SPF 记录。 限定符：+（或无符号）＝ Pass，-＝ Fail（硬拒绝），~＝ SoftFail（标记可疑），?＝ Neutral（不处理）。 -all：所有未匹配者硬拒绝（强制策略）。 实验：使用 swaks 构造与发送测试邮件 swaks（SMTP Swiss Army Knife）是一个用 Perl 编写的命令行工具，常用于测试 SMTP 服务器、验证配置和发送邮件。\n安装 apt install swaks 查询 SPF（示例） nslookup -type=TXT gmail.com 示例中可以看到 Gmail 的 SPF 记录。很多临时邮箱/服务没有 SPF，找一个临时邮箱示例：\nnslookup -type=TXT mailshan.com 如果没有 SPF 记录，则更容易被伪造发送。\n构造并发送伪造邮件 swaks \\ --from \"admin@mail.pku.edu.cn\" \\ --to \"example@gmail.com\" \\ --ehlo \"pku.edu.cn\" \\ --header \"X-Mailer: Gmail\" \\ --header \"Content-Type: text/html; charset=UTF-8\" \\ --header \"Subject: test\" \\ --body \"test\" 在测试中，Gmail 因为发送方 IP 不在授权列表中会拒收该邮件（可见服务器的 SPF 校验生效）。\n另一个测试：给临时邮箱发送伪造邮件，因对方没有 SPF 记录，邮件能成功到达：\nswaks \\ --from \"admin@mail.pku.edu.cn\" \\ --to \"skunk31124@aminating.com\" \\ --ehlo \"pku.edu.cn\" \\ --header \"X-Mailer: Gmail\" \\ --header \"Content-Type: text/html; charset=UTF-8\" \\ --header \"Subject: test\" \\ --body \"hello_hzhsec\" 说明：若目标域未配置 SPF/DKIM/DMARC，伪造邮件更容易成功送达。\nSPF 绕过与代发机制 代发（使用 --h-From） 某些邮局/SMTP 提交服务器允许 MAIL FROM 与邮件头 From: 不一致（也就是允许代发/伪装头部），可以通过 swaks 的 --h-From 将邮件头 From: 指向你想伪造的地址，而 --from 则为你的真实登录账号：\nswaks \\ --from \"username\" \\ --h-From \"admin@pku.edu.cn\" \\ --to \"example@example.com\" \\ --ehlo \"pku.edu.cn\" \\ --header \"X-Mailer: Gmail\" \\ --header \"Content-Type: text/html; charset=UTF-8\" \\ --header \"Subject: 北京大学录取通知书\" \\ --body @./test.html \\ --server smtp.qiye.aliyun.com \\ --au \"username\" \\ --ap \"password\" 参数说明：\n--from：真实发件人账号（用于登录 SMTP 服务器）。 --h-From：邮件头中显示的 From:（可用于伪造）。 --server：SMTP 服务器地址。 --au / --ap：登录用户名与密码。 --body @file：从文件读取邮件正文。 使用代发机制，可利用合法 SMTP 服务代发内容，从而使得接收方更难直接通过简单检查识别伪造（例如邮件可能通过了 SMTP 连接端的反垃圾或信誉检查）。\n示例中构造的钓鱼邮件具有较强的真实性感：\n发现与测试结论 发现某些 网页邮箱不对发件域做严格的 SPF 校验，导致可用伪造的 From: 地址成功发送邮件（实测可针对无 SPF 的域）。 对于存在 SPF 的域，利用 子域 或者使用第三方合法 SMTP 代发有时可以绕过简单的校验（取决于接收方对 SPF/DKIM/DMARC 的严格程度）。 示例：\npku.edu.cn 主域与 email.pku.edu.cn 的 SPF 配置不同，子域策略可能导致某些绕过路径。 安全建议（面向域名所有者与收件方） 域名所有者应：\n为域配置严格的 SPF 记录（例如 -all 策略），并确保列出所有合法发送源。 部署 DKIM：为发信系统签名，并把公钥发布在 DNS。 配置 DMARC，并根据监控结果逐步收紧策略（从 p=none -\u003e p=quarantine -\u003e p=reject）。 对子域设置明确策略（子域继承或单独设定），避免因子域未设置而被滥用。 收件方 / 邮箱服务提供方应：\n在收信阶段严格执行 SPF/DKIM/DMARC 验证，并对失败邮件采取合适策略（拒收或隔离）并生成报告。 对通过第三方 SMTP（代发）且 From 与实际 MAIL FROM 不一致的邮件提高警惕，结合信誉、内容、历史行为做综合判定。 附：常用 swaks 命令模板 # 基本发送 swaks --from \"me@example.com\" --to \"you@example.org\" --server smtp.example.com --auth LOGIN --au \"me\" --ap \"password\" --body \"hello\" # 代发（伪造邮件头） swaks --from \"real@me.com\" --h-From \"spoof@victim.com\" --to \"target@domain.com\" --server smtp.provider.com --au \"real@me.com\" --ap \"password\" --body @./test.html 总结 SMTP 的基本通信流程、邮件伪造的原理，以及常见的防护机制（SPF、DKIM、DMARC）。通过 swaks 的实测可以看出：\n若目标域没有配置 SPF/DKIM/DMARC，伪造邮件极易成功到达； 若目标域配置了严格的认证策略，伪造会被显著阻断，但仍存在代发或通过信任第三方 SMTP 绕过的风险； 最佳实践是域名所有者完善 SPF/DKIM/DMARC，同时邮件接收方严格执行验证并结合报告、信誉和内容策略一起判定可疑邮件。 ",
+  "wordCount" : "455",
+  "inLanguage": "en",
+  "datePublished": "2025-10-09T15:00:00+08:00",
+  "dateModified": "2025-10-09T15:00:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>浅谈电子邮件伪造</h1>
+  </header>
+
+  <p>
+  <small>
+    October 9, 2025&nbsp;· 455 words&nbsp;· 3 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#smtp-大致通信过程">SMTP 大致通信过程</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#spf-简介与解析示例">SPF 简介与解析示例</a></li>
+  </ul>
+
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#安装">安装</a></li>
+        <li><a href="#查询-spf示例">查询 SPF（示例）</a></li>
+        <li><a href="#构造并发送伪造邮件">构造并发送伪造邮件</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#代发使用---h-from">代发（使用 <code>--h-From</code>）</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="smtp-简介">SMTP 简介</h1>
+<blockquote>
+<p>电子邮件协议主要包括 SMTP、POP3 和 IMAP。
+SMTP（Simple Mail Transfer Protocol）是用于在客户端与服务器、以及服务器之间发送和转发电子邮件的应用层协议，本文聚焦 <strong>SMTP 协议</strong> 及其被伪造时的原理与防护。</p>
+</blockquote>
+<h2 id="smtp-大致通信过程">SMTP 大致通信过程</h2>
+<ol>
+<li><strong>建立连接</strong></li>
+</ol>
+<ul>
+<li>客户端与服务器在 TCP 层建立连接，默认使用 25 号端口（另有 587/465 等常用端口用于提交/auth/加密）。</li>
+<li>建立成功后，服务器发回 <code>220</code> 状态码，表示服务就绪。</li>
+<li>客户端发送 <code>EHLO</code>（或 <code>HELO</code>）命令，告诉服务器自己的域名。</li>
+<li>服务器回应 <code>250</code> 状态码，表示命令成功，并（在 <code>EHLO</code> 情况下）返回支持的扩展功能列表（如 <code>STARTTLS</code>、<code>AUTH</code> 等）。</li>
+</ul>
+<ol>
+<li><strong>发送邮件</strong></li>
+</ol>
+<ul>
+<li>客户端发送 <code>MAIL FROM:&lt;发件人地址&gt;</code>，指定邮件的发件人。</li>
+<li>服务器返回 <code>250</code>，确认发件人地址合法（或接受该命令）。</li>
+<li>客户端发送一个或多个 <code>RCPT TO:&lt;收件人地址&gt;</code>，指定收件人。</li>
+<li>服务器对每个收件人均返回 <code>250</code>，确认其合法。</li>
+<li>客户端发送 <code>DATA</code> 命令，服务器返回 <code>354</code>，提示可以开始输入邮件数据。</li>
+<li>客户端逐行发送邮件头和正文，最后以单独一行的句点 <code>.</code> 结束输入。</li>
+<li>服务器返回 <code>250</code>，表示邮件已成功接收并排队等待投递。</li>
+</ul>
+<ol>
+<li><strong>关闭连接</strong></li>
+</ol>
+<ul>
+<li>客户端发送 <code>QUIT</code> 命令，请求断开会话。</li>
+<li>服务器返回 <code>221</code>，表示连接已正常关闭。</li>
+</ul>
+<hr>
+<h1 id="邮件伪造原理">邮件伪造原理</h1>
+<p>在 SMTP 协议中，邮件的头部（例如 <code>From:</code>、<code>To:</code>、<code>Subject:</code>）是可以由发信方声明的，这就导致了伪造（spoofing）的可能性。下面给出一个示例邮件头与正文：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Date: Wed, 06 Aug 2025 14:57:55 +0800
+</span></span><span style="display:flex;"><span>To: example@example.com
+</span></span><span style="display:flex;"><span>From: 110@110.com
+</span></span><span style="display:flex;"><span>Subject: test Wed, 06 Aug 2025 14:57:55 +0800
+</span></span><span style="display:flex;"><span>Message-Id: &lt;...&gt;
+</span></span><span style="display:flex;"><span>X-Mailer: ...
+</span></span><span style="display:flex;"><span>Content-Type: text/html
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>This is a test
+</span></span></code></pre></div><p>其中：</p>
+<ul>
+<li><code>Message-Id</code>：消息 ID，用于区分邮件。</li>
+<li><code>X-Mailer</code>：发送客户端/工具标识。</li>
+<li><code>Subject</code>：邮件标题。</li>
+<li><code>To</code>：收件人邮箱地址。</li>
+<li><code>From</code>：发件人邮箱地址（可被任意伪装）。</li>
+</ul>
+<p>因此，仅凭 <code>From</code> 字段并不能证明邮件来源的真实性，必须依靠后端的认证机制来验证来源。</p>
+<hr>
+<h1 id="防范机制spf--dkim--dmarc">防范机制（SPF / DKIM / DMARC）</h1>
+<p>为了解决邮件伪造问题，业界广泛采用了以下三种 DNS 记录/机制：</p>
+<ul>
+<li><strong>SPF（Sender Policy Framework）</strong>：声明哪些主机/IP 被允许代表某一域发送邮件。通常以 DNS TXT 记录形式存在。</li>
+<li><strong>DKIM（DomainKeys Identified Mail）</strong>：使用公/私钥对邮件进行签名；公钥放在 DNS 中，收件方用公钥验证签名以确认邮件未被篡改并确认为该域所签发。</li>
+<li><strong>DMARC（Domain-based Message Authentication, Reporting &amp; Conformance）</strong>：在 SPF 与 DKIM 之上提供策略和报告机制，告知收件方在验证失败时如何处理（reject/quarantine/none），并可接收送达/验证报告。</li>
+</ul>
+<p>下面具体介绍 SPF 与其解析格式。</p>
+<h2 id="spf-简介与解析示例">SPF 简介与解析示例</h2>
+<p><strong>SPF</strong> 通常以 DNS TXT 记录存在，示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>v=spf1 ip4:192.0.2.0/24 include:_spf.example.com redirect=example.net -all
+</span></span></code></pre></div><p>字段说明：</p>
+<ul>
+<li><code>v=spf1</code>：协议版本，必须且且仅此。</li>
+<li><code>ip4</code> / <code>ip6</code>：允许的 IP 段，例如 <code>ip4:192.0.2.0/24</code>。</li>
+<li><code>a</code> / <code>mx</code>：允许与域名 A 记录或 MX 记录匹配的主机。</li>
+<li><code>include:</code>：引入并复用其它域的 SPF 规则。</li>
+<li><code>redirect=</code>：当本域所有机制都未匹配时，改去检查指定域的 SPF 记录。</li>
+<li><strong>限定符</strong>：<code>+</code>（或无符号）＝ Pass，<code>-</code>＝ Fail（硬拒绝），<code>~</code>＝ SoftFail（标记可疑），<code>?</code>＝ Neutral（不处理）。</li>
+<li><code>-all</code>：所有未匹配者硬拒绝（强制策略）。</li>
+</ul>
+<hr>
+<h1 id="实验使用-swaks-构造与发送测试邮件">实验：使用 swaks 构造与发送测试邮件</h1>
+<p><code>swaks</code>（SMTP Swiss Army Knife）是一个用 Perl 编写的命令行工具，常用于测试 SMTP 服务器、验证配置和发送邮件。</p>
+<h3 id="安装">安装</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>apt install swaks
+</span></span></code></pre></div><h3 id="查询-spf示例">查询 SPF（示例）</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>nslookup -type=TXT gmail.com
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-09 144157.png" alt="屏幕截图 2025-10-09 144157.png"></p>
+<p>示例中可以看到 Gmail 的 SPF 记录。很多临时邮箱/服务没有 SPF，找一个临时邮箱示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>nslookup -type=TXT mailshan.com
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-09 144607.png" alt="屏幕截图 2025-10-09 144607.png"></p>
+<p>如果没有 SPF 记录，则更容易被伪造发送。</p>
+<h3 id="构造并发送伪造邮件">构造并发送伪造邮件</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>swaks <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from    <span style="color:#e6db74">&#34;admin@mail.pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --to      <span style="color:#e6db74">&#34;example@gmail.com&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ehlo    <span style="color:#e6db74">&#34;pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;X-Mailer: Gmail&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Content-Type: text/html; charset=UTF-8&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Subject: test&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --body <span style="color:#e6db74">&#34;test&#34;</span>
+</span></span></code></pre></div><p>在测试中，Gmail 因为发送方 IP 不在授权列表中会拒收该邮件（可见服务器的 SPF 校验生效）。</p>
+<p>另一个测试：给临时邮箱发送伪造邮件，因对方没有 SPF 记录，邮件能成功到达：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>swaks <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from    <span style="color:#e6db74">&#34;admin@mail.pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --to      <span style="color:#e6db74">&#34;skunk31124@aminating.com&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ehlo    <span style="color:#e6db74">&#34;pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;X-Mailer: Gmail&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Content-Type: text/html; charset=UTF-8&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Subject: test&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --body <span style="color:#e6db74">&#34;hello_hzhsec&#34;</span>
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-09 145531.png" alt="屏幕截图 2025-10-09 145531.png"></p>
+<p>说明：若目标域未配置 SPF/DKIM/DMARC，伪造邮件更容易成功送达。</p>
+<hr>
+<h1 id="spf-绕过与代发机制">SPF 绕过与代发机制</h1>
+<h3 id="代发使用---h-from">代发（使用 <code>--h-From</code>）</h3>
+<p>某些邮局/SMTP 提交服务器允许 <code>MAIL FROM</code> 与邮件头 <code>From:</code> 不一致（也就是允许代发/伪装头部），可以通过 <code>swaks</code> 的 <code>--h-From</code> 将邮件头 <code>From:</code> 指向你想伪造的地址，而 <code>--from</code> 则为你的真实登录账号：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>swaks <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from <span style="color:#e6db74">&#34;username&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --h-From    <span style="color:#e6db74">&#34;admin@pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --to      <span style="color:#e6db74">&#34;example@example.com&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ehlo    <span style="color:#e6db74">&#34;pku.edu.cn&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;X-Mailer: Gmail&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Content-Type: text/html; charset=UTF-8&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --header  <span style="color:#e6db74">&#34;Subject: 北京大学录取通知书&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --body @./test.html <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --server smtp.qiye.aliyun.com <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --au <span style="color:#e6db74">&#34;username&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --ap <span style="color:#e6db74">&#34;password&#34;</span>
+</span></span></code></pre></div><p>参数说明：</p>
+<ul>
+<li><code>--from</code>：真实发件人账号（用于登录 SMTP 服务器）。</li>
+<li><code>--h-From</code>：邮件头中显示的 <code>From:</code>（可用于伪造）。</li>
+<li><code>--server</code>：SMTP 服务器地址。</li>
+<li><code>--au</code> / <code>--ap</code>：登录用户名与密码。</li>
+<li><code>--body @file</code>：从文件读取邮件正文。</li>
+</ul>
+<p>使用代发机制，可利用合法 SMTP 服务代发内容，从而使得接收方更难直接通过简单检查识别伪造（例如邮件可能通过了 SMTP 连接端的反垃圾或信誉检查）。</p>
+<p>示例中构造的钓鱼邮件具有较强的真实性感：</p>
+<p align="center"><img src="/static/微信图片_20251009150125_40_8.jpg" alt="微信图片_20251009150125_40_8.jpg"></p>
+<hr>
+<h1 id="发现与测试结论">发现与测试结论</h1>
+<ul>
+<li>发现某些 <strong>网页邮箱不对发件域做严格的 SPF 校验</strong>，导致可用伪造的 <code>From:</code> 地址成功发送邮件（实测可针对无 SPF 的域）。</li>
+<li>对于存在 SPF 的域，利用 <strong>子域</strong> 或者<strong>使用第三方合法 SMTP 代发</strong>有时可以绕过简单的校验（取决于接收方对 SPF/DKIM/DMARC 的严格程度）。</li>
+</ul>
+<p>示例：</p>
+<ul>
+<li><code>pku.edu.cn</code> 主域与 <code>email.pku.edu.cn</code> 的 SPF 配置不同，子域策略可能导致某些绕过路径。</li>
+</ul>
+<hr>
+<h1 id="安全建议面向域名所有者与收件方">安全建议（面向域名所有者与收件方）</h1>
+<p><strong>域名所有者应：</strong></p>
+<ol>
+<li>为域配置严格的 SPF 记录（例如 <code>-all</code> 策略），并确保列出所有合法发送源。</li>
+<li>部署 DKIM：为发信系统签名，并把公钥发布在 DNS。</li>
+<li>配置 DMARC，并根据监控结果逐步收紧策略（从 <code>p=none</code> -&gt; <code>p=quarantine</code> -&gt; <code>p=reject</code>）。</li>
+<li>对子域设置明确策略（子域继承或单独设定），避免因子域未设置而被滥用。</li>
+</ol>
+<p><strong>收件方 / 邮箱服务提供方应：</strong></p>
+<ol>
+<li>在收信阶段严格执行 SPF/DKIM/DMARC 验证，并对失败邮件采取合适策略（拒收或隔离）并生成报告。</li>
+<li>对通过第三方 SMTP（代发）且 <code>From</code> 与实际 <code>MAIL FROM</code> 不一致的邮件提高警惕，结合信誉、内容、历史行为做综合判定。</li>
+</ol>
+<hr>
+<h1 id="附常用-swaks-命令模板">附：常用 swaks 命令模板</h1>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 基本发送</span>
+</span></span><span style="display:flex;"><span>swaks --from <span style="color:#e6db74">&#34;me@example.com&#34;</span> --to <span style="color:#e6db74">&#34;you@example.org&#34;</span> --server smtp.example.com --auth LOGIN --au <span style="color:#e6db74">&#34;me&#34;</span> --ap <span style="color:#e6db74">&#34;password&#34;</span> --body <span style="color:#e6db74">&#34;hello&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 代发（伪造邮件头）</span>
+</span></span><span style="display:flex;"><span>swaks --from <span style="color:#e6db74">&#34;real@me.com&#34;</span> --h-From <span style="color:#e6db74">&#34;spoof@victim.com&#34;</span> --to <span style="color:#e6db74">&#34;target@domain.com&#34;</span> --server smtp.provider.com --au <span style="color:#e6db74">&#34;real@me.com&#34;</span> --ap <span style="color:#e6db74">&#34;password&#34;</span> --body @./test.html
+</span></span></code></pre></div><hr>
+<h1 id="总结">总结</h1>
+<p>SMTP 的基本通信流程、邮件伪造的原理，以及常见的防护机制（SPF、DKIM、DMARC）。通过 <code>swaks</code> 的实测可以看出：</p>
+<ul>
+<li>若目标域没有配置 SPF/DKIM/DMARC，伪造邮件极易成功到达；</li>
+<li>若目标域配置了严格的认证策略，伪造会被显著阻断，但仍存在代发或通过信任第三方 SMTP 绕过的风险；</li>
+<li>最佳实践是域名所有者完善 SPF/DKIM/DMARC，同时邮件接收方严格执行验证并结合报告、信誉和内容策略一起判定可疑邮件。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="https://hzhsec.github.io/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>WinRAR 目录穿越漏洞（CVE-2025-8088）复现与防护</span></a>
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/base_bug/xxe/xxe1/"><span>XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
