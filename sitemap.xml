@@ -2,273 +2,276 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://118.178.86.67/list/app/app1/</loc>
+    <loc>https://hzhsec.github.io/list/app/app1/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/ssrf/ssrf2/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/ssrf/ssrf2/</loc>
     <lastmod>2024-05-10T15:55:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/csrf/csrf/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/csrf/csrf/</loc>
     <lastmod>2024-05-07T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/rce/rce/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/rce/rce/</loc>
     <lastmod>2024-05-05T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/</loc>
     <lastmod>2024-04-28T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/</loc>
     <lastmod>2024-04-20T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/app/app2/</loc>
+    <loc>https://hzhsec.github.io/list/app/app2/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/ssrf/ssrf1/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/ssrf/ssrf1/</loc>
     <lastmod>2024-05-09T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/rce/rce2/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/rce/rce2/</loc>
     <lastmod>2024-05-06T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/</loc>
     <lastmod>2024-04-29T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/</loc>
     <lastmod>2024-04-21T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/app/app3/</loc>
+    <loc>https://hzhsec.github.io/list/app/app3/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up3/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up3/</loc>
     <lastmod>2024-05-04T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up4/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up4/</loc>
     <lastmod>2024-05-02T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/</loc>
     <lastmod>2024-04-24T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/</loc>
     <lastmod>2024-05-03T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
+    <loc>https://hzhsec.github.io/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/</loc>
+    <loc>https://hzhsec.github.io/list/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/apt/</loc>
+    <loc>https://hzhsec.github.io/list/apt/</loc>
     <lastmod>2025-10-09T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/</loc>
     <lastmod>2025-09-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/app/</loc>
+    <loc>https://hzhsec.github.io/list/app/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/xxe/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/xxe/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/</loc>
+    <loc>https://hzhsec.github.io/categories/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/cve-2025-8088/</loc>
+    <loc>https://hzhsec.github.io/tags/cve-2025-8088/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
+    <loc>https://hzhsec.github.io/categories/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/</loc>
+    <loc>https://hzhsec.github.io/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/</loc>
+    <loc>https://hzhsec.github.io/tags/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/winrar/</loc>
+    <loc>https://hzhsec.github.io/tags/winrar/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/winrar/</loc>
+    <loc>https://hzhsec.github.io/categories/winrar/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/</loc>
+    <loc>https://hzhsec.github.io/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%A4%8D%E7%8E%B0/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%A4%8D%E7%8E%B0/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E9%98%B2%E6%8A%A4/</loc>
+    <loc>https://hzhsec.github.io/tags/%E9%98%B2%E6%8A%A4/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/apt/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/</loc>
+    <loc>https://hzhsec.github.io/list/apt/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/</loc>
     <lastmod>2025-10-09T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/</loc>
+    <loc>https://hzhsec.github.io/categories/%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/</loc>
     <lastmod>2025-10-09T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/message/</loc>
+    <loc>https://hzhsec.github.io/message/</loc>
     <lastmod>2025-09-28T00:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/csrf/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/csrf/</loc>
     <lastmod>2025-09-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/rce/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/rce/</loc>
     <lastmod>2025-09-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2025-01-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/ssrf/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/ssrf/</loc>
     <lastmod>2025-01-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/</loc>
     <lastmod>2025-01-12T20:44:21+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/apk%E9%80%86%E5%90%91/</loc>
+    <loc>https://hzhsec.github.io/tags/apk%E9%80%86%E5%90%91/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/frida/</loc>
+    <loc>https://hzhsec.github.io/tags/frida/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/smali/</loc>
+    <loc>https://hzhsec.github.io/tags/smali/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/xposed/</loc>
+    <loc>https://hzhsec.github.io/tags/xposed/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%B8%83%E5%B1%80%E4%BF%AE%E6%94%B9/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%B8%83%E5%B1%80%E4%BF%AE%E6%94%B9/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%95%B0%E6%8D%AE%E7%AF%A1%E6%94%B9/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%95%B0%E6%8D%AE%E7%AF%A1%E6%94%B9/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/</loc>
+    <loc>https://hzhsec.github.io/categories/%E7%A7%BB%E5%8A%A8%E5%AE%89%E5%85%A8/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/</loc>
+    <loc>https://hzhsec.github.io/categories/%E9%80%86%E5%90%91%E5%B7%A5%E7%A8%8B/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E4%BB%A3%E7%90%86%E6%A3%80%E6%B5%8B/</loc>
+    <loc>https://hzhsec.github.io/tags/%E4%BB%A3%E7%90%86%E6%A3%80%E6%B5%8B/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%8F%8D%E6%A8%A1%E6%8B%9F%E5%99%A8/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%8F%8D%E6%A8%A1%E6%8B%9F%E5%99%A8/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%8A%93%E5%8C%85/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%8A%93%E5%8C%85/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E8%AF%81%E4%B9%A6%E7%BB%91%E5%AE%9A/</loc>
+    <loc>https://hzhsec.github.io/tags/%E8%AF%81%E4%B9%A6%E7%BB%91%E5%AE%9A/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/burpsuite/</loc>
+    <loc>https://hzhsec.github.io/tags/burpsuite/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/mobexler/</loc>
+    <loc>https://hzhsec.github.io/tags/mobexler/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/mobsf/</loc>
+    <loc>https://hzhsec.github.io/tags/mobsf/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E8%AF%81%E4%B9%A6%E7%BB%95%E8%BF%87/</loc>
+    <loc>https://hzhsec.github.io/tags/%E8%AF%81%E4%B9%A6%E7%BB%95%E8%BF%87/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/ssrf/</loc>
+    <loc>https://hzhsec.github.io/categories/ssrf/</loc>
     <lastmod>2024-05-10T15:55:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/csrf/</loc>
+    <loc>https://hzhsec.github.io/categories/csrf/</loc>
     <lastmod>2024-05-07T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/ld_preload/</loc>
+    <loc>https://hzhsec.github.io/tags/ld_preload/</loc>
     <lastmod>2024-05-06T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%8F%90%E6%9D%83/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%8F%90%E6%9D%83/</loc>
     <lastmod>2024-05-06T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E7%BB%95%E8%BF%87/</loc>
+    <loc>https://hzhsec.github.io/tags/%E7%BB%95%E8%BF%87/</loc>
     <lastmod>2024-05-06T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/rce/</loc>
+    <loc>https://hzhsec.github.io/tags/rce/</loc>
     <lastmod>2024-05-05T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%BC%82%E6%88%96/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%BC%82%E6%88%96/</loc>
     <lastmod>2024-05-05T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%97%A0%E5%9B%9E%E6%98%BE/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%97%A0%E5%9B%9E%E6%98%BE/</loc>
     <lastmod>2024-05-05T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/</loc>
+    <loc>https://hzhsec.github.io/categories/%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB/</loc>
     <lastmod>2024-05-04T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</loc>
+    <loc>https://hzhsec.github.io/categories/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0/</loc>
     <lastmod>2024-05-03T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD/</loc>
+    <loc>https://hzhsec.github.io/categories/%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD/</loc>
     <lastmod>2024-05-02T10:56:54+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/xml/</loc>
+    <loc>https://hzhsec.github.io/tags/xml/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/list/base_bug/xxe/xxe1/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/xxe/xxe1/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/xxe/</loc>
+    <loc>https://hzhsec.github.io/tags/xxe/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/xxe%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/categories/xxe%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%A4%96%E9%83%A8%E5%AE%9E%E4%BD%93/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%A4%96%E9%83%A8%E5%AE%9E%E4%BD%93/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%B8%A6%E5%A4%96/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%B8%A6%E5%A4%96/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%A3%80%E6%B5%8B/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%A3%80%E6%B5%8B/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/oob/</loc>
+    <loc>https://hzhsec.github.io/list/base_bug/xxe/test/</loc>
+    <lastmod>2024-04-26T15:00:00+09:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/oob/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/sqlmap/</loc>
+    <loc>https://hzhsec.github.io/tags/sqlmap/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/sql%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/categories/sql%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/tamper/</loc>
+    <loc>https://hzhsec.github.io/tags/tamper/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/categories/%E5%B7%A5%E5%85%B7/</loc>
+    <loc>https://hzhsec.github.io/categories/%E5%B7%A5%E5%85%B7/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/</loc>
+    <loc>https://hzhsec.github.io/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/dnslog/</loc>
+    <loc>https://hzhsec.github.io/tags/dnslog/</loc>
     <lastmod>2024-04-24T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E4%BA%8C%E6%AC%A1%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/tags/%E4%BA%8C%E6%AC%A1%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-24T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%A0%86%E5%8F%A0%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-24T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/%E5%B8%A6%E5%A4%96%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/tags/%E5%B8%A6%E5%A4%96%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-24T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/mysql/</loc>
+    <loc>https://hzhsec.github.io/tags/mysql/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/php/</loc>
+    <loc>https://hzhsec.github.io/tags/php/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/tags/sql%E6%B3%A8%E5%85%A5/</loc>
+    <loc>https://hzhsec.github.io/tags/sql%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>http://118.178.86.67/archives/</loc>
+    <loc>https://hzhsec.github.io/archives/</loc>
   </url>
 </urlset>

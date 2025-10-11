@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>CSRF on Hzhsrc home</title>
-    <link>http://118.178.86.67/list/base_bug/csrf/</link>
+    <link>https://hzhsec.github.io/list/base_bug/csrf/</link>
     <description>Recent content in CSRF on Hzhsrc home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 12 Sep 2025 20:44:21 +0800</lastBuildDate><atom:link href="http://118.178.86.67/list/base_bug/csrf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 12 Sep 2025 20:44:21 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/list/base_bug/csrf/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

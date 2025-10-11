@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>SSRF on Hzhsrc home</title>
-    <link>http://118.178.86.67/categories/ssrf/</link>
+    <link>https://hzhsec.github.io/categories/ssrf/</link>
     <description>Recent content in SSRF on Hzhsrc home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 10 May 2024 15:55:00 +0800</lastBuildDate><atom:link href="http://118.178.86.67/categories/ssrf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 10 May 2024 15:55:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/categories/ssrf/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

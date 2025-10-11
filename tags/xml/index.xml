@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>XML on Hzhsrc home</title>
-    <link>http://118.178.86.67/tags/xml/</link>
+    <link>https://hzhsec.github.io/tags/xml/</link>
     <description>Recent content in XML on Hzhsrc home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 26 Apr 2024 15:00:00 +0900</lastBuildDate><atom:link href="http://118.178.86.67/tags/xml/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 26 Apr 2024 15:00:00 +0900</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/xml/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
