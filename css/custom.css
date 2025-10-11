@@ -1,0 +1,54 @@
+/* 让文章区域的图片居中并响应式 */
+.article-content img,
+.post-content img,
+.content img,
+.entry-content img,
+img.wikilink {
+  display: block;        /* 使 margin:auto 生效 */
+  margin: 0 auto;        /* 水平居中 */
+  max-width: 100%;       /* 不超过父容器宽度，响应式 */
+  height: auto;          /* 保持比例 */
+}
+
+/* 如果页面使用 <figure> 包裹图片 + figcaption，居中 caption */
+figure {
+  text-align: center;
+  margin: 1rem 0;
+}
+figure img {
+  display: inline-block; /* 保持 inline 并在 figure 中居中 */
+  max-width: 100%;
+  height: auto;
+}
+figcaption {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+
+/* 改 copy 按钮颜色 */
+.highlight .copy {
+  background-color: #444;   /* 背景色，深色系 */
+  color: #eee;              /* 文字颜色，浅色系 */
+  border: none;             /* 去掉边框 */
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  cursor: pointer;         /* 鼠标悬停时显示手型 */
+}
+
+/* 鼠标悬停颜色 */
+.highlight .copy:hover {
+  background-color: #666;   /* 鼠标悬停时颜色稍亮 */
+  color: #fff;
+  transition: background-color 0.3s ease, color 0.3s ease;  /* 动画效果 */
+}
+
+/* 鼠标悬停时可以增加阴影 */
+.highlight .copy:focus,
+.highlight .copy:hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 自定义代码块样式 */

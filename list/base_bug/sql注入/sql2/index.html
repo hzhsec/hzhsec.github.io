@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL：数据请求类型与注入面分析</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@MySQL：数据请求类型与注入面分析 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="MySQL：数据请求类型与注入面分析" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-21T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-04-21T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MySQL：数据请求类型与注入面分析"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "MySQL：数据请求类型与注入面分析",
+      "item": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MySQL：数据请求类型与注入面分析",
+  "name": "MySQL：数据请求类型与注入面分析",
+  "description": "",
+  "keywords": [
+    "PHP", "SQL注入", "MySQL", "渗透测试"
+  ],
+  "articleBody": "概述 本篇笔记说明 PHP 与 MySQL 交互中常见的数据请求类型、导致注入成功/失败的原因、常见的请求来源（全局变量）及利用场景，并给出绕过与防护的建议。适用于黑盒测试时对不同请求格式的分析与构造。\n一、为什么“看似有注入但无法成功”？ 黑盒测试无法直接看到原始 SQL 语句，注入成功依赖于对原 SQL 拼接方式的猜测与匹配。 开发者或框架对参数的处理（类型转换、转义、模板拼接）会导致常见 payload 拼接失败。 因此先判断请求的数据类型与封装格式至关重要。 二、常见的数据请求类型（按后端接收与拼接方式） 1. 数字型（无引号） -- SQL 示例 SELECT * FROM news WHERE id = $id; 特点：直接拼接数字，若传入非数字可能触发类型错误或被自动转型。\n绕过思路：使用不带引号的数值型 payload（例如：1 OR 1=1），注意部分框架会强制转换为整数。\n2. 字符型（带单引号） SELECT * FROM news WHERE id = '$id'; 特点：常见，单引号是注入绕过的主要目标。\n绕过思路：闭合单引号（' OR '1'='1）、使用十六进制或函数编码绕过过滤。\n3. 搜索型（LIKE，带通配符） SELECT * FROM news WHERE title LIKE '%$id%'; 特点：参数被包含在通配符中，注入时需考虑 % 的位置与转义。\n绕过思路：构造包含 % 的 payload 或利用通配符外部闭合。\n4. 框架/模板型（额外括号或函数封装） SELECT * FROM news WHERE id = ('$id'); SELECT * FROM news WHERE (id = '$id'); 特点：变量包装方式复杂，直接闭合可能不起作用。\n绕过思路：尝试构造能关闭所有包裹的 payload（多重闭合），或利用编码/注释技巧使外层表达式失效。\n小结：绕过的核心在于「构造闭合」，尝试不同的闭合组合与编码方式。\n三、常见请求来源（PHP 全局变量） $_GET, $_POST：最常见的注入入口； $_COOKIE：持久化或跨页面注入点； $_SERVER（如 HTTP_USER_AGENT, HTTP_REFERER, HTTP_HOST, HTTP_X_FORWARDED_FOR）：常被记录到日志或写入数据库的字段，利用场景多样； $_FILES：文件上传名/路径若写入数据库可能产生 INSERT 注入。 示例：HTTP_X_FORWARDED_FOR 绕过 有些应用直接使用 $_SERVER['HTTP_X_FORWARDED_FOR'] 作为客户端 IP 并写入数据库或白名单判断，可通过伪造该头实现绕过或注入。 四、功能点与利用场景 用户登录/鉴权：构造 payload 绕过登录判断或篡改身份； IP 相关逻辑：利用伪造 IP（XFF）绕过基于 IP 的白名单或触发记录型注入（将伪造值写入日志/数据库）； 文件上传流程：上传文件名或路径写入数据库时可触发 INSERT 注入； 日志/审计字段：User-Agent、Referer 等头部常被写入日志，适合盲注或链式利用。 五、数据请求格式（对注入的影响） 统一格式（JSON）：后端解析 JSON 后再带入 SQL，可能改变原始拼接（需抓包查看解析节点）。 编码/加密（如 Base64）：传输前编码，后端解码再使用，注入点需针对解码后的内容构造 payload。 测试技巧：在黑盒场景下，尝试发送简单的 JSON/编码变体，并观察响应差异与错误信息，确定解码与解析流程。\n六、检测流程 确认输入位置与请求类型（GET/POST/JSON/COOKIE/HEADER/FILES）； 判断后端对参数的处理（是否强类型转换、是否去除了引号）； 使用最小变体进行闭合测试（如 +','、' OR '1'='1、%25 编码等）； 若无显性回显，切换盲注方法（布尔型/时间型）； 利用日志/头/上传点进行链式利用。 七、防护建议 使用参数化查询（Prepared Statements）或 ORM，避免字符串拼接； 严格校验并转换输入类型（对数字使用类型检查）； 对所有写入日志/数据库的头部与文件名进行转义与限制长度； 最小权限原则：数据库用户只保留必要权限； 对外部头部（如 X-Forwarded-For）不直接信任，并在可信层做额外验证。 八、payload 数字型：id=1 OR 1=1。 字符型：id=' OR '1'='1' -- 。 JSON 示例：{\"id\":\"1' OR '1'='1\"}（视后端解析而定）。 ",
+  "wordCount" : "165",
+  "inLanguage": "en",
+  "datePublished": "2024-04-21T15:40:00+08:00",
+  "dateModified": "2024-04-21T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>MySQL：数据请求类型与注入面分析</h1>
+  </header>
+
+  <p>
+  <small>
+    April 21, 2024&nbsp;· 165 words&nbsp;· One minute</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-数字型无引号">1. 数字型（无引号）</a></li>
+    <li><a href="#2-字符型带单引号">2. 字符型（带单引号）</a></li>
+    <li><a href="#3-搜索型like带通配符">3. 搜索型（LIKE，带通配符）</a></li>
+    <li><a href="#4-框架模板型额外括号或函数封装">4. 框架/模板型（额外括号或函数封装）</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#示例http_x_forwarded_for-绕过">示例：<code>HTTP_X_FORWARDED_FOR</code> 绕过</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="概述">概述</h1>
+<p>本篇笔记说明 PHP 与 MySQL 交互中常见的<strong>数据请求类型</strong>、导致注入成功/失败的原因、常见的请求来源（全局变量）及利用场景，并给出绕过与防护的建议。适用于黑盒测试时对不同请求格式的分析与构造。</p>
+<hr>
+<h1 id="一为什么看似有注入但无法成功">一、为什么“看似有注入但无法成功”？</h1>
+<ul>
+<li>黑盒测试无法直接看到原始 SQL 语句，注入成功依赖于<strong>对原 SQL 拼接方式的猜测与匹配</strong>。</li>
+<li>开发者或框架对参数的处理（类型转换、转义、模板拼接）会导致常见 payload 拼接失败。</li>
+<li>因此先判断请求的数据类型与封装格式至关重要。</li>
+</ul>
+<hr>
+<h1 id="二常见的数据请求类型按后端接收与拼接方式">二、常见的数据请求类型（按后端接收与拼接方式）</h1>
+<h2 id="1-数字型无引号">1. 数字型（无引号）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#75715e">-- SQL 示例
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> <span style="color:#960050;background-color:#1e0010">$</span>id;
+</span></span></code></pre></div><p>特点：直接拼接数字，若传入非数字可能触发类型错误或被自动转型。</p>
+<p>绕过思路：使用不带引号的数值型 payload（例如：<code>1 OR 1=1</code>），注意部分框架会强制转换为整数。</p>
+<h2 id="2-字符型带单引号">2. 字符型（带单引号）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;$id&#39;</span>;
+</span></span></code></pre></div><p>特点：常见，单引号是注入绕过的主要目标。</p>
+<p>绕过思路：闭合单引号（<code>' OR '1'='1</code>）、使用十六进制或函数编码绕过过滤。</p>
+<h2 id="3-搜索型like带通配符">3. 搜索型（LIKE，带通配符）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> title <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;%$id%&#39;</span>;
+</span></span></code></pre></div><p>特点：参数被包含在通配符中，注入时需考虑 <code>%</code> 的位置与转义。</p>
+<p>绕过思路：构造包含 <code>%</code> 的 payload 或利用通配符外部闭合。</p>
+<h2 id="4-框架模板型额外括号或函数封装">4. 框架/模板型（额外括号或函数封装）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> id <span style="color:#f92672">=</span> (<span style="color:#e6db74">&#39;$id&#39;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> news <span style="color:#66d9ef">WHERE</span> (id <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;$id&#39;</span>);
+</span></span></code></pre></div><p>特点：变量包装方式复杂，直接闭合可能不起作用。</p>
+<p>绕过思路：尝试构造能关闭所有包裹的 payload（多重闭合），或利用编码/注释技巧使外层表达式失效。</p>
+<blockquote>
+<p>小结：绕过的核心在于「构造闭合」，尝试不同的闭合组合与编码方式。</p>
+</blockquote>
+<hr>
+<h1 id="三常见请求来源php-全局变量">三、常见请求来源（PHP 全局变量）</h1>
+<ul>
+<li><code>$_GET</code>, <code>$_POST</code>：最常见的注入入口；</li>
+<li><code>$_COOKIE</code>：持久化或跨页面注入点；</li>
+<li><code>$_SERVER</code>（如 <code>HTTP_USER_AGENT</code>, <code>HTTP_REFERER</code>, <code>HTTP_HOST</code>, <code>HTTP_X_FORWARDED_FOR</code>）：常被记录到日志或写入数据库的字段，利用场景多样；</li>
+<li><code>$_FILES</code>：文件上传名/路径若写入数据库可能产生 <code>INSERT</code> 注入。</li>
+</ul>
+<h2 id="示例http_x_forwarded_for-绕过">示例：<code>HTTP_X_FORWARDED_FOR</code> 绕过</h2>
+<ul>
+<li>有些应用直接使用 <code>$_SERVER['HTTP_X_FORWARDED_FOR']</code> 作为客户端 IP 并写入数据库或白名单判断，可通过伪造该头实现绕过或注入。</li>
+</ul>
+<hr>
+<h1 id="四功能点与利用场景">四、功能点与利用场景</h1>
+<ol>
+<li><strong>用户登录/鉴权</strong>：构造 payload 绕过登录判断或篡改身份；</li>
+<li><strong>IP 相关逻辑</strong>：利用伪造 IP（XFF）绕过基于 IP 的白名单或触发记录型注入（将伪造值写入日志/数据库）；</li>
+<li><strong>文件上传流程</strong>：上传文件名或路径写入数据库时可触发 <code>INSERT</code> 注入；</li>
+<li><strong>日志/审计字段</strong>：User-Agent、Referer 等头部常被写入日志，适合盲注或链式利用。</li>
+</ol>
+<hr>
+<h1 id="五数据请求格式对注入的影响">五、数据请求格式（对注入的影响）</h1>
+<ol>
+<li><strong>统一格式（JSON）</strong>：后端解析 JSON 后再带入 SQL，可能改变原始拼接（需抓包查看解析节点）。</li>
+<li><strong>编码/加密（如 Base64）</strong>：传输前编码，后端解码再使用，注入点需针对解码后的内容构造 payload。</li>
+</ol>
+<p>测试技巧：在黑盒场景下，尝试发送简单的 JSON/编码变体，并观察响应差异与错误信息，确定解码与解析流程。</p>
+<hr>
+<h1 id="六检测流程">六、检测流程</h1>
+<ol>
+<li>确认输入位置与请求类型（GET/POST/JSON/COOKIE/HEADER/FILES）；</li>
+<li>判断后端对参数的处理（是否强类型转换、是否去除了引号）；</li>
+<li>使用最小变体进行闭合测试（如 <code>+','</code>、<code>' OR '1'='1</code>、<code>%25</code> 编码等）；</li>
+<li>若无显性回显，切换盲注方法（布尔型/时间型）；</li>
+<li>利用日志/头/上传点进行链式利用。</li>
+</ol>
+<hr>
+<h1 id="七防护建议">七、防护建议</h1>
+<ul>
+<li>使用参数化查询（Prepared Statements）或 ORM，避免字符串拼接；</li>
+<li>严格校验并转换输入类型（对数字使用类型检查）；</li>
+<li>对所有写入日志/数据库的头部与文件名进行转义与限制长度；</li>
+<li>最小权限原则：数据库用户只保留必要权限；</li>
+<li>对外部头部（如 X-Forwarded-For）不直接信任，并在可信层做额外验证。</li>
+</ul>
+<hr>
+<h1 id="八payload">八、payload</h1>
+<ul>
+<li>数字型：<code>id=1 OR 1=1</code>。</li>
+<li>字符型：<code>id=' OR '1'='1' -- </code>。</li>
+<li>JSON 示例：<code>{&quot;id&quot;:&quot;1' OR '1'='1&quot;}</code>（视后端解析而定）。</li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>文件解析与存储方案：权限、解码与 OSS</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/app/app3/"><span>APK 逆向：数据/逻辑/视图 修改实战</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

