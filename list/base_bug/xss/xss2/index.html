@@ -19,8 +19,8 @@
 <meta property="og:description" content="总结 MXSS/UXSS 概念、相关 CVE、以及 SVG/PDF/SWF 等作为 XSS 载体的原理与复现方法。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://www.hzhsec.top/list/base_bug/xss/xss2/" /><meta property="article:section" content="list" />
-<meta property="article:published_time" content="2025-10-16T16:10:00+08:00" />
-<meta property="article:modified_time" content="2025-10-16T16:10:00+08:00" />
+<meta property="article:published_time" content="2024-05-18T16:00:00+08:00" />
+<meta property="article:modified_time" content="2024-05-18T16:00:00+08:00" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法"/>
@@ -72,8 +72,8 @@
   "articleBody": "XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法 下面整理一些进阶 XSS 载体与攻击面，包括 MXSS、UXSS（浏览器或扩展层面的 XSS）、以及 SVG、PDF、Flash(SWF) 等非传统图片/文件格式作为 XSS 载体的原理与示例。\nMXSS \u0026 UXSS — 概念与示例 MXSS（Mutation XSS） 参考：\nhttps://www.fooying.com/the-art-of-xss-1-introduction/\nUXSS（Universal Cross-Site Scripting）\nUXSS 是利用浏览器或浏览器扩展的漏洞来触发 XSS 的一种方式（例如浏览器翻译插件错误处理导致注入并执行）。这类 XSS 不依赖于被测站点的输入输出缺陷，而是利用浏览器或插件自身的缺陷造成脚本执行。\n示例 CVE：MICROSOFT EDGE uXSS CVE-2021-34506\nEdge 浏览器翻译功能导致 JS 语句被错误调用执行（参考）\n视频演示： https://www.bilibili.com/video/BV1fX4y1c7rX\nSVG → XSS（SVG-XSS） SVG（Scalable Vector Graphics）是一种基于 XML 的矢量图格式。与 JPG/PNG 不同，SVG 文件可以使用文本编辑器直接查看/编辑，并且许多 SVG 元素、属性、脚本都能在浏览器中执行，从而成为 XSS 的载体。\n示例（危险的 SVG，演示目的）：\n",
   "wordCount" : "303",
   "inLanguage": "en",
-  "datePublished": "2025-10-16T16:10:00+08:00",
-  "dateModified": "2025-10-16T16:10:00+08:00",
+  "datePublished": "2024-05-18T16:00:00+08:00",
+  "dateModified": "2024-05-18T16:00:00+08:00",
   "author":{
     "@type": "Person",
     "name": "hzhsec"
@@ -212,7 +212,7 @@
 
   <p>
   <small>
-    October 16, 2025&nbsp;· 303 words&nbsp;· 2 min</small>
+    May 18, 2024&nbsp;· 303 words&nbsp;· 2 min</small>
 
   
 <p>
