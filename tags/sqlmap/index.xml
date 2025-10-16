@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>sqlmap on Hzhsrc home</title>
+    <title>sqlmap on Hzhsec home</title>
     <link>https://hzhsec.github.io/tags/sqlmap/</link>
-    <description>Recent content in sqlmap on Hzhsrc home created by </description>
+    <description>Recent content in sqlmap on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 25 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/sqlmap/index.xml" rel="self" type="application/rss+xml" />

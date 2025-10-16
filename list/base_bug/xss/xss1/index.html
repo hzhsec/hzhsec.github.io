@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS跨站 — 原理、分类与闭合</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@XSS 漏洞的输入输出原理、分类（反射、存储、DOM）、测试与闭合要点。含流程图与 DOM 树示意图。">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss1/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="XSS跨站 — 原理、分类与闭合" />
+<meta property="og:description" content="XSS 漏洞的输入输出原理、分类（反射、存储、DOM）、测试与闭合要点。含流程图与 DOM 树示意图。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-16T16:00:00+08:00" />
+<meta property="article:modified_time" content="2025-10-16T16:00:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="XSS跨站 — 原理、分类与闭合"/>
+<meta name="twitter:description" content="XSS 漏洞的输入输出原理、分类（反射、存储、DOM）、测试与闭合要点。含流程图与 DOM 树示意图。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "XSS漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "XSS跨站 — 原理、分类与闭合",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/xss1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "XSS跨站 — 原理、分类与闭合",
+  "name": "XSS跨站 — 原理、分类与闭合",
+  "description": "XSS 漏洞的输入输出原理、分类（反射、存储、DOM）、测试与闭合要点。含流程图与 DOM 树示意图。",
+  "keywords": [
+    "XSS", "DOM XSS", "Stored XSS", "Reflected XSS"
+  ],
+  "articleBody": "XSS 跨站 — 输入/输出、原理、分类与闭合 漏洞概述\nXSS（跨站脚本）本质上是：接收外部输入 → 输出到页面并被浏览器解析/执行。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。\n漏洞原理 原理简述：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据），导致攻击者构造的脚本在受害者浏览器中执行。\n关键链路：输入点 → 服务器/客户端处理 → 输出到页面上下文 → 浏览器执行。\n基础类型 反射型（Reflected XSS） 定义：攻击载荷随请求参数发送，服务器在响应中直接回显（不持久化）。通常通过构造恶意链接诱导用户点击从而触发一次性攻击（one-to-one）。\n常见场景：\n搜索、错误消息、重定向参数直接回显 表单回填未编码 检测要点：向参数注入探针，观察响应是否按预期回显并执行。 示意：反射型 XSS 攻击流程图\n存储型（Stored XSS） 定义：恶意脚本被服务器持久化（如数据库、留言、评论、用户资料等），当其他用户查看包含该内容的页面时触发执行（one-to-many），危害范围更广。\n常见场景：\n评论、论坛发帖、富文本编辑器内容存储后回显 用户资料（昵称、签名）被当作 HTML 回显\n检测要点：在能写入后端存储的位置注入 payload，随后访问回显页面查看是否执行。 示意：存储型 XSS 攻击流程图\nDOM 型（DOM-based XSS） 定义：漏洞发生在浏览器端。页面的 JavaScript 将来自 location、hash、document.referrer、postMessage、localStorage 等来源的数据不安全地写入 DOM（例如使用 innerHTML、document.write、eval），从而触发脚本执行。服务器响应本身可能“干净”。\n特点：\n发生/触发都在客户端（浏览器）侧 需要审计前端 JS 的数据流（source → sink）\n检测要点：在浏览器环境修改 location.hash/location.search 或模拟 postMessage，然后观察 DOM 是否被不安全插入或执行。 示意：HTML DOM 树形结构（便于理解数据如何被插入 DOM）\n拓展类型与常见载体 jQuery 相关不当 API 使用导致的 XSS（如 .html() 直接插入未经消毒的内容） MXSS / UXSS / PDF XSS / Flash XSS / 上传类 XSS（文件名、图片 EXIF、SVG 等） 富文本编辑器（富文本内容若未严格过滤或未使用安全 sanitizer，极易引入 Stored XSS） 攻击利用与可能后果 常见利用方式与影响包括但不限于：\n恶意重定向、页面劫持 cookie / 会话凭证窃取（若 cookie 非 HttpOnly） 持久化的钓鱼页面或权限维持（植入后门） 行为伪造（利用受害者权限在后台操作） 测试流程与检测点（实用步骤） 发现输入点：所有能提交/控制内容的字段（GET、POST、Headers、文件上传、富文本）。 观察输出点：页面回显、模板渲染、JS DOM 操作、动态模板/脚本注入位置。 注入探针：从简单的 \" 到更隐蔽的 payload（可绕过过滤器）逐步测试。 针对 DOM XSS：在浏览器 Console 手动或脚本化地修改 location.search/hash、postMessage、localStorage，观察是否被 JS 插入到危险 sink（innerHTML、eval 等）。 记录与证据：截图/持久化日志/response 保存，便于复现与修复跟踪。 避免盲测生产：若为生产环境，优先使用抽样与低频率测试并在授权范围内进行。 安全修复与防护要点 输出编码（上下文相关）：HTML、Attribute、JavaScript、URL 等按上下文进行编码。 尽量避免危险 API：前端尽量不用 innerHTML / document.write / eval，而用 textContent、createTextNode 等。 使用成熟的 Sanitizer：如 DOMPurify 等，在必须允许部分 HTML 的场景中清洗输入。 Content Security Policy（CSP）：配置严格的 CSP（禁用 unsafe-inline、限制 script 源），降低攻击影响范围。 HttpOnly / Secure / SameSite Cookie：防止 JS 直接读取 cookie，并降低 CSRF 等风险。 White-list 验证：对输入采用白名单策略，尤其是对可插入 DOM 的参数进行严格校验。 WAF 与检测：部署 WAF 作第一道防线，但不要依赖 WAF 替代编码/消毒（WAF 可作为补充）。 最小化数据暴露：页面尽量不输出敏感信息（例如完整 cookie、token），只输出必要数据。 常见测试点汇总 用户资料、签名、昵称回显点 评论/论坛/富文本编辑器内容 文件名、图片元数据（EXIF、SVG） URL 参数（query、fragment/hash）、referer、postMessage、localStorage 内容 第三方组件（WYSIWYG 编辑器、插件）未正确配置或未消毒内容的地方 小结 反射型：一次性回显，常通过恶意链接触发。 存储型：持久化到服务器，影响范围广，危害大。 DOM 型：客户端脚本不安全处理数据导致执行，服务器端响应可能并未直接包含 payload。 ",
+  "wordCount" : "193",
+  "inLanguage": "en",
+  "datePublished": "2025-10-16T16:00:00+08:00",
+  "dateModified": "2025-10-16T16:00:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/base_bug/xss/xss1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>XSS跨站 — 原理、分类与闭合</h1>
+  </header>
+
+  <p>
+  <small>
+    October 16, 2025&nbsp;· 193 words&nbsp;· One minute</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#漏洞原理">漏洞原理</a></li>
+    <li><a href="#基础类型">基础类型</a>
+      <ul>
+        <li><a href="#反射型reflected-xss">反射型（Reflected XSS）</a></li>
+        <li><a href="#存储型stored-xss">存储型（Stored XSS）</a></li>
+        <li><a href="#dom-型dom-based-xss">DOM 型（DOM-based XSS）</a></li>
+      </ul>
+    </li>
+    <li><a href="#拓展类型与常见载体">拓展类型与常见载体</a></li>
+    <li><a href="#攻击利用与可能后果">攻击利用与可能后果</a></li>
+    <li><a href="#测试流程与检测点实用步骤">测试流程与检测点（实用步骤）</a></li>
+    <li><a href="#安全修复与防护要点">安全修复与防护要点</a></li>
+    <li><a href="#常见测试点汇总">常见测试点汇总</a></li>
+    <li><a href="#小结">小结</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="xss-跨站--输入输出原理分类与闭合">XSS 跨站 — 输入/输出、原理、分类与闭合</h1>
+<p><strong>漏洞概述</strong><br>
+XSS（跨站脚本）本质上是：<strong>接收外部输入 → 输出到页面并被浏览器解析/执行</strong>。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。</p>
+<hr>
+<h2 id="漏洞原理">漏洞原理</h2>
+<p><strong>原理简述</strong>：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据），导致攻击者构造的脚本在受害者浏览器中执行。<br>
+关键链路：<strong>输入点 → 服务器/客户端处理 → 输出到页面上下文 → 浏览器执行</strong>。</p>
+<hr>
+<h2 id="基础类型">基础类型</h2>
+<h3 id="反射型reflected-xss">反射型（Reflected XSS）</h3>
+<p><strong>定义</strong>：攻击载荷随请求参数发送，服务器在响应中直接回显（不持久化）。通常通过构造恶意链接诱导用户点击从而触发一次性攻击（one-to-one）。<br>
+<strong>常见场景</strong>：</p>
+<ul>
+<li>搜索、错误消息、重定向参数直接回显</li>
+<li>表单回填未编码
+<strong>检测要点</strong>：向参数注入探针，观察响应是否按预期回显并执行。</li>
+</ul>
+<p><strong>示意：反射型 XSS 攻击流程图</strong><br>
+<img src="/static/image 1.jpg" alt="反射型 XSS 流程图"></p>
+<hr>
+<h3 id="存储型stored-xss">存储型（Stored XSS）</h3>
+<p><strong>定义</strong>：恶意脚本被服务器持久化（如数据库、留言、评论、用户资料等），当其他用户查看包含该内容的页面时触发执行（one-to-many），危害范围更广。<br>
+<strong>常见场景</strong>：</p>
+<ul>
+<li>评论、论坛发帖、富文本编辑器内容存储后回显</li>
+<li>用户资料（昵称、签名）被当作 HTML 回显<br>
+<strong>检测要点</strong>：在能写入后端存储的位置注入 payload，随后访问回显页面查看是否执行。</li>
+</ul>
+<p><strong>示意：存储型 XSS 攻击流程图</strong><br>
+<img src="/static/image1.jpg" alt="存储型 XSS 流程图"></p>
+<hr>
+<h3 id="dom-型dom-based-xss">DOM 型（DOM-based XSS）</h3>
+<p><strong>定义</strong>：漏洞发生在浏览器端。页面的 JavaScript 将来自 <code>location</code>、<code>hash</code>、<code>document.referrer</code>、<code>postMessage</code>、<code>localStorage</code> 等来源的数据不安全地写入 DOM（例如使用 <code>innerHTML</code>、<code>document.write</code>、<code>eval</code>），从而触发脚本执行。服务器响应本身可能“干净”。<br>
+<strong>特点</strong>：</p>
+<ul>
+<li>发生/触发都在客户端（浏览器）侧</li>
+<li>需要审计前端 JS 的数据流（source → sink）<br>
+<strong>检测要点</strong>：在浏览器环境修改 <code>location.hash</code>/<code>location.search</code> 或模拟 postMessage，然后观察 DOM 是否被不安全插入或执行。</li>
+</ul>
+<p><strong>示意：HTML DOM 树形结构（便于理解数据如何被插入 DOM）</strong><br>
+<img src="/static/image2 2.jpg" alt="HTML DOM 树形结构"></p>
+<hr>
+<h2 id="拓展类型与常见载体">拓展类型与常见载体</h2>
+<ul>
+<li>jQuery 相关不当 API 使用导致的 XSS（如 <code>.html()</code> 直接插入未经消毒的内容）</li>
+<li>MXSS / UXSS / PDF XSS / Flash XSS / 上传类 XSS（文件名、图片 EXIF、SVG 等）</li>
+<li>富文本编辑器（富文本内容若未严格过滤或未使用安全 sanitizer，极易引入 Stored XSS）</li>
+</ul>
+<hr>
+<h2 id="攻击利用与可能后果">攻击利用与可能后果</h2>
+<p>常见利用方式与影响包括但不限于：</p>
+<ul>
+<li>恶意重定向、页面劫持</li>
+<li>cookie / 会话凭证窃取（若 cookie 非 HttpOnly）</li>
+<li>持久化的钓鱼页面或权限维持（植入后门）</li>
+<li>行为伪造（利用受害者权限在后台操作）</li>
+</ul>
+<hr>
+<h2 id="测试流程与检测点实用步骤">测试流程与检测点（实用步骤）</h2>
+<ol>
+<li><strong>发现输入点</strong>：所有能提交/控制内容的字段（GET、POST、Headers、文件上传、富文本）。</li>
+<li><strong>观察输出点</strong>：页面回显、模板渲染、JS DOM 操作、动态模板/脚本注入位置。</li>
+<li><strong>注入探针</strong>：从简单的 <code>&quot;&lt;script&gt;alert(1)&lt;/script&gt;</code> 到更隐蔽的 payload（可绕过过滤器）逐步测试。</li>
+<li><strong>针对 DOM XSS</strong>：在浏览器 Console 手动或脚本化地修改 <code>location.search/hash</code>、<code>postMessage</code>、<code>localStorage</code>，观察是否被 JS 插入到危险 sink（<code>innerHTML</code>、<code>eval</code> 等）。</li>
+<li><strong>记录与证据</strong>：截图/持久化日志/response 保存，便于复现与修复跟踪。</li>
+<li><strong>避免盲测生产</strong>：若为生产环境，优先使用抽样与低频率测试并在授权范围内进行。</li>
+</ol>
+<hr>
+<h2 id="安全修复与防护要点">安全修复与防护要点</h2>
+<ul>
+<li><strong>输出编码（上下文相关）</strong>：HTML、Attribute、JavaScript、URL 等按上下文进行编码。</li>
+<li><strong>尽量避免危险 API</strong>：前端尽量不用 <code>innerHTML</code> / <code>document.write</code> / <code>eval</code>，而用 <code>textContent</code>、<code>createTextNode</code> 等。</li>
+<li><strong>使用成熟的 Sanitizer</strong>：如 DOMPurify 等，在必须允许部分 HTML 的场景中清洗输入。</li>
+<li><strong>Content Security Policy（CSP）</strong>：配置严格的 CSP（禁用 <code>unsafe-inline</code>、限制 script 源），降低攻击影响范围。</li>
+<li><strong>HttpOnly / Secure / SameSite Cookie</strong>：防止 JS 直接读取 cookie，并降低 CSRF 等风险。</li>
+<li><strong>White-list 验证</strong>：对输入采用白名单策略，尤其是对可插入 DOM 的参数进行严格校验。</li>
+<li><strong>WAF 与检测</strong>：部署 WAF 作第一道防线，但不要依赖 WAF 替代编码/消毒（WAF 可作为补充）。</li>
+<li><strong>最小化数据暴露</strong>：页面尽量不输出敏感信息（例如完整 cookie、token），只输出必要数据。</li>
+</ul>
+<hr>
+<h2 id="常见测试点汇总">常见测试点汇总</h2>
+<ul>
+<li>用户资料、签名、昵称回显点</li>
+<li>评论/论坛/富文本编辑器内容</li>
+<li>文件名、图片元数据（EXIF、SVG）</li>
+<li>URL 参数（query、fragment/hash）、referer、postMessage、localStorage 内容</li>
+<li>第三方组件（WYSIWYG 编辑器、插件）未正确配置或未消毒内容的地方</li>
+</ul>
+<hr>
+<h2 id="小结">小结</h2>
+<ul>
+<li><strong>反射型</strong>：一次性回显，常通过恶意链接触发。</li>
+<li><strong>存储型</strong>：持久化到服务器，影响范围广，危害大。</li>
+<li><strong>DOM 型</strong>：客户端脚本不安全处理数据导致执行，服务器端响应可能并未直接包含 payload。</li>
+</ul>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/app/app1/"><span>APP 渗透分析：Mobexler、MobSF 与证书绕过实践</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

@@ -2,6 +2,9 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss1/</loc>
+    <lastmod>2025-10-16T16:00:00+08:00</lastmod>
+  </url><url>
     <loc>https://hzhsec.github.io/list/app/app1/</loc>
     <lastmod>2024-05-13T15:00:00+08:00</lastmod>
   </url><url>
@@ -20,6 +23,9 @@
     <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/</loc>
     <lastmod>2024-04-20T15:40:00+08:00</lastmod>
   </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss2/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
     <loc>https://hzhsec.github.io/list/app/app2/</loc>
     <lastmod>2024-05-14T15:00:00+08:00</lastmod>
   </url><url>
@@ -35,6 +41,9 @@
     <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/</loc>
     <lastmod>2024-04-21T15:40:00+08:00</lastmod>
   </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss3/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
     <loc>https://hzhsec.github.io/list/app/app3/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
   </url><url>
@@ -43,6 +52,9 @@
   </url><url>
     <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss4/</loc>
+    <lastmod>2025-10-16T16:45:00+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/base_bug/%E6%96%87%E4%BB%B6%E6%BC%8F%E6%B4%9E/up4/</loc>
     <lastmod>2024-05-02T10:56:54+08:00</lastmod>
@@ -56,17 +68,23 @@
     <loc>https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sqlmap/</loc>
     <lastmod>2024-04-25T15:40:00+08:00</lastmod>
   </url><url>
-    <loc>https://hzhsec.github.io/list/za_xiang/</loc>
-    <lastmod>2025-10-11T15:30:00+09:00</lastmod>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss6/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/list/za_xiang/</loc>
     <lastmod>2025-10-11T15:30:00+09:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
-  </url><url>
-    <loc>https://hzhsec.github.io/list/base_bug/</loc>
-    <lastmod>2025-09-12T20:44:21+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/app/</loc>
     <lastmod>2024-05-15T15:00:00+08:00</lastmod>
@@ -75,12 +93,105 @@
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/categories/</loc>
-    <lastmod>2025-10-11T15:30:00+09:00</lastmod>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
   </url><url>
-    <loc>https://hzhsec.github.io/categories/git/</loc>
-    <lastmod>2025-10-11T15:30:00+09:00</lastmod>
+    <loc>https://hzhsec.github.io/tags/csp/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/jsonp/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/categories/jsonp%E7%82%B9%E5%87%BB%E5%8A%AB%E6%8C%81/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/categories/web-%E5%AE%89%E5%85%A8/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/x-frame-options/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/categories/xss/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E7%82%B9%E5%87%BB%E5%8A%AB%E6%8C%81/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E7%BB%95%E8%BF%87/</loc>
+    <lastmod>2025-10-16T17:15:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/httponly/</loc>
+    <lastmod>2025-10-16T16:45:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/xss-filter/</loc>
+    <lastmod>2025-10-16T16:45:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E6%A3%80%E6%B5%8B/</loc>
+    <lastmod>2025-10-16T16:45:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E9%98%B2%E6%8A%A4/</loc>
+    <lastmod>2025-10-16T16:45:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/beef/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/xss/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/xssreceiver/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E5%87%AD%E6%8D%AE%E7%9B%97%E5%8F%96/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E6%95%B0%E6%8D%AE%E6%8F%90%E4%BA%A4/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E6%BA%AF%E6%BA%90/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E7%BD%91%E7%BB%9C%E9%92%93%E9%B1%BC/</loc>
+    <lastmod>2025-10-16T16:30:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/flash/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/mxss/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/pdf/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/svg/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/swf/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/uxss/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E4%B8%8A%E4%BC%A0/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/%E5%8F%8D%E7%BC%96%E8%AF%91/</loc>
+    <lastmod>2025-10-16T16:10:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/dom-xss/</loc>
+    <lastmod>2025-10-16T16:00:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/reflected-xss/</loc>
+    <lastmod>2025-10-16T16:00:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/tags/stored-xss/</loc>
+    <lastmod>2025-10-16T16:00:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/categories/git/</loc>
     <lastmod>2025-10-11T15:30:00+09:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/categories/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8/</loc>
@@ -98,9 +209,6 @@
     <loc>https://hzhsec.github.io/categories/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
-    <loc>https://hzhsec.github.io/tags/</loc>
-    <lastmod>2025-10-09T21:40:00+08:00</lastmod>
-  </url><url>
     <loc>https://hzhsec.github.io/tags/winrar/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
@@ -111,9 +219,6 @@
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/tags/%E5%A4%8D%E7%8E%B0/</loc>
-    <lastmod>2025-10-09T21:40:00+08:00</lastmod>
-  </url><url>
-    <loc>https://hzhsec.github.io/tags/%E9%98%B2%E6%8A%A4/</loc>
     <lastmod>2025-10-09T21:40:00+08:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/</loc>
@@ -200,9 +305,6 @@
     <loc>https://hzhsec.github.io/tags/%E6%8F%90%E6%9D%83/</loc>
     <lastmod>2024-05-06T11:20:00+08:00</lastmod>
   </url><url>
-    <loc>https://hzhsec.github.io/tags/%E7%BB%95%E8%BF%87/</loc>
-    <lastmod>2024-05-06T11:20:00+08:00</lastmod>
-  </url><url>
     <loc>https://hzhsec.github.io/tags/rce/</loc>
     <lastmod>2024-05-05T10:56:54+08:00</lastmod>
   </url><url>
@@ -237,9 +339,6 @@
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/tags/%E5%B8%A6%E5%A4%96/</loc>
-    <lastmod>2024-04-26T15:00:00+09:00</lastmod>
-  </url><url>
-    <loc>https://hzhsec.github.io/tags/%E6%A3%80%E6%B5%8B/</loc>
     <lastmod>2024-04-26T15:00:00+09:00</lastmod>
   </url><url>
     <loc>https://hzhsec.github.io/list/base_bug/xxe/test/</loc>
@@ -283,6 +382,8 @@
   </url><url>
     <loc>https://hzhsec.github.io/tags/sql%E6%B3%A8%E5%85%A5/</loc>
     <lastmod>2024-04-22T15:40:00+08:00</lastmod>
+  </url><url>
+    <loc>https://hzhsec.github.io/list/base_bug/xss/xss5/</loc>
   </url><url>
     <loc>https://hzhsec.github.io/archives/</loc>
   </url>

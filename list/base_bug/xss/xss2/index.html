@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@总结 MXSS/UXSS 概念、相关 CVE、以及 SVG/PDF/SWF 等作为 XSS 载体的原理与复现方法。">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss2/">
+
+    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法" />
+<meta property="og:description" content="总结 MXSS/UXSS 概念、相关 CVE、以及 SVG/PDF/SWF 等作为 XSS 载体的原理与复现方法。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss2/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-16T16:10:00+08:00" />
+<meta property="article:modified_time" content="2025-10-16T16:10:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法"/>
+<meta name="twitter:description" content="总结 MXSS/UXSS 概念、相关 CVE、以及 SVG/PDF/SWF 等作为 XSS 载体的原理与复现方法。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "https://hzhsec.github.io/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "基础漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "XSS漏洞",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法",
+      "item": "https://hzhsec.github.io/list/base_bug/xss/xss2/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法",
+  "name": "XSS 进阶：MXSS \/ UXSS \/ SVG \/ PDF \/ SWF 等载体与复现方法",
+  "description": "总结 MXSS/UXSS 概念、相关 CVE、以及 SVG/PDF/SWF 等作为 XSS 载体的原理与复现方法。",
+  "keywords": [
+    "MXSS", "UXSS", "SVG", "PDF", "Flash", "SWF", "上传", "反编译"
+  ],
+  "articleBody": "XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法 下面整理一些进阶 XSS 载体与攻击面，包括 MXSS、UXSS（浏览器或扩展层面的 XSS）、以及 SVG、PDF、Flash(SWF) 等非传统图片/文件格式作为 XSS 载体的原理与示例。\nMXSS \u0026 UXSS — 概念与示例 MXSS（Mutation XSS） 参考：\nhttps://www.fooying.com/the-art-of-xss-1-introduction/\nUXSS（Universal Cross-Site Scripting）\nUXSS 是利用浏览器或浏览器扩展的漏洞来触发 XSS 的一种方式（例如浏览器翻译插件错误处理导致注入并执行）。这类 XSS 不依赖于被测站点的输入输出缺陷，而是利用浏览器或插件自身的缺陷造成脚本执行。\n示例 CVE：MICROSOFT EDGE uXSS CVE-2021-34506\nEdge 浏览器翻译功能导致 JS 语句被错误调用执行（参考）\n视频演示： https://www.bilibili.com/video/BV1fX4y1c7rX\nSVG → XSS（SVG-XSS） SVG（Scalable Vector Graphics）是一种基于 XML 的矢量图格式。与 JPG/PNG 不同，SVG 文件可以使用文本编辑器直接查看/编辑，并且许多 SVG 元素、属性、脚本都能在浏览器中执行，从而成为 XSS 的载体。\n示例（危险的 SVG，演示目的）：\n",
+  "wordCount" : "303",
+  "inLanguage": "en",
+  "datePublished": "2025-10-16T16:10:00+08:00",
+  "dateModified": "2025-10-16T16:10:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzhsec.github.io/list/base_bug/xss/xss2/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzhsec.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法</h1>
+  </header>
+
+  <p>
+  <small>
+    October 16, 2025&nbsp;· 303 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#mxss--uxss--概念与示例">MXSS &amp; UXSS — 概念与示例</a></li>
+    <li><a href="#svg--xsssvg-xss">SVG → XSS（SVG-XSS）</a></li>
+    <li><a href="#pdf--xsspdf-xss">PDF → XSS（PDF-XSS）</a></li>
+    <li><a href="#flashswf-xssflash-xss">Flash（SWF）→ XSS（Flash-XSS）</a></li>
+    <li><a href="#上传类-xss文件上传触发">上传类 XSS（文件上传触发）</a></li>
+    <li><a href="#反编译与检测工具示例">反编译与检测工具（示例）</a></li>
+    <li><a href="#小结">小结</a></li>
+    <li><a href="#参考与延伸阅读">参考与延伸阅读</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="xss-进阶mxss--uxss--svg--pdf--swf-等载体与复现方法">XSS 进阶：MXSS / UXSS / SVG / PDF / SWF 等载体与复现方法</h1>
+<p>下面整理一些进阶 XSS 载体与攻击面，包括 MXSS、UXSS（浏览器或扩展层面的 XSS）、以及 SVG、PDF、Flash(SWF) 等非传统图片/文件格式作为 XSS 载体的原理与示例。</p>
+<hr>
+<h2 id="mxss--uxss--概念与示例">MXSS &amp; UXSS — 概念与示例</h2>
+<ul>
+<li>
+<p><strong>MXSS（Mutation XSS）</strong> 参考：<br>
+<a href="https://www.fooying.com/the-art-of-xss-1-introduction/">https://www.fooying.com/the-art-of-xss-1-introduction/</a></p>
+</li>
+<li>
+<p><strong>UXSS（Universal Cross-Site Scripting）</strong><br>
+UXSS 是利用浏览器或浏览器扩展的漏洞来触发 XSS 的一种方式（例如浏览器翻译插件错误处理导致注入并执行）。这类 XSS 不依赖于被测站点的输入输出缺陷，而是利用浏览器或插件自身的缺陷造成脚本执行。</p>
+</li>
+<li>
+<p><strong>示例 CVE：MICROSOFT EDGE uXSS CVE-2021-34506</strong><br>
+Edge 浏览器翻译功能导致 JS 语句被错误调用执行（参考）<br>
+视频演示： <a href="https://www.bilibili.com/video/BV1fX4y1c7rX">https://www.bilibili.com/video/BV1fX4y1c7rX</a></p>
+</li>
+</ul>
+<hr>
+<h2 id="svg--xsssvg-xss">SVG → XSS（SVG-XSS）</h2>
+<p>SVG（Scalable Vector Graphics）是一种基于 XML 的矢量图格式。与 JPG/PNG 不同，SVG 文件可以使用文本编辑器直接查看/编辑，并且许多 SVG 元素、属性、脚本都能在浏览器中执行，从而成为 XSS 的载体。</p>
+<p><strong>示例（危险的 SVG，演示目的）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-svg" data-lang="svg"><span style="display:flex;"><span><span style="color:#f92672">&lt;svg</span> <span style="color:#a6e22e">xmlns=</span><span style="color:#e6db74">&#34;http://www.w3.org/2000/svg&#34;</span> <span style="color:#a6e22e">version=</span><span style="color:#e6db74">&#34;1.1&#34;</span><span style="color:#f92672">&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;circle</span> <span style="color:#a6e22e">cx=</span><span style="color:#e6db74">&#34;100&#34;</span> <span style="color:#a6e22e">cy=</span><span style="color:#e6db74">&#34;50&#34;</span> <span style="color:#a6e22e">r=</span><span style="color:#e6db74">&#34;40&#34;</span> <span style="color:#a6e22e">stroke=</span><span style="color:#e6db74">&#34;black&#34;</span> <span style="color:#a6e22e">stroke-width=</span><span style="color:#e6db74">&#34;2&#34;</span> <span style="color:#a6e22e">fill=</span><span style="color:#e6db74">&#34;red&#34;</span> <span style="color:#f92672">/&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;script&gt;</span>alert(1)<span style="color:#f92672">&lt;/script&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/svg&gt;</span>
+</span></span></code></pre></div><p>注意：如果站点允许上传或直接托管并通过浏览器渲染 SVG，攻击者可利用内嵌 <code>&lt;script&gt;</code> 或某些事件属性（如 <code>onload</code>）来执行 JS，从而实现 XSS。</p>
+<p>防护建议：对上传的 SVG 做严格消毒（移除 <code>&lt;script&gt;</code>、事件属性、外部引用等），或将 SVG 当作静态图片以文本方式禁用脚本执行（例如在渲染上下文中使用 <code>&lt;img&gt;</code> 并确保浏览器不会解析内联 SVG 来源），或采用服务器端转换（生成 raster 图像）以彻底避免脚本执行风险。</p>
+<hr>
+<h2 id="pdf--xsspdf-xss">PDF → XSS（PDF-XSS）</h2>
+<p>PDF 文件支持内置动作（JavaScript）与交互行为；攻击者可以在 PDF 中嵌入 JavaScript，在某些场景下（例如浏览器内置 PDF 查看器或第三方 PDF 阅读器）这些 JS 可能被触发，造成 XSS 或更高危害。</p>
+<p><strong>常见思路</strong>：</p>
+<ol>
+<li>在 PDF 中加入动作/JavaScript。</li>
+<li>将 PDF 上传并获得可直接访问的直链（或被浏览器预览触发）。</li>
+<li>访问该直链后，PDF 内的 JS 被触发（具体触发条件取决于阅读器/查看器）。</li>
+</ol>
+<p><strong>示例：使用 PyPDF2 给 PDF 添加简单 JS 的示意脚本</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> PyPDF2 <span style="color:#f92672">import</span> PdfReader, PdfWriter
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>new_PDF <span style="color:#f92672">=</span> PdfWriter()
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># 写入JavaScript代码</span>
+</span></span><span style="display:flex;"><span>new_PDF<span style="color:#f92672">.</span>add_js(<span style="color:#e6db74">&#34;app.alert(&#39;xss&#39;);&#34;</span>)
+</span></span><span style="display:flex;"><span>f <span style="color:#f92672">=</span> open(<span style="color:#e6db74">&#34;E:/path/to/output.pdf&#34;</span>,<span style="color:#e6db74">&#34;wb&#34;</span>)
+</span></span><span style="display:flex;"><span>new_PDF<span style="color:#f92672">.</span>write(f)
+</span></span><span style="display:flex;"><span>f<span style="color:#f92672">.</span>close()
+</span></span></code></pre></div><blockquote>
+<p>注意：不同 PDF 阅读器对内嵌 JavaScript 的支持与限制差异很大，现代浏览器通常在内置 PDF 渲染器中限制或禁用某些 JS 功能，但在某些插件或特定配置下仍可能触发。请以受控环境测试并保存测试授权。</p>
+</blockquote>
+<p>参考文章：借助 PDF 进行 XSS 漏洞攻击（示例）<br>
+<a href="https://blog.csdn.net/qq_48201589/article/details/135856195">https://blog.csdn.net/qq_48201589/article/details/135856195</a></p>
+<hr>
+<h2 id="flashswf-xssflash-xss">Flash（SWF）→ XSS（Flash-XSS）</h2>
+<p>Flash（SWF）可以与宿主页面的 JavaScript 交互（例如 <code>ExternalInterface.call</code>），因此不安全的 Flash文件可能成为跨站脚本的媒介（尤其在旧有或已启用 Flash 的环境中）。</p>
+<p><strong>制作与触发思路</strong>：</p>
+<ol>
+<li>新建 SWF 文件（使用 Adobe Flash 或其它工具）。</li>
+<li>在 SWF 中通过 <code>ExternalInterface.call</code> 或其它桥接函数调用宿主页面 JS（例如读取 URL 参数并调用宿主的 JS）。</li>
+<li>构造 URL 参数（例如 <code>?m=alert(/xss/)</code>）触发。</li>
+</ol>
+<p><strong>示例（ActionScript 伪代码）</strong>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-actionscript" data-lang="actionscript"><span style="display:flex;"><span><span style="color:#75715e">// 取 m 参数
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">m</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">_root</span>.<span style="color:#a6e22e">m</span><span style="color:#f92672">;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 调用 html 中 Javascript 中的 m 参数值
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">flash</span>.<span style="color:#a6e22e">external</span>.ExternalInterface.<span style="color:#a6e22e">call</span>(<span style="color:#a6e22e">m</span>);
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 触发：?m=alert(/xss/)
+</span></span></span></code></pre></div><p><strong>测试步骤</strong>：</p>
+<ul>
+<li>反编译 SWF（例如用 JPEXS Free Flash Decompiler）查看是否有危险函数调用（<code>ExternalInterface.call</code>, <code>getURL</code>, <code>navigateToURL</code>, <code>htmlText</code> 等）。</li>
+<li>查找可控参数并尝试触发调用，评估宿主环境是否会执行传入的 JS。</li>
+</ul>
+<blockquote>
+<p>注意：Flash 已在大部分现代浏览器中被淘汰/禁用，但在仍使用旧系统或特殊企业环境中仍可能存在风险。若目标环境仍然支持 Flash，请谨慎测试并优先建议升级或移除 Flash 支持。</p>
+</blockquote>
+<hr>
+<h2 id="上传类-xss文件上传触发">上传类 XSS（文件上传触发）</h2>
+<p>文件上传为 XSS 提供了多种路径：</p>
+<ul>
+<li>直接上传可包含脚本的文件（如 HTML/SVG/SWF/PDF）并通过直链访问或渲染触发。</li>
+<li>文件名、元数据（如 EXIF）、SVG 内容、富文本附件等作为回显点导致脚本执行。</li>
+<li>上传后的 MIME 类型、Content-Type、服务端对文件的处理（是否转存、是否设置安全 header）会影响是否触发。</li>
+</ul>
+<p>防护建议：</p>
+<ul>
+<li>对上传的文件类型进行严格白名单控制。</li>
+<li>对可托管为静态资源的文件，务必正确设置 <code>Content-Type</code> 与 <code>Content-Disposition</code>（attachment vs inline）以避免浏览器直接解析并执行脚本。</li>
+<li>对 SVG、HTML、SWF 等文本型文件进行内容消毒或直接拒绝上传。</li>
+<li>对文件名进行 HTML/Attribute 编码与白名单校验，避免文件名回显引发 XSS。</li>
+</ul>
+<hr>
+<h2 id="反编译与检测工具示例">反编译与检测工具（示例）</h2>
+<ul>
+<li><strong>SWF 反编译</strong>：JPEXS Free Flash Decompiler（用于查看 SWF 内部代码，查找危险调用）</li>
+<li><strong>PDF 分析</strong>：使用 PDF 解析/编辑库（如 PyPDF2、pdfminer）查看是否有内嵌 JS 或动作（/AA、/OpenAction 等）</li>
+<li><strong>SVG / HTML</strong>：直接用文本编辑器查看并审计内嵌脚本或事件属性</li>
+<li><strong>常规渗透工具</strong>：Burp Suite、OWASP ZAP、手工浏览器 Console 与断点调试（针对 DOM XSS）</li>
+</ul>
+<hr>
+<h2 id="小结">小结</h2>
+<ul>
+<li>非传统媒介（SVG/PDF/SWF 等）能以多种方式触发脚本执行，必须在上传/托管与渲染路径上采取严格防护。</li>
+<li>许多攻击依赖于宿主环境（浏览器、插件、阅读器等）的行为差异，因此测试需在目标环境下复现并保存证据。</li>
+<li>在进行此类测试时务必有清晰的书面授权与测试范围，避免对生产环境或无关系统造成影响。</li>
+</ul>
+<hr>
+<h2 id="参考与延伸阅读">参考与延伸阅读</h2>
+<ul>
+<li>MXSS 概述：https://www.fooying.com/the-art-of-xss-1-introduction/</li>
+<li>Edge uXSS CVE-2021-34506（示例视频）：https://www.bilibili.com/video/BV1fX4y1c7rX</li>
+<li>PDF / SVG / SWF 相关复现与工具：网络公开教程与工具页面（请在授权环境中测试）</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="https://hzhsec.github.io/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql1/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>SQL 注入实战与技巧</span></a>
+    
+    
+    <a class="next" href="https://hzhsec.github.io/list/app/app2/"><span>APP 抓包问题与证书/代理/模拟器防护与绕过</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
