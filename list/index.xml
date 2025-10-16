@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>目录 on Hzhsec home</title>
-    <link>https://hzhsec.github.io/list/</link>
+    <link>http://www.hzhsec.top/list/</link>
     <description>Recent content in 目录 on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 16 Oct 2025 17:15:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/list/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 16 Oct 2025 17:15:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/list/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

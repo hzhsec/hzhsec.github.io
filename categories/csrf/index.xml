@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>CSRF on Hzhsec home</title>
-    <link>https://hzhsec.github.io/categories/csrf/</link>
+    <link>http://www.hzhsec.top/categories/csrf/</link>
     <description>Recent content in CSRF on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 07 May 2024 11:20:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/categories/csrf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 07 May 2024 11:20:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/categories/csrf/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

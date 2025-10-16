@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>PHP on Hzhsec home</title>
-    <link>https://hzhsec.github.io/tags/php/</link>
+    <link>http://www.hzhsec.top/tags/php/</link>
     <description>Recent content in PHP on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 22 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/php/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 22 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/tags/php/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

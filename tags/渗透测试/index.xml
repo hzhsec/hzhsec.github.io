@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>渗透测试 on Hzhsec home</title>
-    <link>https://hzhsec.github.io/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/</link>
+    <link>http://www.hzhsec.top/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/</link>
     <description>Recent content in 渗透测试 on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 25 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 25 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/tags/%E6%B8%97%E9%80%8F%E6%B5%8B%E8%AF%95/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

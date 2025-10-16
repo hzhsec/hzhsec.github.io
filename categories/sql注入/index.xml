@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>SQL注入 on Hzhsec home</title>
-    <link>https://hzhsec.github.io/categories/sql%E6%B3%A8%E5%85%A5/</link>
+    <link>http://www.hzhsec.top/categories/sql%E6%B3%A8%E5%85%A5/</link>
     <description>Recent content in SQL注入 on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 25 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/categories/sql%E6%B3%A8%E5%85%A5/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 25 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/categories/sql%E6%B3%A8%E5%85%A5/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>BurpSuite on Hzhsec home</title>
-    <link>https://hzhsec.github.io/tags/burpsuite/</link>
+    <link>http://www.hzhsec.top/tags/burpsuite/</link>
     <description>Recent content in BurpSuite on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 13 May 2024 15:00:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/burpsuite/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 13 May 2024 15:00:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/tags/burpsuite/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

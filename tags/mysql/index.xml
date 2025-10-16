@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>MySQL on Hzhsec home</title>
-    <link>https://hzhsec.github.io/tags/mysql/</link>
+    <link>http://www.hzhsec.top/tags/mysql/</link>
     <description>Recent content in MySQL on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 22 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 22 Apr 2024 15:40:00 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

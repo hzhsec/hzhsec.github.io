@@ -2,10 +2,10 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>SSRF服务端请求伪造 on Hzhsec home</title>
-    <link>https://hzhsec.github.io/list/base_bug/ssrf/</link>
+    <link>http://www.hzhsec.top/list/base_bug/ssrf/</link>
     <description>Recent content in SSRF服务端请求伪造 on Hzhsec home created by </description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jan 2025 20:44:21 +0800</lastBuildDate><atom:link href="https://hzhsec.github.io/list/base_bug/ssrf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 12 Jan 2025 20:44:21 +0800</lastBuildDate><atom:link href="http://www.hzhsec.top/list/base_bug/ssrf/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

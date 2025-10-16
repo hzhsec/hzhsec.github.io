@@ -11,9 +11,9 @@ XSS 绕过过滤的思路 在 XSS（跨站脚本攻击） 测试和绕过过滤�
 &lt;script&gt;alert(1)&lt;/script&gt; → %253Cscript%253Ealert(1)%253C%252Fscript%253E （2）HTML 实体编码 使用 HTML 实体编码绕过过滤：
 &lt;script&gt;alert(1)&lt;/script&gt; → &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt; （3）Base64 编码 如果目标应用允许 JavaScript 的 atob() 解码，可以绕过过滤：">
     <meta name="author" content="hzhsec">
-    <link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss5/">
+    <link rel="canonical" href="http://www.hzhsec.top/list/base_bug/xss/xss5/">
 
-    <link rel="alternate" type="application/rss+xml" href="https://hzhsec.github.io//index.xml" title="Hzhsec home">
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
 
     
 
@@ -28,7 +28,7 @@ XSS 绕过过滤的思路 在 XSS（跨站脚本攻击） 测试和绕过过滤�
 &lt;script&gt;alert(1)&lt;/script&gt; → %253Cscript%253Ealert(1)%253C%252Fscript%253E （2）HTML 实体编码 使用 HTML 实体编码绕过过滤：
 &lt;script&gt;alert(1)&lt;/script&gt; → &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt; （3）Base64 编码 如果目标应用允许 JavaScript 的 atob() 解码，可以绕过过滤：" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss5/" /><meta property="article:section" content="list" />
+<meta property="og:url" content="http://www.hzhsec.top/list/base_bug/xss/xss5/" /><meta property="article:section" content="list" />
 
 
 
@@ -51,25 +51,25 @@ XSS 绕过过滤的思路 在 XSS（跨站脚本攻击） 测试和绕过过滤�
       "@type": "ListItem",
       "position":  1 ,
       "name": "目录",
-      "item": "https://hzhsec.github.io/list/"
+      "item": "http://www.hzhsec.top/list/"
     }, 
     {
       "@type": "ListItem",
       "position":  2 ,
       "name": "基础漏洞",
-      "item": "https://hzhsec.github.io/list/base_bug/"
+      "item": "http://www.hzhsec.top/list/base_bug/"
     }, 
     {
       "@type": "ListItem",
       "position":  3 ,
       "name": "XSS漏洞",
-      "item": "https://hzhsec.github.io/list/base_bug/xss/"
+      "item": "http://www.hzhsec.top/list/base_bug/xss/"
     }, 
     {
       "@type": "ListItem",
       "position":  4 ,
       "name": "",
-      "item": "https://hzhsec.github.io/list/base_bug/xss/xss5/"
+      "item": "http://www.hzhsec.top/list/base_bug/xss/xss5/"
     }
   ]
 }
@@ -95,14 +95,14 @@ XSS 绕过过滤的思路 在 XSS（跨站脚本攻击） 测试和绕过过滤�
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://hzhsec.github.io/list/base_bug/xss/xss5/"
+    "@id": "http://www.hzhsec.top/list/base_bug/xss/xss5/"
   },
   "publisher": {
     "@type": "Organization",
     "name": "Hzhsec home",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://hzhsec.github.io/favicon.ico"
+      "url": "http://www.hzhsec.top/favicon.ico"
     }
   }
 }
@@ -355,7 +355,7 @@ weight= 5
   
   <div class="paginator">
     
-    <a class="prev" href="https://hzhsec.github.io/list/base_bug/xxe/test/">
+    <a class="prev" href="http://www.hzhsec.top/list/base_bug/xxe/test/">
       <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
       </svg>
@@ -371,7 +371,7 @@ weight= 5
 </article>
 
         </div><footer class="footer">
-  <p>&copy; 2025 <a href="https://hzhsec.github.io/">Hzhsec home</a>
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
     Powered by
     <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
     <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
