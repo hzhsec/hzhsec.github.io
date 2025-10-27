@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云原生基础</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@云原生基础 - Hzhsec home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/cloud/cloud1/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="云原生基础" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/cloud/cloud1/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-09T21:40:00+08:00" />
+<meta property="article:modified_time" content="2025-10-09T21:40:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="云原生基础"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "云上攻防",
+      "item": "http://www.hzhsec.top/list/cloud/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "云原生基础",
+      "item": "http://www.hzhsec.top/list/cloud/cloud1/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "云原生基础",
+  "name": "云原生基础",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "任意上传 \u0026 域名接管 \u0026 AccessKey 泄漏 概述（对象存储风险点） 云服务 — 对象存储 — 权限配置不当\n云服务 — 对象存储 — 域名解析接管\n云服务 — 对象存储 — AccessKey 泄漏\n云服务简介 云服务即在云厂商上购买的在线产品服务。\n国内：阿里云、腾讯云、华为云、天翼云、Ucloud、金山云 国外：亚马逊 AWS、Google GCP、微软 Azure、IBM 云等。 示例（以 AWS 为例）：\nS3 —— 对象存储（类似网盘） EC2 —— 弹性计算服务（云上虚拟机） RDS —— 云数据库（托管关系型数据库） IAM —— 身份与访问管理（子账号权限管理） 对象存储各厂商命名 阿里云：OSS 腾讯云：COS 华为云：OBS 谷歌云：GCS 微软云：Blob 亚马逊云：S3 对象存储常见问题 权限配置错误 - 公共读或公共读写：可访问但不显示完整结构 - 授权策略错误：设置 ListObject 后可列出文件结构 - 公共读写：可直接 PUT 文件，实现任意上传 域名解析 Bucket 接管 存储桶绑定域名后，若桶被删除而域名解析仍存在，可尝试接管。 返回 NoSuchBucket 说明可能能接管；返回 AccessDenied 则通常不可接管。\n新建存储桶时需使用相同厂商与相同地域，否则无法接管成功。\nAccessKeyId / SecretAccessKey 泄漏 泄漏来源：APP、小程序、JS、源码仓库、提交历史等 排查方式：搜索 AccessKey 特征或关键字 参考文档：https://wiki.teamssix.com/CloudService/more/\n弹性计算 — 元数据、SSRF、AK（及云数据库外部连接与权限提升） 元数据说明 实例元数据（metadata）是云服务器实例在云厂商系统中的描述信息， 包括实例 ID、IP、MAC、操作系统类型等，用于配置和管理实例。 各大云元数据访问地址：\n阿里云：http://100.100.100.200/ 腾讯云：http://metadata.tencentyun.com/ 华为云：http://169.254.169.254/ 亚马逊云：http://169.254.169.254/ 微软云：http://169.254.169.254/ 谷歌云：http://metadata.google.internal/ 阿里云文档参考：https://help.aliyun.com/zh/ecs/user-guide/manage-instance-metadata\n云服务 — 弹性计算 — 元数据 \u0026 SSRF \u0026 AK\n1. 前提条件 - 弹性计算已配置访问控制角色 - 存在 SSRF 漏洞，或已取得云服务器权限（WebShell/RCE 可请求元数据地址） 2. 利用场景一：已取得服务器权限后横向移动 curl http://100.100.100.200/latest/meta-data/ curl http://100.100.100.200/latest/meta-data/ram/security-credentials/ 获取临时凭证：\ncurl http://100.100.100.200/latest/meta-data/ram/security-credentials/ecs 使用获取的临时 AK 进行横向移动或资源访问。 参考框架：CF 云渗透框架（https://wiki.teamssix.com/CF/ ）\n3. 利用场景二：Web 资产存在 SSRF 漏洞 同样可通过 SSRF 请求上述元数据接口以获取临时凭证。 凭证一旦泄露，可用于进一步横向渗透或接管云资源。\n云服务 — 云数据库（外部连接 \u0026 权限提升） 常见获取方式\n1. 账号密码： - 多出现在源码配置文件中 - 或通过暴力破解获取 2. 连接方式： - 白名单开放或外网可连：可直接用 Navicat 等连接 - 内网：需通过内网服务器转发或代理连接 AK 利用（权限提升） 利用泄露或获取的 AK 访问云控制台或 API 接口，实现权限提升或控制其他资源。 参考：https://wiki.teamssix.com/CF/\n总结\n对象存储风险：权限配置不当、域名接管、AccessKey 泄漏\n弹性计算风险：SSRF 或主机权限可导致元数据泄漏\n云数据库风险：凭据泄露与配置不当可导致外部连接与权限提升\n",
+  "wordCount" : "175",
+  "inLanguage": "en",
+  "datePublished": "2025-10-09T21:40:00+08:00",
+  "dateModified": "2025-10-09T21:40:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/cloud/cloud1/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>云原生基础</h1>
+  </header>
+
+  <p>
+  <small>
+    October 9, 2025&nbsp;· 175 words&nbsp;· One minute</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#任意上传--域名接管--accesskey-泄漏">任意上传 &amp; 域名接管 &amp; AccessKey 泄漏</a>
+      <ul>
+        <li><a href="#概述对象存储风险点">概述（对象存储风险点）</a></li>
+        <li><a href="#云服务简介">云服务简介</a></li>
+        <li><a href="#对象存储各厂商命名">对象存储各厂商命名</a></li>
+        <li><a href="#对象存储常见问题">对象存储常见问题</a></li>
+      </ul>
+    </li>
+    <li><a href="#弹性计算--元数据ssrfak及云数据库外部连接与权限提升">弹性计算 — 元数据、SSRF、AK（及云数据库外部连接与权限提升）</a>
+      <ul>
+        <li><a href="#元数据说明">元数据说明</a></li>
+        <li><a href="#ak-利用权限提升">AK 利用（权限提升）</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h2 id="任意上传--域名接管--accesskey-泄漏">任意上传 &amp; 域名接管 &amp; AccessKey 泄漏</h2>
+<h3 id="概述对象存储风险点">概述（对象存储风险点）</h3>
+<ul>
+<li>
+<p>云服务 — 对象存储 — 权限配置不当</p>
+</li>
+<li>
+<p>云服务 — 对象存储 — 域名解析接管</p>
+</li>
+<li>
+<p>云服务 — 对象存储 — AccessKey 泄漏</p>
+</li>
+</ul>
+<hr>
+<h3 id="云服务简介">云服务简介</h3>
+<p>云服务即在云厂商上购买的在线产品服务。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>国内：阿里云、腾讯云、华为云、天翼云、Ucloud、金山云  
+</span></span><span style="display:flex;"><span>国外：亚马逊 AWS、Google GCP、微软 Azure、IBM 云等。
+</span></span></code></pre></div><p>示例（以 AWS 为例）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>S3 —— 对象存储（类似网盘）
+</span></span><span style="display:flex;"><span>EC2 —— 弹性计算服务（云上虚拟机）
+</span></span><span style="display:flex;"><span>RDS —— 云数据库（托管关系型数据库）
+</span></span><span style="display:flex;"><span>IAM —— 身份与访问管理（子账号权限管理）
+</span></span></code></pre></div><hr>
+<h3 id="对象存储各厂商命名">对象存储各厂商命名</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>阿里云：OSS     腾讯云：COS     华为云：OBS  
+</span></span><span style="display:flex;"><span>谷歌云：GCS     微软云：Blob    亚马逊云：S3
+</span></span></code></pre></div><hr>
+<h3 id="对象存储常见问题">对象存储常见问题</h3>
+<ol>
+<li>权限配置错误</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>- 公共读或公共读写：可访问但不显示完整结构
+</span></span><span style="display:flex;"><span>- 授权策略错误：设置 ListObject 后可列出文件结构
+</span></span><span style="display:flex;"><span>- 公共读写：可直接 PUT 文件，实现任意上传
+</span></span></code></pre></div><ol start="2">
+<li>域名解析 Bucket 接管</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>存储桶绑定域名后，若桶被删除而域名解析仍存在，可尝试接管。
+</span></span></code></pre></div><ul>
+<li>
+<p>返回 NoSuchBucket 说明可能能接管；返回 AccessDenied 则通常不可接管。</p>
+</li>
+<li>
+<p>新建存储桶时需使用相同厂商与相同地域，否则无法接管成功。</p>
+</li>
+</ul>
+<ol start="3">
+<li>AccessKeyId / SecretAccessKey 泄漏</li>
+</ol>
+<ul>
+<li>泄漏来源：APP、小程序、JS、源码仓库、提交历史等</li>
+<li>排查方式：搜索 AccessKey 特征或关键字</li>
+</ul>
+<p>参考文档：https://wiki.teamssix.com/CloudService/more/</p>
+<hr>
+<h2 id="弹性计算--元数据ssrfak及云数据库外部连接与权限提升">弹性计算 — 元数据、SSRF、AK（及云数据库外部连接与权限提升）</h2>
+<h3 id="元数据说明">元数据说明</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>实例元数据（metadata）是云服务器实例在云厂商系统中的描述信息，
+</span></span><span style="display:flex;"><span>包括实例 ID、IP、MAC、操作系统类型等，用于配置和管理实例。
+</span></span></code></pre></div><p>各大云元数据访问地址：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>阿里云：http://100.100.100.200/
+</span></span><span style="display:flex;"><span>腾讯云：http://metadata.tencentyun.com/
+</span></span><span style="display:flex;"><span>华为云：http://169.254.169.254/
+</span></span><span style="display:flex;"><span>亚马逊云：http://169.254.169.254/
+</span></span><span style="display:flex;"><span>微软云：http://169.254.169.254/
+</span></span><span style="display:flex;"><span>谷歌云：http://metadata.google.internal/
+</span></span></code></pre></div><p>阿里云文档参考：https://help.aliyun.com/zh/ecs/user-guide/manage-instance-metadata</p>
+<hr>
+<p>云服务 — 弹性计算 — 元数据 &amp; SSRF &amp; AK</p>
+<h4 id="1-前提条件">1. 前提条件</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>- 弹性计算已配置访问控制角色
+</span></span><span style="display:flex;"><span>- 存在 SSRF 漏洞，或已取得云服务器权限（WebShell/RCE 可请求元数据地址）
+</span></span></code></pre></div><h4 id="2-利用场景一已取得服务器权限后横向移动">2. 利用场景一：已取得服务器权限后横向移动</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>curl http://100.100.100.200/latest/meta-data/
+</span></span><span style="display:flex;"><span>curl http://100.100.100.200/latest/meta-data/ram/security-credentials/
+</span></span></code></pre></div><p>获取临时凭证：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>curl http://100.100.100.200/latest/meta-data/ram/security-credentials/ecs
+</span></span></code></pre></div><p>使用获取的临时 AK 进行横向移动或资源访问。
+参考框架：CF 云渗透框架（https://wiki.teamssix.com/CF/
+）</p>
+<h4 id="3-利用场景二web-资产存在-ssrf-漏洞">3. 利用场景二：Web 资产存在 SSRF 漏洞</h4>
+<p>同样可通过 SSRF 请求上述元数据接口以获取临时凭证。
+凭证一旦泄露，可用于进一步横向渗透或接管云资源。</p>
+<p>云服务 — 云数据库（外部连接 &amp; 权限提升）
+常见获取方式</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>1. 账号密码：
+</span></span><span style="display:flex;"><span>   - 多出现在源码配置文件中
+</span></span><span style="display:flex;"><span>   - 或通过暴力破解获取
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2. 连接方式：
+</span></span><span style="display:flex;"><span>   - 白名单开放或外网可连：可直接用 Navicat 等连接
+</span></span><span style="display:flex;"><span>   - 内网：需通过内网服务器转发或代理连接
+</span></span></code></pre></div><h3 id="ak-利用权限提升">AK 利用（权限提升）</h3>
+<p>利用泄露或获取的 AK 访问云控制台或 API 接口，实现权限提升或控制其他资源。
+参考：https://wiki.teamssix.com/CF/</p>
+<p>总结</p>
+<ul>
+<li>
+<p><strong>对象存储风险</strong>：权限配置不当、域名接管、AccessKey 泄漏</p>
+</li>
+<li>
+<p><strong>弹性计算风险</strong>：SSRF 或主机权限可导致元数据泄漏</p>
+</li>
+<li>
+<p><strong>云数据库风险</strong>：凭据泄露与配置不当可导致外部连接与权限提升</p>
+</li>
+</ul></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://www.hzhsec.top/list/cve%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/cve-2025-8088-winrar/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>WinRAR 目录穿越漏洞（CVE-2025-8088）复现与防护</span></a>
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/za_xiang/%E6%B5%85%E8%B0%88%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E4%BC%AA%E9%80%A0/"><span>浅谈电子邮件伪造</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
