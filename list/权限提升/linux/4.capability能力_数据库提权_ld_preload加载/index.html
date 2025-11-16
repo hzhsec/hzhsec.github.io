@@ -4,16 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Capability能力 · 数据库提权 · LD_Preload加载</title>
     <meta charset="utf-8">
-    <meta name="description" content="Ladder@Capability能力,数据库提权,LD_Preload加载
-数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
-1、信息收集：
-dirsearch爆破子目录
-发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
-找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606.">
+    <meta name="description" content="Ladder@
+Capability能力,数据库提权,LD_Preload加载">
     <meta name="author" content="hzhsec">
     <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/">
 
@@ -25,16 +17,8 @@ dirsearch爆破子目录
 <script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
 
     <meta property="og:title" content="Capability能力 · 数据库提权 · LD_Preload加载" />
-<meta property="og:description" content="Capability能力,数据库提权,LD_Preload加载
-数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
-1、信息收集：
-dirsearch爆破子目录
-发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
-找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606." />
+<meta property="og:description" content="
+Capability能力,数据库提权,LD_Preload加载" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/" /><meta property="article:section" content="list" />
 <meta property="article:published_time" content="2025-11-16T00:00:00+08:00" />
@@ -42,16 +26,8 @@ dirsearch爆破子目录
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Capability能力 · 数据库提权 · LD_Preload加载"/>
-<meta name="twitter:description" content="Capability能力,数据库提权,LD_Preload加载
-数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
-1、信息收集：
-dirsearch爆破子目录
-发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
-找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
-&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606."/>
+<meta name="twitter:description" content="
+Capability能力,数据库提权,LD_Preload加载"/>
 
 
 <script type="application/ld+json">
@@ -80,7 +56,7 @@ dirsearch爆破子目录
   "@type": "BlogPosting",
   "headline": "Capability能力 · 数据库提权 · LD_Preload加载",
   "name": "Capability能力 · 数据库提权 · LD_Preload加载",
-  "description": "Capability能力,数据库提权,LD_Preload加载\n数据库 环境 https://www.vulnhub.com/entry/raven-2,269/\n1、信息收集：\ndirsearch爆破子目录\n发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/\n找到了发现phpmailer插件,版本为5.2.16 \u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 154755.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 154755.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; \u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 154657.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 154657.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 155145.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 155145.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; locate php/webapps/40974.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031155315.png\u0026#34; alt=\u0026#34;Pasted image 20251031155315.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; 复制+修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031155942.png\u0026#34; alt=\u0026#34;Pasted image 20251031155942.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; python poc.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031160606.png\u0026#34; alt=\u0026#34;Pasted image 20251031160606.",
+  "description": " Capability能力,数据库提权,LD_Preload加载\n",
   "keywords": [
     "UDF", "Capability", "LD_PRELOAD", "XXE", "Python ptrace", "提权技巧"
   ],
