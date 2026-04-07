@@ -21,7 +21,7 @@ import yaml
 from bs4 import BeautifulSoup
 from jinja2 import Environment
 
-SITE_URL = "http://www.hzhsec.top"
+SITE_URL = "https://hzhsec.github.io"
 SITE_TITLE = "Hzhsec home"
 SITE_AUTHOR = "hzhsec"
 SITE_DESCRIPTION = "Ladder@"
