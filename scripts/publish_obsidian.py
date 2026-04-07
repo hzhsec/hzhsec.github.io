@@ -92,6 +92,16 @@ class PostRecord:
     article_body_text: str = ""
 
 
+def is_publishable_post(post: PostRecord) -> bool:
+    """??????????????????"""
+    if post.slug in {"__index", "__index__"}:
+        return False
+    if "/__index" in post.rel_permalink:
+        return False
+    if not post.title.strip():
+        return False
+    return True
+
 def sanitize_segment(value: str) -> str:
     value = INVALID_SEGMENT.sub("-", value.strip()).rstrip(". ").strip()
     return value or "post"
@@ -254,6 +264,7 @@ def state_path(site_root: Path) -> Path:
     return site_root / "scripts" / STATE_FILE
 
 def save_state(site_root: Path, posts: list[PostRecord], sections: dict[str, SectionInfo]) -> None:
+    posts = [post for post in posts if is_publishable_post(post)]
     data = {"posts": [asdict(post) for post in posts], "sections": {slug: asdict(info) for slug, info in sections.items()}}
     write_text(state_path(site_root), json.dumps(data, ensure_ascii=False, indent=2))
 
@@ -316,6 +327,7 @@ def bootstrap(site_root: Path) -> tuple[list[PostRecord], dict[str, SectionInfo]
         post.featured = post.rel_permalink.strip("/") in featured
         post.categories = sorted(category_map.get(post.rel_permalink.strip("/"), []))
         post.tags = sorted(tag_map.get(post.rel_permalink.strip("/"), []))
+    posts = [post for post in posts if is_publishable_post(post)]
     posts.sort(key=lambda item: item.date_iso, reverse=True)
     return posts, sections
 
@@ -323,7 +335,9 @@ def load_state(site_root: Path) -> tuple[list[PostRecord], dict[str, SectionInfo
     file = state_path(site_root)
     if file.exists():
         data = json.loads(file.read_text(encoding="utf-8"))
-        return [PostRecord(**item) for item in data.get("posts", [])], {slug: SectionInfo(**info) for slug, info in data.get("sections", {}).items()}
+        posts = [PostRecord(**item) for item in data.get("posts", [])]
+        posts = [post for post in posts if is_publishable_post(post)]
+        return posts, {slug: SectionInfo(**info) for slug, info in data.get("sections", {}).items()}
     return bootstrap(site_root)
 
 def summary_from_text(text: str) -> str:
@@ -442,10 +456,12 @@ def build_note(note_path: Path, existing: Optional[PostRecord], sections: dict[s
 def upsert(posts: list[PostRecord], post: PostRecord) -> list[PostRecord]:
     result = [item for item in posts if item.rel_permalink != post.rel_permalink]
     result.append(post)
+    result = [item for item in result if is_publishable_post(item)]
     result.sort(key=lambda item: item.date_iso, reverse=True)
     return result
 
 def rebuild(site_root: Path, posts: list[PostRecord], sections: dict[str, SectionInfo]) -> None:
+    posts = [item for item in posts if is_publishable_post(item)]
     posts.sort(key=lambda item: item.date_iso, reverse=True)
     write_text(site_root / "index.html", render_home(posts))
     write_text(site_root / "archives" / "index.html", render_archive(posts))
