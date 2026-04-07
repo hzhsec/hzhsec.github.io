@@ -394,11 +394,11 @@ def metadata_to_form_values(filename: str, content: bytes) -> dict[str, str]:
     }
 
 def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: dict[str, Any]) -> str:
-    """将上传的笔记内容发布到站点。"""
+    """??????????????"""
     posts, sections = pub.load_state(site_root)
     text = content.decode("utf-8-sig")
 
-    # 用临时文件承接正文，但不会改动用户原始 md。
+    # ??????????????????? md?
     with tempfile.TemporaryDirectory() as tmp_dir:
         temp_note = Path(tmp_dir) / filename
         with temp_note.open("w", encoding="utf-8", newline="") as file:
@@ -414,7 +414,7 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             "summary": form.get("summary", "").strip(),
             "featured": form.get("featured") == "on",
             "section_titles": parse_section_titles(form.get("section_titles", "")),
-            # ????????????????? section ???????????
+            # ????????????????????
             "_fallback_section": split_csv(form.get("categories", ""))[0] if not form.get("section", "").strip() and split_csv(form.get("categories", "")) else "",
         }
 
@@ -429,8 +429,11 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
         post.source_note = filename
         posts = pub.upsert(posts, post)
 
+        categories_text = ", ".join(post.categories) or "?"
+        tags_text = ", ".join(post.tags) or "?"
+
         if form.get("dry_run") == "on":
-            return f"预览成功\n\n标题：{post.title}\n路径：/{post.rel_permalink}/\n分类：{', '.join(post.categories) or '无'}\n标签：{', '.join(post.tags) or '无'}"
+            return f"????\n\n???{post.title}\n???/{post.rel_permalink}/\n???{categories_text}\n???{tags_text}"
 
         pub.rebuild(site_root, posts, sections)
         pub.save_state(site_root, posts, sections)
@@ -441,8 +444,11 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             with (backup_dir / filename).open("w", encoding="utf-8", newline="") as file:
                 file.write(text)
 
-        return f"发布完成\n\n标题：{post.title}\n路径：/{post.rel_permalink}/"
-
+        result = f"????\n\n???{post.title}\n???/{post.rel_permalink}/"
+        if form.get("git_push") == "on":
+            commit_message = form.get("commit_message", "").strip() or f"publish {post.title}"
+            result += "\n\n" + pub.auto_git_push(site_root, commit_message)
+        return result
 
 class PublishHandler(BaseHTTPRequestHandler):
     """?????????"""
@@ -484,7 +490,7 @@ class PublishHandler(BaseHTTPRequestHandler):
 
             form = {
                 key: fs.getvalue(key, "")
-                for key in ["title", "date", "section", "slug", "categories", "tags", "summary", "section_titles", "featured", "dry_run", "no_backup"]
+                for key in ["title", "date", "section", "slug", "categories", "tags", "summary", "section_titles", "featured", "dry_run", "no_backup", "git_push", "commit_message"]
             }
             message = publish_uploaded_note(self.site_root, Path(note_item.filename).name, note_item.file.read(), form)
             level = "info" if form.get("dry_run") == "on" else "ok"

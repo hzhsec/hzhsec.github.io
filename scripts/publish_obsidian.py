@@ -11,6 +11,7 @@ import json
 import math
 import re
 import shutil
+import subprocess
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -525,42 +526,77 @@ def backup(site_root: Path, note_path: Path, slug: str) -> None:
     target.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(note_path, target / f"{slug}.md")
 
+
+def run_git(site_root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
+    """?? git ????????"""
+    return subprocess.run(
+        ["git", *args],
+        cwd=str(site_root),
+        check=True,
+        text=True,
+        encoding="utf-8",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
+def auto_git_push(site_root: Path, message: str) -> str:
+    """??????????????"""
+    status = run_git(site_root, ["status", "--short"]).stdout.strip()
+    if not status:
+        return "??????? git ?????????"
+
+    run_git(site_root, ["add", "-A"])
+    run_git(site_root, ["commit", "-m", message])
+    push_result = run_git(site_root, ["push"])
+    output = (push_result.stdout or push_result.stderr).strip()
+    return f"Git ?????{message}" + (f"\n{output}" if output else "")
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="将 Obsidian 笔记发布到当前静态站点。")
-    parser.add_argument("note", nargs="?", help="Obsidian 笔记路径。")
+    parser = argparse.ArgumentParser(description="? Obsidian ????????????")
+    parser.add_argument("note", nargs="?", help="Obsidian ?????")
     parser.add_argument("--site-root", default=".")
     parser.add_argument("--rebuild-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-backup", action="store_true")
+    parser.add_argument("--git-push", action="store_true", help="????? git add?commit?push")
+    parser.add_argument("--commit-message", default="", help="??? git commit ??")
     args = parser.parse_args()
     site_root = Path(args.site_root).resolve()
     posts, sections = load_state(site_root)
     if args.rebuild_only:
         if args.dry_run:
-            print(f"预览：将根据 {state_path(site_root)} 重建页面")
+            print(f"?????? {state_path(site_root)} ????")
             return 0
         rebuild(site_root, posts, sections)
         save_state(site_root, posts, sections)
-        print(f"重建完成，共处理 {len(posts)} 篇文章")
+        print(f"???????? {len(posts)} ???")
+        if args.git_push:
+            message = args.commit_message.strip() or f"rebuild site {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            print(auto_git_push(site_root, message))
         return 0
     if not args.note:
-        parser.error("未提供笔记路径，或请使用 --rebuild-only")
+        parser.error("???????????? --rebuild-only")
     note_path = Path(args.note).expanduser().resolve()
     if not note_path.exists():
-        raise FileNotFoundError(f"笔记不存在：{note_path}")
+        raise FileNotFoundError(f"??????{note_path}")
     existing = next((item for item in posts if item.source_note == str(note_path)), None)
     post = build_note(note_path, existing, sections)
     posts = upsert(posts, post)
     if args.dry_run:
-        print(f"预览：将发布《{post.title}》到 /{post.rel_permalink}/")
-        print(f"分类：{', '.join(post.categories) or '无'}")
-        print(f"标签：{', '.join(post.tags) or '无'}")
+        print(f"???????{post.title}?? /{post.rel_permalink}/")
+        print(f"???{', '.join(post.categories) or '?'}")
+        print(f"???{', '.join(post.tags) or '?'}")
         return 0
     rebuild(site_root, posts, sections)
     save_state(site_root, posts, sections)
     if not args.no_backup:
         backup(site_root, note_path, post.slug)
-    print(f"发布完成：/{post.rel_permalink}/")
+    print(f"?????/{post.rel_permalink}/")
+    if args.git_push:
+        message = args.commit_message.strip() or f"publish {post.title}"
+        print(auto_git_push(site_root, message))
     return 0
 
 if __name__ == "__main__":
