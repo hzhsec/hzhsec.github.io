@@ -65,3 +65,55 @@ figcaption {
 }
 
 /* 自定义代码块样式 */
+
+/* ???????? */
+.home .intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 0 0 2.5rem;
+}
+
+.home .intro-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.home .intro-content h1 {
+  margin: 0 0 0.4rem;
+}
+
+.home .intro-subtitle {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.home .intro-text {
+  margin: 0;
+}
+
+.home .intro-avatar {
+  flex: 0 0 auto;
+}
+
+.home .intro-avatar img {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .home .intro {
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
+
+  .home .intro-avatar img {
+    width: 96px;
+    height: 96px;
+  }
+}
+
