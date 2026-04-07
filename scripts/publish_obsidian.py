@@ -376,12 +376,13 @@ def render_home(posts: list[PostRecord]) -> str:
 
     content = (
         '<div class="home">'
-        '<section class="intro">'
-        '<div class="intro-content">'
+        '<section class="intro" style="display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;margin:0 0 2.5rem;flex-wrap:wrap;">'
+        '<div class="intro-content" style="flex:1;min-width:260px;">'
         f'<h1>{html.escape(INTRO_TITLE)}</h1>'
         f'<p class="intro-subtitle">{html.escape(INTRO_SUBTITLE)}</p>'
         f'<p class="intro-text">{html.escape(INTRO_TEXT)}</p>'
         '</div>'
+        f'<div class="intro-avatar" style="flex:0 0 auto;"><img src="{html.escape(AVATAR)}" alt="{html.escape(INTRO_TITLE)}" style="width:120px;height:120px;border-radius:9999px;object-fit:cover;display:block;"></div>'
         '</section>'
         '<div class="featured">'
         '<h2>Featured Posts</h2>'
