@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>护网面经</title><meta charset="utf-8"><meta name="description" content="Ladder@一、蓝队初级岗位认知 蓝队初级面试整体不算难，但问得最细的一般是： 应急响应 日志分析 安全设备告警分析 常见漏洞原理和 `payload` WebShell 流量特征 如果时间有限，优先背熟这三块： 应急响应流程 告警研判思路 常见漏洞与流量特征 1. 岗位要求 重点会看各种攻击 `payload`，熟悉常见漏洞利用流量。 给一个请求包，能判断： 是否为攻"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/%E6%8A%A4%E7%BD%91/%E6%8A%A4%E7%BD%91%E9%9D%A2%E7%BB%8F/"><meta property="og:title" content="护网面经" /><meta property="og:description" content="一、蓝队初级岗位认知 蓝队初级面试整体不算难，但问得最细的一般是： 应急响应 日志分析 安全设备告警分析 常见漏洞原理和 `payload` WebShell 流量特征 如果时间有限，优先背熟这三块： 应急响应流程 告警研判思路 常见漏洞与流量特征 1. 岗位要求 重点会看各种攻击 `payload`，熟悉常见漏洞利用流量。 给一个请求包，能判断： 是否为攻" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/%E6%8A%A4%E7%BD%91/%E6%8A%A4%E7%BD%91%E9%9D%A2%E7%BB%8F/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-04-07T22:34:33.949262+08:00" /><meta property="article:modified_time" content="2026-04-07T22:34:33.949262+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="护网面经"/><meta name="twitter:description" content="一、蓝队初级岗位认知 蓝队初级面试整体不算难，但问得最细的一般是： 应急响应 日志分析 安全设备告警分析 常见漏洞原理和 `payload` WebShell 流量特征 如果时间有限，优先背熟这三块： 应急响应流程 告警研判思路 常见漏洞与流量特征 1. 岗位要求 重点会看各种攻击 `payload`，熟悉常见漏洞利用流量。 给一个请求包，能判断： 是否为攻"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>护网面经</h1></header><p><small>April 7, 2026&nbsp;· 6102 words&nbsp;· 31 min</small><p><div class="blog-toc"><nav id="TableOfContents"><ul><li><a href="#一蓝队初级岗位认知">一、蓝队初级岗位认知</a></li><li><a href="#1-岗位要求">1. 岗位要求</a></li><li><a href="#2-学习重点">2. 学习重点</a></li><li><a href="#3-面试高频方向">3. 面试高频方向</a></li><li><a href="#二渗透测试与信息收集思路">二、渗透测试与信息收集思路</a></li><li><a href="#1-标准流程">1. 标准流程</a></li><li><a href="#2-信息收集">2. 信息收集</a></li><li><a href="#3-漏洞挖掘">3. 漏洞挖掘</a></li><li><a href="#4-漏洞利用与提权">4. 漏洞利用与提权</a></li><li><a href="#5-名词补充">5. 名词补充</a></li><li><a href="#cms">CMS</a></li><li><a href="#cdn">CDN</a></li><li><a href="#中间件">中间件</a></li><li><a href="#三owasp-top-10">三、OWASP Top 10</a></li><li><a href="#四常见漏洞总复习">四、常见漏洞总复习</a></li><li><a href="#1-sql-注入">1. SQL 注入</a></li><li><a href="#原理">原理</a></li><li><a href="#成因">成因</a></li><li><a href="#分类">分类</a></li><li><a href="#常见函数">常见函数</a></li><li><a href="#报错注入">报错注入</a></li><li><a href="#盲注">盲注</a></li><li><a href="#宽字节注入">宽字节注入</a></li><li><a href="#堆叠注入">堆叠注入</a></li><li><a href="#dnslog-注入">Dnslog 注入</a></li><li><a href="#联合注入步骤">联合注入步骤</a></li><li><a href="#判断闭合符常见方式">判断闭合符常见方式</a></li><li><a href="#过滤了怎么办">过滤了怎么办</a></li><li><a href="#空格替代">空格替代</a></li><li><a href="#关键字和函数绕过">关键字和函数绕过</a></li><li><a href="#写-webshell--提权">写 WebShell / 提权</a></li><li><a href="#写文件">写文件</a></li><li><a href="#写日志">写日志</a></li><li><a href="#日志写-shell-示例">日志写 Shell 示例</a></li><li><a href="#拿到-sql-权限后如何拿系统权限">拿到 SQL 权限后如何拿系统权限</a></li><li><a href="#udf-提权">UDF 提权</a></li><li><a href="#mof-提权">MOF 提权</a></li><li><a href="#防御">防御</a></li><li><a href="#面试常问">面试常问</a></li><li><a href="#mysql-50-上下区别">MySQL 5.0 上下区别</a></li><li><a href="#为什么一个站点只有-80-端口开放">为什么一个站点只有 80 端口开放</a></li><li><a href="#sqlmap-常用参数">Sqlmap 常用参数</a></li><li><a href="#2-xss">2. XSS</a></li><li><a href="#原理-2">原理</a></li><li><a href="#类型">类型</a></li><li><a href="#区别">区别</a></li><li><a href="#常见-javascript-函数">常见 JavaScript 函数</a></li><li><a href="#绕过方式">绕过方式</a></li><li><a href="#常见工具">常见工具</a></li><li><a href="#xss-平台与利用">XSS 平台与利用</a></li><li><a href="#危害">危害</a></li><li><a href="#xss-蠕虫产生条件">XSS 蠕虫产生条件</a></li><li><a href="#有-shell-的情况下如何长久控制">有 Shell 的情况下如何长久控制</a></li><li><a href="#防御-2">防御</a></li><li><a href="#3-xxe">3. XXE</a></li><li><a href="#原理-3">原理</a></li><li><a href="#特点">特点</a></li><li><a href="#利用">利用</a></li><li><a href="#防御-3">防御</a></li><li><a href="#4-csrf">4. CSRF</a></li><li><a href="#原理-4">原理</a></li><li><a href="#攻击过程">攻击过程</a></li><li><a href="#防御-4">防御</a></li><li><a href="#5-ssrf">5. SSRF</a></li><li><a href="#原理-5">原理</a></li><li><a href="#常见场景">常见场景</a></li><li><a href="#支持协议">支持协议</a></li><li><a href="#常见危险函数">常见危险函数</a></li><li><a href="#危害-2">危害</a></li><li><a href="#绕过">绕过</a></li><li><a href="#防御-5">防御</a></li><li><a href="#6-文件上传">6. 文件上传</a></li><li><a href="#原理-6">原理</a></li><li><a href="#中间件解析漏洞">中间件解析漏洞</a></li><li><a href="#apache">Apache</a></li><li><a href="#iis">IIS</a></li><li><a href="#nginx">Nginx</a></li><li><a href="#黑名单绕过">黑名单绕过</a></li><li><a href="#白名单绕过">白名单绕过</a></li><li><a href="#内容绕过">内容绕过</a></li><li><a href="#前端绕过">前端绕过</a></li><li><a href="#防御-6">防御</a></li><li><a href="#7-文件包含--下载--目录遍历">7. 文件包含 / 下载 / 目录遍历</a></li><li><a href="#文件包含原理">文件包含原理</a></li><li><a href="#常见函数-2">常见函数</a></li><li><a href="#协议">协议</a></li><li><a href="#利用-2">利用</a></li><li><a href="#文件下载漏洞原理">文件下载漏洞原理</a></li><li><a href="#目录遍历原理">目录遍历原理</a></li><li><a href="#防御-7">防御</a></li><li><a href="#8-命令执行--代码执行">8. 命令执行 / 代码执行</a></li><li><a href="#命令执行漏洞原理">命令执行漏洞原理</a></li><li><a href="#代码执行漏洞原理">代码执行漏洞原理</a></li><li><a href="#防御-8">防御</a></li><li><a href="#9-序列化与反序列化">9. 序列化与反序列化</a></li><li><a href="#php-反序列化">PHP 反序列化</a></li><li><a href="#常见函数-3">常见函数</a></li><li><a href="#常见魔术方法">常见魔术方法</a></li><li><a href="#补充">补充</a></li><li><a href="#java-反序列化">Java 反序列化</a></li><li><a href="#原理-7">原理</a></li><li><a href="#修复">修复</a></li><li><a href="#常见题">常见题</a></li><li><a href="#10-中间件与组件高频漏洞">10. 中间件与组件高频漏洞</a></li><li><a href="#apache-2">Apache</a></li><li><a href="#iis-2">IIS</a></li><li><a href="#nginx-2">Nginx</a></li><li><a href="#tomcat">Tomcat</a></li><li><a href="#weblogic">WebLogic</a></li><li><a href="#jboss">JBoss</a></li><li><a href="#redis-未授权">Redis 未授权</a></li><li><a href="#五搜索引擎与资产语法">五、搜索引擎与资产语法</a></li><li><a href="#1-fofa">1. FOFA</a></li><li><a href="#高级语法">高级语法</a></li><li><a href="#2-google-语法">2. Google 语法</a></li><li><a href="#3-其他平台">3. 其他平台</a></li><li><a href="#4-zoomeye-常见字段">4. ZoomEye 常见字段</a></li><li><a href="#六工具与命令">六、工具与命令</a></li><li><a href="#1-nmap-常见参数">1. Nmap 常见参数</a></li><li><a href="#2-goby">2. Goby</a></li><li><a href="#3-ufw-常用命令">3. UFW 常用命令</a></li><li><a href="#七流量分析告警与端口">七、流量分析、告警与端口</a></li><li><a href="#1-pcap--流量分析">1. PCAP / 流量分析</a></li><li><a href="#2-wireshark-过滤规则">2. Wireshark 过滤规则</a></li><li><a href="#ip">IP</a></li><li><a href="#端口">端口</a></li><li><a href="#协议-2">协议</a></li><li><a href="#请求方法">请求方法</a></li><li><a href="#3-高危端口">3. 高危端口</a></li><li><a href="#4-log4j-漏洞">4. Log4j 漏洞</a></li><li><a href="#八webshell-与木马流量特征">八、WebShell 与木马流量特征</a></li><li><a href="#1-菜刀">1. 菜刀</a></li><li><a href="#2-蚁剑">2. 蚁剑</a></li><li><a href="#3-冰蝎">3. 冰蝎</a></li><li><a href="#通用特征">通用特征</a></li><li><a href="#冰蝎-2">冰蝎 2</a></li><li><a href="#冰蝎-3">冰蝎 3</a></li><li><a href="#4-哥斯拉">4. 哥斯拉</a></li><li><a href="#5-webshell-简介">5. WebShell 简介</a></li><li><a href="#九天眼与告警平台面试题">九、天眼与告警平台面试题</a></li><li><a href="#1-常见字段">1. 常见字段</a></li><li><a href="#2-dns-字段">2. DNS 字段</a></li><li><a href="#3-告警状态">3. 告警状态</a></li><li><a href="#4-常见问答">4. 常见问答</a></li><li><a href="#天眼可以捕捉到-cmd-命令吗">天眼可以捕捉到 CMD 命令吗</a></li><li><a href="#内网横向常见告警类型">内网横向常见告警类型</a></li><li><a href="#如何判断资产是否失陷">如何判断资产是否失陷</a></li><li><a href="#受害-ip-为源-ip-说明什么">受害 IP 为源 IP 说明什么</a></li><li><a href="#如何搜索端口">如何搜索端口</a></li><li><a href="#如何搜索源-ip-为-a目的-ip-为-b">如何搜索源 IP 为 A、目的 IP 为 B</a></li><li><a href="#目的-ip-是-114114114114端口是-53要不要封">目的 IP 是 `114.114.114.114`，端口是 `53`，要不要封</a></li><li><a href="#不出网主机通过哪种代理建立连接">不出网主机通过哪种代理建立连接</a></li><li><a href="#正向代理与反向代理">正向代理与反向代理</a></li><li><a href="#天眼小工具能做什么">天眼小工具能做什么</a></li><li><a href="#主机外联排查思路">主机外联排查思路</a></li><li><a href="#告警成功如何处理">告警成功如何处理</a></li><li><a href="#十应急响应">十、应急响应</a></li><li><a href="#1-网站被挂马如何应急">1. 网站被挂马如何应急</a></li><li><a href="#取证">取证</a></li><li><a href="#处理">处理</a></li><li><a href="#溯源">溯源</a></li><li><a href="#记录">记录</a></li><li><a href="#2-入侵排查流程">2. 入侵排查流程</a></li><li><a href="#检查账号安全">检查账号安全</a></li><li><a href="#检查异常端口和进程">检查异常端口和进程</a></li><li><a href="#检查启动项计划任务服务">检查启动项、计划任务、服务</a></li><li><a href="#检查系统信息">检查系统信息</a></li><li><a href="#日志分析">日志分析</a></li><li><a href="#3-如何判断情报或告警是否误报">3. 如何判断情报或告警是否误报</a></li><li><a href="#4-如何判断是否被拿-shell">4. 如何判断是否被拿 Shell</a></li><li><a href="#webshell">WebShell</a></li><li><a href="#系统-shell">系统 Shell</a></li><li><a href="#5-服务器被入侵后怎么做">5. 服务器被入侵后怎么做</a></li><li><a href="#6-内网报警处理思路">6. 内网报警处理思路</a></li><li><a href="#溯源方向">溯源方向</a></li><li><a href="#7-日志或木马文件被删除怎么办">7. 日志或木马文件被删除怎么办</a></li><li><a href="#8-服务中了-webshell怎样快速定位">8. 服务中了 WebShell，怎样快速定位</a></li><li><a href="#9-sql-注入告警如何判断是否成功">9. SQL 注入告警如何判断是否成功</a></li><li><a href="#10-如何判断主机是否异常外联">10. 如何判断主机是否异常外联</a></li><li><a href="#十一安全设备与防护部署">十一、安全设备与防护部署</a></li><li><a href="#1-waf">1. WAF</a></li><li><a href="#2-蜜罐">2. 蜜罐</a></li><li><a href="#定义">定义</a></li><li><a href="#可尝试实践">可尝试实践</a></li><li><a href="#面试常问部署蜜罐开放哪些端口">面试常问：部署蜜罐开放哪些端口</a></li><li><a href="#十二内网渗透全流程">十二、内网渗透全流程</a></li><li><a href="#1-总体流程">1. 总体流程</a></li><li><a href="#2-主机信息收集">2. 主机信息收集</a></li><li><a href="#3-域内信息收集">3. 域内信息收集</a></li><li><a href="#判断是否在域内">判断是否在域内</a></li><li><a href="#探测存活主机">探测存活主机</a></li><li><a href="#域相关命令">域相关命令</a></li><li><a href="#查找域控">查找域控</a></li><li><a href="#4-内网环境不出网怎么办">4. 内网环境不出网怎么办</a></li><li><a href="#十三面试速记模板">十三、面试速记模板</a></li><li><a href="#1-如果一台服务器被入侵你怎么应急">1. 如果一台服务器被入侵，你怎么应急</a></li><li><a href="#2-如何判断-sql-注入告警是真攻击还是误报">2. 如何判断 SQL 注入告警是真攻击还是误报</a></li><li><a href="#3-如何快速定位-webshell">3. 如何快速定位 WebShell</a></li><li><a href="#4-告警成功怎么处理">4. 告警成功怎么处理</a></li><li><a href="#5-蓝队初级核心复习顺序">5. 蓝队初级核心复习顺序</a></li><li><a href="#十四总结">十四、总结</a></li></ul></nav></div><section class="blog-content"><h2 id="一蓝队初级岗位认知">一、蓝队初级岗位认知</h2>
+<p>蓝队初级面试整体不算难，但问得最细的一般是：</p>
+<ul><li>应急响应</li><li>日志分析</li><li>安全设备告警分析</li><li>常见漏洞原理和 <code>payload</code></li><li>WebShell 流量特征</li></ul>
+<p>如果时间有限，优先背熟这三块：</p>
+<ul><li>应急响应流程</li><li>告警研判思路</li><li>常见漏洞与流量特征</li></ul>
+<h3 id="1-岗位要求">1. 岗位要求</h3>
+<ul><li>重点会看各种攻击 <code>payload</code>，熟悉常见漏洞利用流量。</li><li>给一个请求包，能判断：</li><li>是否为攻击流量；</li><li>如果是，属于什么漏洞；</li><li>利用思路和危害是什么。</li><li>基础能力要求：</li><li>基本漏洞扫描和渗透能力；</li><li>日志分析能力；</li><li>安全设备告警分析能力；</li><li>能看懂常见安全产品。</li></ul>
+<h3 id="2-学习重点">2. 学习重点</h3>
+<ul><li>多练习常见漏洞利用方法。</li><li>学会识别漏洞利用请求和常见 <code>payload</code>。</li><li>重点加强：</li><li>应急响应；</li><li>日志分析；</li><li>安全设备告警分析；</li><li>流量研判。</li></ul>
+<h3 id="3-面试高频方向">3. 面试高频方向</h3>
+<ul><li>OWASP Top 10 常见漏洞原理</li><li>常见绕过思路</li><li>WebShell 流量特征</li><li>天眼/流量平台字段与检索</li><li>主机失陷判断</li><li>应急响应流程</li><li>内网渗透基础</li></ul>
+<hr>
+<h2 id="二渗透测试与信息收集思路">二、渗透测试与信息收集思路</h2>
+<h3 id="1-标准流程">1. 标准流程</h3>
+<ol><li>信息收集</li><li>漏洞挖掘</li><li>漏洞扫描</li><li>漏洞利用</li><li>权限提升</li><li>日志清理</li><li>总结报告与修复建议</li></ol>
+<h3 id="2-信息收集">2. 信息收集</h3>
+<ul><li>服务器信息：</li><li>真实 IP；</li><li>系统类型；</li><li>系统版本；</li><li>开放端口；</li><li>WAF。</li><li>网站指纹：</li><li>CMS；</li><li>CDN；</li><li>证书；</li><li>DNS 记录。</li><li>外围信息：</li><li>Whois；</li><li>备案；</li><li>邮箱；</li><li>电话；</li><li>姓名；</li><li>社工关联信息。</li><li>外围资产：</li><li>子域名；</li><li>旁站；</li><li>C 段。</li><li>搜索内容：</li><li>Google Hacking；</li><li>PDF 文档；</li><li>中间件版本；</li><li>弱口令；</li><li>GitHub 源码；</li><li>公开 Exp。</li><li>敏感文件与路径：</li><li>目录结构；</li><li>后台地址；</li><li>网站 Banner；</li><li>测试文件；</li><li>备份文件；</li><li>敏感文件泄露。</li></ul>
+<h3 id="3-漏洞挖掘">3. 漏洞挖掘</h3>
+<ul><li>浏览网站，先看规模、功能、业务特点。</li><li>扫目录、扫端口、测弱口令。</li><li>对开放端口做漏洞探测：</li><li>MySQL；</li><li>FTP；</li><li>SSH；</li><li>中间件；</li><li>组件。</li><li>常见测试项：</li><li>XSS；</li><li>SQL 注入；</li><li>SSRF；</li><li>XXE；</li><li>文件上传；</li><li>文件包含；</li><li>任意文件读取/下载；</li><li>命令执行；</li><li>代码执行；</li><li>越权访问；</li><li>未授权访问；</li><li>暴力破解；</li><li>重放攻击；</li><li>目录遍历；</li><li>编辑器漏洞；</li><li>服务器漏洞。</li></ul>
+<h3 id="4-漏洞利用与提权">4. 漏洞利用与提权</h3>
+<ul><li>漏洞利用：</li><li><code>msf</code></li><li><code>nc</code></li><li><code>sqlmap</code></li><li><code>goby</code></li><li>常见提权：</li><li>MySQL 提权；</li><li>UDF 提权；</li><li>MOF 提权；</li><li>Serv-U 提权；</li><li>Oracle 提权；</li><li>Linux 脏牛与内核提权；</li><li>Windows 溢出提权。</li></ul>
+<h3 id="5-名词补充">5. 名词补充</h3>
+<h4 id="cms">CMS</h4>
+<p>内容管理系统，位于前端和后台之间，常可通过公开源码、版本信息、公开漏洞定位风险。</p>
+<h4 id="cdn">CDN</h4>
+<p>通过边缘节点和调度系统让用户就近访问资源，降低拥塞、提升访问速度。</p>
+<h4 id="中间件">中间件</h4>
+<p>独立的软件或服务程序，用于连接应用程序或系统，让不同接口也能交互数据。</p>
+<hr>
+<h2 id="三owasp-top-10">三、OWASP Top 10</h2>
+<ul><li>SQL 注入</li><li>失效的身份认证</li><li>敏感数据泄露</li><li>XML 外部实体（XXE）</li><li>失效的访问控制</li><li>安全配置错误</li><li>跨站脚本（XSS）</li><li>不安全的反序列化</li><li>使用含有已知漏洞的组件</li><li>不足的日志记录和监控</li></ul>
+<hr>
+<h2 id="四常见漏洞总复习">四、常见漏洞总复习</h2>
+<h3 id="1-sql-注入">1. SQL 注入</h3>
+<h4 id="原理">原理</h4>
+<p>用户输入被拼接进 SQL 语句，并被数据库当作代码执行。</p>
+<h4 id="成因">成因</h4>
+<ul><li>开发未做严格过滤；</li><li>未使用预编译或参数化查询；</li><li>编码与字符集处理不当。</li></ul>
+<h4 id="分类">分类</h4>
+<ul><li>有回显注入</li><li>无回显注入</li><li>布尔盲注</li><li>时间盲注</li><li>报错注入</li><li>联合注入</li><li>堆叠注入</li><li>宽字节注入</li><li>二次注入</li><li>Cookie 注入</li><li>Referer 注入</li><li><code>X-Forwarded-For</code> 注入</li></ul>
+<h4 id="常见函数">常见函数</h4>
+<h5 id="报错注入">报错注入</h5>
+<ul><li><code>updatexml()</code></li><li><code>extractvalue()</code></li><li><code>floor()</code></li><li><code>rand()</code></li><li><code>exp()</code></li><li><code>group by</code></li><li><code>count()</code></li><li><code>concat()</code></li></ul>
+<h5 id="盲注">盲注</h5>
+<ul><li><code>if()</code></li><li><code>sleep()</code></li><li><code>substr()</code></li><li><code>substring()</code></li><li><code>left()</code></li><li><code>ascii()</code></li><li><code>ord()</code></li><li><code>length()</code></li><li><code>limit</code></li></ul>
+<h4 id="宽字节注入">宽字节注入</h4>
+<ul><li>常见场景：</li><li>Web 使用 UTF-8；</li><li>数据库使用 GBK。</li><li>由于 GBK 为双字节编码，转义符可能和前字节重新组合，导致单引号逃逸。</li><li>常被提到的函数：</li><li><code>magic_quotes_gpc()</code></li></ul>
+<h4 id="堆叠注入">堆叠注入</h4>
+<ul><li>MySQL 默认用分号 <code>;</code> 结束语句；</li><li>一条无害语句后继续拼接恶意语句，实现多条 SQL 执行。</li></ul>
+<h4 id="dnslog-注入">Dnslog 注入</h4>
+<ul><li>借助 <code>load_file()</code> 读取共享路径；</li><li>拼接 DNSLog 域名，把数据外带。</li></ul>
+<h4 id="联合注入步骤">联合注入步骤</h4>
+<ol><li>找传参点</li><li>判断闭合符</li><li>判断列数</li><li>判断显示位</li><li>查询 <code>database()</code></li><li>查表</li><li>查字段和数据</li></ol>
+<h4 id="判断闭合符常见方式">判断闭合符常见方式</h4>
+<ul><li><code>id=1 and 1=1</code></li><li><code>id=1&#x27; and 1=2</code></li><li><code>id=1&quot; or 1=1</code></li><li><code>&#x27;) or 1=2</code></li><li><code>and 234=234</code></li><li><code>and 1</code></li><li><code>or 1</code></li><li><code>and 1^1</code></li><li><code>&amp;amp;&amp;amp;1</code></li><li><code>||0</code></li></ul>
+<h4 id="过滤了怎么办">过滤了怎么办</h4>
+<ul><li>关键字过滤：</li><li>大小写绕过；</li><li>双写绕过；</li><li>URL 编码绕过。</li><li>特殊字符或空格过滤：</li><li>URL 编码；</li><li>特殊空白字符。</li><li>注释过滤：</li><li>闭合绕过；</li><li>逻辑运算绕过。</li><li>单引号过滤：</li><li>宽字节绕过。</li><li>明文参数过滤：</li><li>Burp 进行业务层编码后重放。</li></ul>
+<h4 id="空格替代">空格替代</h4>
+<ul><li><code>/**/</code></li><li><code>/<em>!</em>/</code></li><li><code>+</code></li><li><code>%09</code></li><li><code>%0a</code></li><li><code>%0b</code></li><li><code>%00</code></li><li><code>%a0</code></li><li>括号</li></ul>
+<h4 id="关键字和函数绕过">关键字和函数绕过</h4>
+<ul><li>16 进制</li><li><code>char()</code></li><li>字符串拼接</li><li><code>sleep()</code> -&gt; <code>benchmark()</code></li><li><code>if()</code> -&gt; <code>case when then else end</code></li><li><code>ascii()</code> -&gt; <code>ord()</code></li><li><code>substr()</code> -&gt; <code>substring()</code></li><li>内联注释：</li><li><code>/<em>! ... </em>/</code></li></ul>
+<h4 id="写-webshell--提权">写 WebShell / 提权</h4>
+<h5 id="写文件">写文件</h5>
+<ul><li>需要写权限。</li></ul>
+<h5 id="写日志">写日志</h5>
+<ul><li>不一定需要直接网站权限；</li><li>需要能开启日志并指定日志路径到网站目录。</li></ul>
+<h5 id="日志写-shell-示例">日志写 Shell 示例</h5>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">select &#x27;一句话木马&#x27; into outfile &#x27;路径&#x27;;
+select &#x27;一句话木马&#x27; into dumpfile &#x27;路径&#x27;;</code></pre></div>
+<p>前提：</p>
+<ul><li>Root 权限；</li><li><code>GPC</code> 关闭；</li><li>已知文件路径。</li></ul>
+<h4 id="拿到-sql-权限后如何拿系统权限">拿到 SQL 权限后如何拿系统权限</h4>
+<h5 id="udf-提权">UDF 提权</h5>
+<ul><li>原理：导出可调用 <code>cmd</code> 的 <code>udf.dll</code> 动态链接库。</li><li>条件：</li><li><code>secure_file_priv=&#x27;&#x27;</code> 或满足写文件条件；</li><li>账户权限高，最好是 Root；</li><li>对安装目录有写权限。</li></ul>
+<h5 id="mof-提权">MOF 提权</h5>
+<ul><li>常见于 Windows Server 2003。</li><li><code>C:/Windows/system32/wbem/mof/</code> 目录中的 <code>.mof</code> 文件会被系统周期性执行，可借此执行命令。</li></ul>
+<h4 id="防御">防御</h4>
+<ul><li>预编译</li><li>参数化查询</li><li>白名单限制</li><li>敏感字符过滤</li><li>编码统一</li><li>站库分离</li></ul>
+<h4 id="面试常问">面试常问</h4>
+<h5 id="mysql-50-上下区别">MySQL 5.0 上下区别</h5>
+<ul><li>5.0 以下没有 <code>information_schema</code>；</li><li>常需暴力跑库跑表。</li></ul>
+<h5 id="为什么一个站点只有-80-端口开放">为什么一个站点只有 80 端口开放</h5>
+<ul><li>数据库端口改了；</li><li>站库分离；</li><li><code>3306</code> 没对外开放。</li></ul>
+<h4 id="sqlmap-常用参数">Sqlmap 常用参数</h4>
+<ul><li><code>-r</code></li><li><code>-u</code></li><li><code>-p</code></li><li><code>*</code></li><li><code>-m</code></li><li><code>--os-shell</code></li><li><code>--os-cmd</code></li><li><code>--tamper</code></li><li><code>--level</code></li><li><code>--risk</code></li><li><code>--random-agent</code></li><li><code>--batch</code></li><li><code>--dbms</code></li></ul>
+<hr>
+<h3 id="2-xss">2. XSS</h3>
+<h4 id="原理-2">原理</h4>
+<p>通过注入恶意 HTML 或 JavaScript，最终攻击浏览器。</p>
+<h4 id="类型">类型</h4>
+<ul><li>反射型</li><li>存储型</li><li>DOM 型</li></ul>
+<h4 id="区别">区别</h4>
+<ul><li>反射型：后端处理后回显到页面。</li><li>DOM 型：前端 JavaScript 直接修改 DOM 触发。</li></ul>
+<h4 id="常见-javascript-函数">常见 JavaScript 函数</h4>
+<ul><li><code>document.cookie</code></li><li><code>console.log(&#x27;xss&#x27;)</code></li></ul>
+<h4 id="绕过方式">绕过方式</h4>
+<ul><li>大小写绕过</li><li><code>javascript:</code> 伪协议</li><li>不写分号</li><li>Flash</li><li>HTML5 新标签</li><li>Fuzz 测试</li><li>双层标签绕过</li></ul>
+<h4 id="常见工具">常见工具</h4>
+<ul><li><code>xsstrike</code></li></ul>
+<h4 id="xss-平台与利用">XSS 平台与利用</h4>
+<ul><li>BEEF</li><li><a href="https://xss.pt/">xss.pt</a></li></ul>
+<h4 id="危害">危害</h4>
+<ul><li>窃取 Cookie</li><li>会话劫持</li><li>浏览器挂钩</li><li>钓鱼跳转</li><li>账户接管</li></ul>
+<h4 id="xss-蠕虫产生条件">XSS 蠕虫产生条件</h4>
+<p>只要页面存在用户间交互，就可能形成蠕虫，不一定必须是存储型。</p>
+<h4 id="有-shell-的情况下如何长久控制">有 Shell 的情况下如何长久控制</h4>
+<ul><li>在后台登录处插入记录账号密码的恶意 JS；</li><li>在登录后页面植入存储型 XSS。</li></ul>
+<h4 id="防御-2">防御</h4>
+<ul><li>输出时做实体编码；</li><li>过滤危险事件；</li><li>限制输入长度；</li><li>使用 <code>HttpOnly</code>；</li><li>开启 CSP；</li><li>及时修补漏洞。</li></ul>
+<hr>
+<h3 id="3-xxe">3. XXE</h3>
+<h4 id="原理-3">原理</h4>
+<ul><li>PHP 开启外部实体引用；</li><li>传入 XML 数据未做过滤。</li></ul>
+<h4 id="特点">特点</h4>
+<ul><li>参数中常出现 XML 标签；</li><li>响应包 <code>Content-Type</code> 常为 <code>text/xml</code>。</li></ul>
+<h4 id="利用">利用</h4>
+<ul><li><code>file://</code> 读取文件</li><li><code>http://127.0.0.1:22</code> 探测端口</li><li>PHP 伪协议读取文件</li><li>盲 XXE：</li><li>加载远程 XML；</li><li>做数据外带。</li></ul>
+<h4 id="防御-3">防御</h4>
+<ul><li>关闭外部实体功能；</li><li>严格校验 XML 输入。</li></ul>
+<hr>
+<h3 id="4-csrf">4. CSRF</h3>
+<h4 id="原理-4">原理</h4>
+<p>攻击者利用用户已登录状态，诱导浏览器向目标站点自动发起请求。</p>
+<h4 id="攻击过程">攻击过程</h4>
+<ol><li>构造恶意请求</li><li>放到链接、图片、表单中</li><li>用户在登录态访问后自动发出请求</li></ol>
+<h4 id="防御-4">防御</h4>
+<ul><li>关键操作二次认证</li><li>Token 校验</li><li>验证 Referer / Origin</li><li><code>HttpOnly</code></li></ul>
+<hr>
+<h3 id="5-ssrf">5. SSRF</h3>
+<h4 id="原理-5">原理</h4>
+<p>服务端提供从其他服务器获取数据的能力，但未对目标地址做限制，攻击者可借此让服务器替自己发请求。</p>
+<h4 id="常见场景">常见场景</h4>
+<ul><li>加载图片</li><li>拉取网页</li><li>下载远程资源</li><li>邮件系统</li><li>文件处理</li><li>在线处理工具</li></ul>
+<h4 id="支持协议">支持协议</h4>
+<ul><li><code>http://</code></li><li><code>https://</code></li><li><code>dict://</code></li><li><code>ftp://</code></li><li><code>file://</code></li><li><code>php://</code></li><li><code>gopher://</code></li></ul>
+<h4 id="常见危险函数">常见危险函数</h4>
+<ul><li><code>file_get_contents()</code></li><li><code>fsockopen()</code></li><li><code>curl_exec()</code></li></ul>
+<h4 id="危害-2">危害</h4>
+<ul><li>内外网端口和服务扫描</li><li>本地敏感文件读取</li><li>利用内网服务漏洞</li><li>探测内外网 Web 服务</li></ul>
+<h4 id="绕过">绕过</h4>
+<ul><li>利用 <code>@</code></li><li>添加端口号</li><li>短链接</li><li>IP 进制转换</li><li>DNS 解析绕过</li></ul>
+<h4 id="防御-5">防御</h4>
+<ul><li>输入校验</li><li>白名单访问</li><li>禁用危险协议</li><li>限制访问内网地址</li></ul>
+<hr>
+<h3 id="6-文件上传">6. 文件上传</h3>
+<h4 id="原理-6">原理</h4>
+<p>上传点对文件类型、内容、解析方式校验不严，攻击者可上传恶意脚本并在服务端执行。</p>
+<h4 id="中间件解析漏洞">中间件解析漏洞</h4>
+<h5 id="apache">Apache</h5>
+<ul><li>多后缀解析</li><li>罕见后缀解析</li><li><code>.htaccess</code> 解析</li><li>例如：</li><li><code>1.php.rar</code></li></ul>
+<h5 id="iis">IIS</h5>
+<ul><li>分号截断：</li><li><code>1.asp;.jpg</code></li><li>罕见后缀：</li><li><code>.asa</code></li><li><code>.cer</code></li><li><code>.cdx</code></li><li>文件夹解析：</li><li><code>1.asp/1.jpg</code></li><li><code>1.asa/1.jpg</code></li><li><code>1.cer/1.jpg</code></li><li>CGI 解析漏洞</li><li>PUT 上传漏洞</li></ul>
+<h5 id="nginx">Nginx</h5>
+<ul><li>CGI / <code>cgi.fix_pathinfo</code> 解析问题</li><li>如：</li><li><code>/1.jpg/1.php</code></li></ul>
+<h4 id="黑名单绕过">黑名单绕过</h4>
+<ul><li>特殊后缀：</li><li><code>.php3</code></li><li><code>.php4</code></li><li><code>.php5</code></li><li><code>.phtml</code></li><li>上传 <code>.htaccess</code></li><li>上传 <code>.user.ini</code></li><li>大小写绕过</li><li>后缀前加空格</li><li>文件名以点结尾</li><li><code>::$DATA</code></li><li>双写后缀：</li><li><code>1.pphphp</code></li><li>双点：</li><li><code>x.php..</code></li></ul>
+<h4 id="白名单绕过">白名单绕过</h4>
+<ul><li><code>%00</code> 截断</li><li>图片马</li><li>条件竞争</li><li>配合文件包含</li></ul>
+<h4 id="内容绕过">内容绕过</h4>
+<ul><li>填充垃圾字符</li><li>免杀</li></ul>
+<h4 id="前端绕过">前端绕过</h4>
+<ul><li>关闭前端 JS</li><li>Burp 改包</li></ul>
+<h4 id="防御-6">防御</h4>
+<ul><li>服务端校验</li><li>白名单校验</li><li>校验 MIME</li><li>校验文件头与完整性</li><li>上传目录不可执行</li><li>上传目录与 Web 服务隔离</li><li>重命名文件</li><li>图片重渲染</li><li>重建文件内容</li><li>检查文件内容</li></ul>
+<hr>
+<h3 id="7-文件包含--下载--目录遍历">7. 文件包含 / 下载 / 目录遍历</h3>
+<h4 id="文件包含原理">文件包含原理</h4>
+<p>应用动态包含文件时未校验用户输入，导致攻击者可包含本地文件、远程文件或图片马。</p>
+<h4 id="常见函数-2">常见函数</h4>
+<ul><li><code>include()</code></li><li><code>include_once()</code></li><li><code>require()</code></li><li><code>require_once()</code></li></ul>
+<h4 id="协议">协议</h4>
+<ul><li><code>file://</code></li><li><code>http://</code></li><li><code>https://</code></li><li><code>php://filter</code></li><li><code>php://input</code></li><li><code>data://</code></li><li><code>zip://</code></li><li><code>phar://</code></li><li><code>zlib://</code></li><li><code>glob://</code></li><li><code>ssh2://</code></li><li><code>rar://</code></li><li><code>ogg://</code></li><li><code>expect://</code></li></ul>
+<h4 id="利用-2">利用</h4>
+<ul><li><code>../</code> 目录遍历</li><li>配合文件上传获取 WebShell</li><li>读取源码</li><li>读取敏感文件</li></ul>
+<h4 id="文件下载漏洞原理">文件下载漏洞原理</h4>
+<p>攻击者通过构造请求，下载本不该公开访问的敏感文件，例如配置文件、账号密码、业务数据。</p>
+<h4 id="目录遍历原理">目录遍历原理</h4>
+<p>服务器配置不当或文件名校验不足，导致可访问 Web 根目录以外文件，严重时还能配合其他漏洞执行命令。</p>
+<h4 id="防御-7">防御</h4>
+<ul><li>过滤 <code>.</code>、<code>\</code>、<code>/</code></li><li>使用 <code>open_basedir</code></li><li>禁止远程文件包含</li><li>关闭 <code>allow_url_fopen</code> / <code>allow_url_include</code></li><li>对下载参数做访问控制和合法性校验</li></ul>
+<hr>
+<h3 id="8-命令执行--代码执行">8. 命令执行 / 代码执行</h3>
+<h4 id="命令执行漏洞原理">命令执行漏洞原理</h4>
+<p>攻击者向程序提交恶意输入，程序拼接后调用系统命令执行。</p>
+<h4 id="代码执行漏洞原理">代码执行漏洞原理</h4>
+<p>应用把用户输入当作代码解释执行，最终导致任意代码运行。</p>
+<h4 id="防御-8">防御</h4>
+<ul><li>严格输入校验</li><li>过滤危险字符</li><li>最小权限运行</li><li>正确设置文件和目录权限</li></ul>
+<hr>
+<h3 id="9-序列化与反序列化">9. 序列化与反序列化</h3>
+<h4 id="php-反序列化">PHP 反序列化</h4>
+<ul><li>用户可控数据进入 <code>unserialize()</code>；</li><li>类中存在可利用魔术方法时，可能导致代码执行、目录遍历、SQL 注入等。</li></ul>
+<h4 id="常见函数-3">常见函数</h4>
+<ul><li><code>serialize()</code></li><li><code>unserialize()</code></li></ul>
+<h4 id="常见魔术方法">常见魔术方法</h4>
+<ul><li><code>__wakeup()</code></li><li><code>__sleep()</code></li><li><code>__construct()</code></li><li><code>__destruct()</code></li><li><code>__call()</code></li><li><code>__callStatic()</code></li><li><code>__get()</code></li><li><code>__set()</code></li><li><code>__isset()</code></li><li><code>__unset()</code></li><li><code>__toString()</code></li><li><code>__invoke()</code></li></ul>
+<h4 id="补充">补充</h4>
+<ul><li>某些场景下，成员属性数大于实际数目，可用于绕过 <code>__wakeup()</code> 限制。</li></ul>
+<h4 id="java-反序列化">Java 反序列化</h4>
+<h5 id="原理-7">原理</h5>
+<p>序列化是把对象转成二进制，反序列化是再还原为对象。若输入对象是恶意构造的，反序列化时就可能执行恶意逻辑。</p>
+<h5 id="修复">修复</h5>
+<ul><li>升级组件</li><li>打补丁</li><li>限制危险类和反序列化入口</li></ul>
+<h5 id="常见题">常见题</h5>
+<ul><li>Shiro：</li><li><code>RememberMe</code></li><li>默认 AES Key 可被利用伪造恶意数据</li><li>Fastjson：</li><li><code>@type</code> 指定类名</li><li>恶意 JSON 可导致代码执行</li><li>Log4j：</li><li><code>${jndi:...}</code></li><li>配合 LDAP/RMI 远程加载</li></ul>
+<hr>
+<h3 id="10-中间件与组件高频漏洞">10. 中间件与组件高频漏洞</h3>
+<h4 id="apache-2">Apache</h4>
+<ul><li>多后缀解析</li><li>目录遍历</li><li><code>.htaccess</code> 解析</li><li><code>CVE-2021-42013</code></li></ul>
+<h4 id="iis-2">IIS</h4>
+<ul><li>分号截断</li><li>罕见后缀解析</li><li>文件夹解析</li><li>CGI 解析</li><li>PUT 上传</li><li><code>MS15-034</code></li></ul>
+<h4 id="nginx-2">Nginx</h4>
+<ul><li>CGI 解析漏洞</li></ul>
+<h4 id="tomcat">Tomcat</h4>
+<ul><li>后台部署 War 包</li><li>PUT 上传</li><li>反序列化</li><li>样例目录 Session 操控</li></ul>
+<h4 id="weblogic">WebLogic</h4>
+<ul><li>后台部署 War 包</li><li>反序列化</li><li>未授权 RCE</li></ul>
+<h4 id="jboss">JBoss</h4>
+<ul><li>后台部署 War 包</li><li>反序列化</li></ul>
+<h4 id="redis-未授权">Redis 未授权</h4>
+<ul><li>默认端口 <code>6379</code></li><li>写 WebShell</li><li>写 SSH 公钥</li><li>写计划任务</li><li>主从复制 <code>getshell</code></li></ul>
+<hr>
+<h2 id="五搜索引擎与资产语法">五、搜索引擎与资产语法</h2>
+<h3 id="1-fofa">1. FOFA</h3>
+<ul><li><code>app=&quot;cms&quot;</code></li><li><code>domain=&quot;baidu.com&quot;</code></li><li><code>host=&quot;.edu.cn&quot;</code></li><li><code>port=3389</code></li><li><code>protocol=ssh</code></li><li><code>cert=baidu.com</code></li><li><code>banner=users &amp;amp;&amp;amp; protocol=ftp</code></li><li><code>type=service</code></li><li><code>server=apache</code></li></ul>
+<h4 id="高级语法">高级语法</h4>
+<ul><li><code>body=&quot;后台&quot; &amp;amp;&amp;amp; domain=&quot;xxx.com&quot;</code></li><li><code>header=&quot;Hikvision&quot;</code></li></ul>
+<h3 id="2-google-语法">2. Google 语法</h3>
+<ul><li><code>intext</code></li><li><code>intitle</code></li><li><code>allintitle</code></li><li><code>inurl</code></li><li><code>allinurl</code></li><li><code>site</code></li><li><code>filetype</code></li><li><code>cache</code></li></ul>
+<h3 id="3-其他平台">3. 其他平台</h3>
+<ul><li>Shodan</li><li>夸克</li><li>ZoomEye</li></ul>
+<h3 id="4-zoomeye-常见字段">4. ZoomEye 常见字段</h3>
+<ul><li><code>app</code></li><li><code>ver</code></li><li><code>os</code></li><li><code>service</code></li><li><code>cidr</code></li><li><code>device</code></li><li><code>keyword</code></li></ul>
+<hr>
+<h2 id="六工具与命令">六、工具与命令</h2>
+<h3 id="1-nmap-常见参数">1. Nmap 常见参数</h3>
+<ul><li><code>-Pn</code></li><li><code>-sP</code></li><li><code>-sS</code></li><li><code>-sT</code></li><li><code>-PR</code></li><li><code>-O</code></li><li><code>-p</code></li><li><code>-T4</code></li><li><code>-P0</code></li></ul>
+<h3 id="2-goby">2. Goby</h3>
+<ul><li>可扫 IP 和域名；</li><li>可自定义端口扫描；</li><li>可加载指定 POC；</li><li>可自定义爆破字典；</li><li>可导入导出报告。</li></ul>
+<h3 id="3-ufw-常用命令">3. UFW 常用命令</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">ufw status
+ufw version
+ufw enable
+ufw disable
+ufw default deny
+ufw allow 22/tcp
+ufw allow 53
+ufw deny 3306
+ufw delete allow 22
+ufw allow from 192.168.1.100
+ufw delete allow from 192.168.1.100
+ufw status numbered
+ufw delete 3
+ufw deny 8888
+ufw allow proto tcp from 192.168.0.1 to any port 22</code></pre></div>
+<hr>
+<h2 id="七流量分析告警与端口">七、流量分析、告警与端口</h2>
+<h3 id="1-pcap--流量分析">1. PCAP / 流量分析</h3>
+<ul><li>大量 <code>404</code>：</li><li>目录扫描。</li><li>大量 <code>select ... from</code>：</li><li>SQL 注入。</li><li>单 IP 多端口连续请求，或多 IP 扫相同端口：</li><li>端口扫描。</li><li>登录接口高频失败：</li><li>爆破。</li><li>高频 POST、异常参数、异常 UA：</li><li>可能是 WebShell 通信。</li></ul>
+<h3 id="2-wireshark-过滤规则">2. Wireshark 过滤规则</h3>
+<h4 id="ip">IP</h4>
+<ul><li><code>ip.src==1.1.1.1</code></li><li><code>ip.dst==1.1.1.1</code></li></ul>
+<h4 id="端口">端口</h4>
+<ul><li><code>tcp.port==80</code></li><li><code>tcp.srcport==80</code></li><li><code>tcp.dstport==80</code></li></ul>
+<h4 id="协议-2">协议</h4>
+<ul><li><code>http</code></li></ul>
+<h4 id="请求方法">请求方法</h4>
+<ul><li><code>http.request.method==&quot;GET&quot;</code></li><li><code>http.request.method==&quot;POST&quot;</code></li></ul>
+<h3 id="3-高危端口">3. 高危端口</h3>
+<ul><li><code>21</code>：FTP</li><li><code>22</code>：SSH</li><li><code>23</code>：Telnet</li><li><code>80</code>：Web</li><li><code>81</code>：Web</li><li><code>139/445</code>：SMB / IPC</li><li><code>1433</code>：MSSQL</li><li><code>1521</code>：Oracle</li><li><code>3306</code>：MySQL</li><li><code>3389</code>：RDP</li><li><code>6379</code>：Redis</li><li><code>7001/7002</code>：WebLogic</li><li><code>8080</code>：Tomcat</li><li><code>8888</code></li><li><code>50050</code>：Cobalt Strike 默认端口</li></ul>
+<h3 id="4-log4j-漏洞">4. Log4j 漏洞</h3>
+<ul><li>关键点：</li><li>日志中出现 <code>${...}</code>；</li><li>触发表达式解析与替换；</li><li>可配合 JNDI 远程加载。</li></ul>
+<hr>
+<h2 id="八webshell-与木马流量特征">八、WebShell 与木马流量特征</h2>
+<h3 id="1-菜刀">1. 菜刀</h3>
+<ul><li>早期多为明文，后常见 Base64。</li><li>常见参数：</li><li><code>z0</code></li><li><code>z1</code></li><li><code>z2</code></li><li>常见执行函数：</li><li><code>eval</code></li><li>少量情况可能为 <code>assert</code></li><li>参数接收可能来自：</li><li><code>$_POST</code></li><li><code>$_GET</code></li><li><code>$_REQUEST</code></li></ul>
+<h3 id="2-蚁剑">2. 蚁剑</h3>
+<ul><li>默认 <code>User-Agent</code> 常见 <code>antsword</code></li><li>常见特征代码：</li><li><code>@ini_set(&quot;display_errors&quot;,&quot;0&quot;);</code></li><li>混淆后参数名常为：</li><li><code>_0x...</code></li></ul>
+<h3 id="3-冰蝎">3. 冰蝎</h3>
+<h4 id="通用特征">通用特征</h4>
+<ul><li>常为 POST 请求；</li><li><code>Content-Type: application/octet-stream</code> 为强特征；</li><li>默认 <code>Accept</code> 与默认 UA 偏旧，属弱特征。</li></ul>
+<h4 id="冰蝎-2">冰蝎 2</h4>
+<ul><li>默认 <code>Accept</code> 值较特殊；</li><li>默认内置 UA 偏旧；</li><li><code>Content-Length: 16</code> 常被作为连接特征。</li></ul>
+<h4 id="冰蝎-3">冰蝎 3</h4>
+<ul><li>取消动态密钥获取；</li><li>常见 POST；</li><li><code>application/octet-stream</code> 仍值得重点关注；</li><li>默认 UA 也较旧，但可以修改。</li></ul>
+<h3 id="4-哥斯拉">4. 哥斯拉</h3>
+<ul><li>常为加密流量；</li><li>默认 <code>User-Agent</code> 可能带 Java 版本信息。</li></ul>
+<p>常见特征：</p>
+<ul><li>发送固定代码后 HTTP 响应为空；</li><li>发送固定测试代码，结果固定；</li><li>存在如 <code>getBasicsInfo</code> 的固定交互阶段。</li></ul>
+<h3 id="5-webshell-简介">5. WebShell 简介</h3>
+<p>WebShell 是以 <code>asp</code>、<code>php</code>、<code>jsp</code>、<code>cgi</code> 等形式存在的后门或远程管理代码，可用于文件管理、命令执行、数据库管理、权限维持等。</p>
+<hr>
+<h2 id="九天眼与告警平台面试题">九、天眼与告警平台面试题</h2>
+<h3 id="1-常见字段">1. 常见字段</h3>
+<ul><li><code>sip</code>：源 IP</li><li><code>dip</code>：目的 IP</li><li><code>sport</code>：源端口</li><li><code>dport</code>：目的端口</li><li><code>proto</code>：协议</li><li><code>from</code>：发件人</li><li><code>GEO</code>：地理位置</li><li><code>IOC</code>：命中的威胁情报</li><li><code>attack sip</code>：攻击者 IP</li></ul>
+<h3 id="2-dns-字段">2. DNS 字段</h3>
+<ul><li><code>dns type</code></li><li><code>0</code>：DNS 请求</li><li><code>1</code>：DNS 响应</li><li><code>addr</code></li><li>表示 Host 对应的 IP 地址信息</li><li>可能有多条记录</li></ul>
+<h3 id="3-告警状态">3. 告警状态</h3>
+<ul><li>成功</li><li>失败</li><li>尝试</li><li>未知</li></ul>
+<p>说明：</p>
+<ul><li><code>未知</code> 往往是告警异常生成；</li><li><code>尝试</code> 不能忽略，需要继续分析。</li></ul>
+<h3 id="4-常见问答">4. 常见问答</h3>
+<h4 id="天眼可以捕捉到-cmd-命令吗">天眼可以捕捉到 CMD 命令吗</h4>
+<p>可以。尤其是远控内网主机并回显执行结果时，可能在流量中体现。</p>
+<h4 id="内网横向常见告警类型">内网横向常见告警类型</h4>
+<ul><li>CS 相关</li><li>隧道类</li><li>内网扫描</li><li>暴力破解</li></ul>
+<h4 id="如何判断资产是否失陷">如何判断资产是否失陷</h4>
+<ul><li>持续外联恶意地址；</li><li>存在 Shell 或隧道连接；</li><li>内网主机持续攻击其他内网资产。</li></ul>
+<h4 id="受害-ip-为源-ip-说明什么">受害 IP 为源 IP 说明什么</h4>
+<p>可能说明主机已被控后主动对外通信，也可能存在 IP 欺骗，要结合上下文分析。</p>
+<h4 id="如何搜索端口">如何搜索端口</h4>
+<ul><li><code>sport eq 80</code></li><li><code>sport eq 80 or sport eq 443</code></li></ul>
+<h4 id="如何搜索源-ip-为-a目的-ip-为-b">如何搜索源 IP 为 A、目的 IP 为 B</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">ip(A) AND dip(B)</code></pre></div>
+<p>说明：</p>
+<ul><li>运算符要大写：</li><li><code>AND</code></li><li><code>OR</code></li><li><code>NOT</code></li></ul>
+<h4 id="目的-ip-是-114114114114端口是-53要不要封">目的 IP 是 <code>114.114.114.114</code>，端口是 <code>53</code>，要不要封</h4>
+<p>不能直接封。这个通常是 DNS 地址，应先确认真实受害资产和上下文。</p>
+<h4 id="不出网主机通过哪种代理建立连接">不出网主机通过哪种代理建立连接</h4>
+<ul><li>常见回答：正向代理。</li></ul>
+<h4 id="正向代理与反向代理">正向代理与反向代理</h4>
+<ul><li>正向代理：代理客户端，服务端不知道真实客户端。</li><li>反向代理：代理服务端，客户端不知道真实服务端。</li></ul>
+<h4 id="天眼小工具能做什么">天眼小工具能做什么</h4>
+<ul><li>常见编码解码，如：</li><li>Base64</li><li>URL</li></ul>
+<h4 id="主机外联排查思路">主机外联排查思路</h4>
+<ul><li>判断外联目标是否恶意；</li><li>是否为 DNSLog 平台；</li><li>是否高频请求；</li><li>是否命中威胁情报。</li></ul>
+<h4 id="告警成功如何处理">告警成功如何处理</h4>
+<ul><li>先判断是否真的利用成功；</li><li>结合回显特征和数据包分析；</li><li>若无法仅凭数据包判断，可尝试复现；</li><li>确认成功后，立即同步研判组或客户。</li></ul>
+<hr>
+<h2 id="十应急响应">十、应急响应</h2>
+<h3 id="1-网站被挂马如何应急">1. 网站被挂马如何应急</h3>
+<h4 id="取证">取证</h4>
+<ul><li>登录服务器</li><li>备份现场</li><li>检查敏感目录</li><li>搜索后门文件</li><li>关注文件时间、用户、后缀</li><li>调取系统日志、中间件日志、WAF 日志</li></ul>
+<h4 id="处理">处理</h4>
+<ul><li>恢复备份或快照</li><li>确认入侵方式</li><li>修复漏洞</li></ul>
+<h4 id="溯源">溯源</h4>
+<ul><li>查入侵 IP</li><li>查攻击手法</li><li>查攻击路径</li></ul>
+<h4 id="记录">记录</h4>
+<ul><li>归档事件</li><li>形成闭环：</li><li>预防</li><li>检测</li><li>抑制</li><li>根除</li><li>恢复</li><li>跟踪</li><li>记录</li></ul>
+<h3 id="2-入侵排查流程">2. 入侵排查流程</h3>
+<h4 id="检查账号安全">检查账号安全</h4>
+<ul><li>是否存在弱口令</li><li>远程管理端口是否暴露</li><li>是否有隐藏账号、克隆账号、可疑账号</li><li>结合登录日志看时间和用户名是否异常</li></ul>
+<h4 id="检查异常端口和进程">检查异常端口和进程</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">netstat -ano
+tasklist | findstr &quot;PID&quot;</code></pre></div>
+<p>重点看：</p>
+<ul><li>异常外连</li><li>异常 <code>ESTABLISHED</code></li><li>可疑 PID 对应进程</li></ul>
+<h4 id="检查启动项计划任务服务">检查启动项、计划任务、服务</h4>
+<ul><li><code>msconfig</code></li><li><code>regedit</code></li></ul>
+<h4 id="检查系统信息">检查系统信息</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">systeminfo</code></pre></div>
+<h4 id="日志分析">日志分析</h4>
+<ul><li><code>eventvwr.msc</code></li><li>导出：</li><li>应用程序日志</li><li>安全日志</li><li>系统日志</li><li>可结合 Log Parser</li></ul>
+<h3 id="3-如何判断情报或告警是否误报">3. 如何判断情报或告警是否误报</h3>
+<ul><li>看告警时间</li><li>看访问对象</li><li>看 <code>payload</code></li><li>用 Wireshark 看是否为正常业务流量</li><li>结合应用日志、主机日志和安全设备日志综合判断</li></ul>
+<h3 id="4-如何判断是否被拿-shell">4. 如何判断是否被拿 Shell</h3>
+<h4 id="webshell">WebShell</h4>
+<ul><li>查 Web 日志</li><li>分析攻击流量</li><li>扫 WebShell</li><li>排查网站目录最近改动文件</li></ul>
+<h4 id="系统-shell">系统 Shell</h4>
+<ul><li>查未知端口</li><li>查未知进程</li><li>查恶意外联</li><li>锁定感染进程</li><li>结合安全设备日志</li></ul>
+<h3 id="5-服务器被入侵后怎么做">5. 服务器被入侵后怎么做</h3>
+<p>回答模板：</p>
+<ul><li>查日志</li><li>查服务</li><li>查进程</li><li>查可疑登录</li><li>查新增账号</li><li>找入口点和持久化</li><li>清除恶意文件和计划任务</li><li>修复漏洞并加固</li><li>最后复盘形成报告</li></ul>
+<h3 id="6-内网报警处理思路">6. 内网报警处理思路</h3>
+<ul><li>先定位具体主机</li><li>明确漏洞类型</li><li>打补丁</li><li>Linux 重点看：</li><li><code>/var/log/secure</code></li><li><code>~/.bash_history</code></li><li><code>/tmp</code></li><li>使用 WebShell / Shell 查杀工具</li><li>看是否横向到其他主机</li><li>拿到攻击 IP 后可结合情报平台判断：</li><li>傀儡机</li><li>VPS</li><li>云主机</li></ul>
+<h4 id="溯源方向">溯源方向</h4>
+<ul><li>Whois</li><li>域名绑定</li><li>邮箱关联</li><li>社工信息</li></ul>
+<p>面试里建议围绕三点说：</p>
+<ul><li>应急响应</li><li>加固</li><li>溯源</li></ul>
+<h3 id="7-日志或木马文件被删除怎么办">7. 日志或木马文件被删除怎么办</h3>
+<ul><li>可尝试用 <code>lsof</code> 恢复被删除文件；</li><li>继续查日志、查进程、查服务；</li><li>查新增账号。</li></ul>
+<h3 id="8-服务中了-webshell怎样快速定位">8. 服务中了 WebShell，怎样快速定位</h3>
+<ul><li>从日志、流量、文件三条线入手；</li><li>看敏感目录：</li><li><code>/tmp</code></li><li><code>/usr/sbin</code></li><li><code>/etc/ssh</code></li><li>看新增文件、修改文件、异常权限文件，如 <code>777</code></li><li>从 UA 和 <code>payload</code> 关联分析</li><li>用时间线还原攻击过程</li><li>从进程和内存看长期占用、异常占用的可疑进程</li></ul>
+<h3 id="9-sql-注入告警如何判断是否成功">9. SQL 注入告警如何判断是否成功</h3>
+<ul><li>先看来源 IP 是否为内部业务</li><li>再看 <code>payload</code> 是否可真实利用</li><li>判断安全设备是否拦截</li><li>查应用、数据库、系统日志是否已有影响</li><li>若成功：</li><li>立即上报</li><li>进入应急响应</li><li>临时添加拦截规则</li><li>修改敏感账号密码</li></ul>
+<h3 id="10-如何判断主机是否异常外联">10. 如何判断主机是否异常外联</h3>
+<ol><li>看目标是否命中情报</li><li>看是否为 DNSLog、恶意下载、C2 地址</li><li>看访问频率是否异常</li><li>结合进程、端口、时间线做关联</li></ol>
+<hr>
+<h2 id="十一安全设备与防护部署">十一、安全设备与防护部署</h2>
+<h3 id="1-waf">1. WAF</h3>
+<ul><li>可通过 <code>CNAME</code> 接入防护域名；</li><li>修改 DNS，将流量切到 WAF；</li><li>面试可强调：</li><li>规则防护；</li><li>日志审计；</li><li>临时拦截；</li><li>溯源辅助。</li></ul>
+<h3 id="2-蜜罐">2. 蜜罐</h3>
+<h4 id="定义">定义</h4>
+<p>故意暴露脆弱面的诱饵系统，用于采集攻击行为和特征。</p>
+<h4 id="可尝试实践">可尝试实践</h4>
+<ul><li>微步 <code>Hfish</code></li></ul>
+<h4 id="面试常问部署蜜罐开放哪些端口">面试常问：部署蜜罐开放哪些端口</h4>
+<ul><li><code>21</code>：FTP 爆破</li><li><code>22</code>：SSH 爆破</li><li><code>23</code>：Telnet 爆破</li><li><code>80/443</code>：Web 攻击</li><li><code>1521</code>：Oracle 爆破与利用</li><li><code>3306</code>：MySQL 爆破与 UDF 利用</li><li><code>3389</code>：远程桌面爆破</li><li><code>6379</code>：Redis 未授权</li><li><code>445</code>：SMB 攻击与爆破</li><li><code>1433</code>：SQL Server 爆破与存储过程利用</li><li><code>135/139</code>：RPC/共享攻击</li><li><code>8080</code>：可部署假 VPN 页面作为诱饵</li></ul>
+<hr>
+<h2 id="十二内网渗透全流程">十二、内网渗透全流程</h2>
+<h3 id="1-总体流程">1. 总体流程</h3>
+<ul><li>拿到跳板机</li><li>探测内网存活主机</li><li>判断是否在域内</li><li>提权</li><li>提取 Hash</li><li>横向移动</li><li>定位域控</li><li>查找可直接提权为域管的漏洞</li><li>拿下域控后维权</li><li>制作黄金票据</li><li>清理日志</li></ul>
+<h3 id="2-主机信息收集">2. 主机信息收集</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">ipconfig /all
+systeminfo | findstr /B /C:&quot;OS 名称&quot; /C:&quot;OS 版本&quot;
+systeminfo | findstr /B /C:&quot;OS Name&quot; /C:&quot;OS Version&quot;
+wmic /namespace:\\root\\securitycenter2 path antivirusproduct GET displayName,productState,pathToSignedProductExe
+net user
+net localgroup administrators
+netstat -ano
+wmic qfe get Caption,Description,HotFixID,InstalledOn
+netsh firewall show config</code></pre></div>
+<h3 id="3-域内信息收集">3. 域内信息收集</h3>
+<h4 id="判断是否在域内">判断是否在域内</h4>
+<ul><li><code>ipconfig /all</code></li><li><code>nslookup</code></li><li><code>net config workstation</code></li></ul>
+<h4 id="探测存活主机">探测存活主机</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">for /L %I in (1,1,254) DO @ping -w 1 -n 1 192.168.174.%I | findstr &quot;TTL=&quot;</code></pre></div>
+<h4 id="域相关命令">域相关命令</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">net view /domain
+net view /domain:XXX
+net group /domain
+net user /domain
+net group &quot;Domain Admins&quot; /domain
+whoami /all</code></pre></div>
+<h4 id="查找域控">查找域控</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-powershell" data-lang="powershell">nslookup -type=SRV _ldap._tcp
+net time /domain
+net group &quot;Domain Controllers&quot; /domain</code></pre></div>
+<h3 id="4-内网环境不出网怎么办">4. 内网环境不出网怎么办</h3>
+<ul><li>通过 WebShell 做内网 Socket 代理</li><li>正向连接</li><li>SSH 隧道</li><li>DNS 通道，如 <code>dnscat2</code></li><li>TCP 隧道</li><li>测试特定协议或端口是否可出网</li></ul>
+<hr>
+<h2 id="十三面试速记模板">十三、面试速记模板</h2>
+<h3 id="1-如果一台服务器被入侵你怎么应急">1. 如果一台服务器被入侵，你怎么应急</h3>
+<ul><li>先保留现场和备份</li><li>查日志、查进程、查端口、查账号</li><li>找入口点和持久化</li><li>清除恶意文件和任务</li><li>修复漏洞并加固</li><li>最后复盘和写报告</li></ul>
+<h3 id="2-如何判断-sql-注入告警是真攻击还是误报">2. 如何判断 SQL 注入告警是真攻击还是误报</h3>
+<ul><li>确认来源 IP</li><li>分析 <code>payload</code></li><li>看设备是否拦截成功</li><li>查数据库、应用、系统日志</li><li>若已成功，立即按入侵事件处理</li></ul>
+<h3 id="3-如何快速定位-webshell">3. 如何快速定位 WebShell</h3>
+<ul><li>先从 Web 日志定位时间点</li><li>再从请求包提取特征</li><li>到文件系统查对应时间新增或变更文件</li><li>最后结合进程、网络连接做关联</li></ul>
+<h3 id="4-告警成功怎么处理">4. 告警成功怎么处理</h3>
+<ol><li>判断是否真实成功</li><li>记录问题详情</li><li>同步研判组或客户</li><li>若失败，继续判断是人工攻击还是工具攻击</li><li>扩线分析攻击 IP 是否还有其他行为</li><li>记录发现时间、攻击手法、影响范围</li></ol>
+<h3 id="5-蓝队初级核心复习顺序">5. 蓝队初级核心复习顺序</h3>
+<ol><li>应急响应流程</li><li>告警研判与误报排查</li><li>常见漏洞原理与绕过</li><li>WebShell 流量特征</li><li>天眼字段与检索语法</li><li>内网基础</li></ol>
+<hr>
+<h2 id="十四总结">十四、总结</h2>
+<p>蓝队初级面试整体不算难，但问得最细的一般是：</p>
+<ul><li>应急响应</li><li>日志分析</li><li>安全设备告警分析</li><li>常见漏洞原理和 <code>payload</code></li><li>WebShell 流量特征</li></ul>
+<p>如果时间有限，优先背熟这三块：</p>
+<ul><li>应急响应流程</li><li>告警研判思路</li><li>常见漏洞与流量特征</li></ul></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/4.diao-yu-you-jian-fen-xi-yu-pai-cha/"><small>← 上一篇</small><span>4.钓鱼邮件分析与排查</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>
