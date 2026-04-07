@@ -376,6 +376,14 @@ def render_home(posts: list[PostRecord]) -> str:
 
     content = (
         '<div class="home">'
+        '<section class="intro">'
+        '<div class="intro-content">'
+        f'<h1>{html.escape(INTRO_TITLE)}</h1>'
+        f'<p class="intro-subtitle">{html.escape(INTRO_SUBTITLE)}</p>'
+        f'<p class="intro-text">{html.escape(INTRO_TEXT)}</p>'
+        '</div>'
+        f'<div class="intro-avatar"><img src="{html.escape(AVATAR)}" alt="{html.escape(INTRO_TITLE)}"></div>'
+        '</section>'
         '<div class="featured">'
         '<h2>Featured Posts</h2>'
         f'<div class="featured-list">{"".join(cards)}</div>'
