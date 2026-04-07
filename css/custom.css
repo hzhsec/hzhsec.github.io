@@ -117,3 +117,57 @@ figcaption {
   }
 }
 
+/* ???????? */
+.paginator {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.8rem;
+  padding-top: 1.4rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.16);
+}
+
+.paginator a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 1rem;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.paginator a:hover {
+  border-color: rgba(159, 178, 200, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.paginator a small {
+  color: #9fb2c8;
+  font-size: 0.85rem;
+}
+
+.paginator a span {
+  color: #f2f5f8;
+}
+
+.paginator .next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .paginator {
+    flex-direction: column;
+  }
+
+  .paginator .next {
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+

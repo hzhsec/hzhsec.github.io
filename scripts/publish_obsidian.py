@@ -418,9 +418,13 @@ def render_article(post: PostRecord, prev_post: Optional[PostRecord], next_post:
     if prev_post or next_post:
         paginator.append('<div class="paginator">')
         if prev_post:
-            paginator.append(f'<a class="prev" href="{abs_url(prev_post.rel_permalink)}"><span>{html.escape(prev_post.title)}</span></a>')
+            paginator.append(
+                f'<a class="prev" href="{abs_url(prev_post.rel_permalink)}"><small>← 上一篇</small><span>{html.escape(prev_post.title)}</span></a>'
+            )
         if next_post:
-            paginator.append(f'<a class="next" href="{abs_url(next_post.rel_permalink)}"><span>{html.escape(next_post.title)}</span></a>')
+            paginator.append(
+                f'<a class="next" href="{abs_url(next_post.rel_permalink)}"><small>下一篇 →</small><span>{html.escape(next_post.title)}</span></a>'
+            )
         paginator.append('</div>')
     toc_block = f'<div class="blog-toc">{post.toc_html}</div>' if post.toc_html else ''
     content = f'<article class="blog-single"><header class="blog-title"><h1>{html.escape(post.title)}</h1></header><p><small>{minute_text(post)}</small><p>{toc_block}<section class="blog-content">{post.body_html}</section>{"".join(paginator)}</article>'
