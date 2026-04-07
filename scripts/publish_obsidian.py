@@ -344,12 +344,30 @@ def render_listing(title: str, canonical_path: str, posts: list[PostRecord], chi
     return page(title, canonical_path, content, desc)
 
 def render_home(posts: list[PostRecord]) -> str:
-    featured = [post for post in posts if post.featured] or posts[:6]
-    featured = featured[:6]
+    featured = [post for post in posts if post.featured]
+    seen = {post.rel_permalink for post in featured}
+    for post in posts:
+        if len(featured) >= 6:
+            break
+        if post.rel_permalink in seen:
+            continue
+        featured.append(post)
+        seen.add(post.rel_permalink)
+
     cards = []
-    for post in featured:
-        cards.append(f'<article class="featured-single"><h4><a href="/{quote_path(post.rel_permalink).strip("/")}">{html.escape(post.title)}</a></h4><p><small>{minute_text(post)}</small><p><p>{html.escape(post.summary)}</p></article>')
-    content = f'<div class="home"><div class="info"><div class="intro"><h1>{INTRO_TITLE}</h1><small>{INTRO_SUBTITLE}</small><p>{INTRO_TEXT}</p></div><div class="avatar"><img src="{AVATAR}" alt="hzhsec.png"></div></div><div class="featured"><h2>Featured Posts</h2><div class="featured-list">{"".join(cards)}</div></div></div>'
+    for post in featured[:6]:
+        cards.append(
+            f'<article class="featured-single"><h4><a href="/{quote_path(post.rel_permalink).strip("/")}">{html.escape(post.title)}</a></h4><p><small>{minute_text(post)}</small><p></article>'
+        )
+
+    content = (
+        '<div class="home">'
+        '<div class="featured">'
+        '<h2>Featured Posts</h2>'
+        f'<div class="featured-list">{"".join(cards)}</div>'
+        '</div>'
+        '</div>'
+    )
     return page(SITE_TITLE, "", content)
 
 def render_archive(posts: list[PostRecord]) -> str:
