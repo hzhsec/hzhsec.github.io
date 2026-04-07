@@ -249,6 +249,7 @@ HTML_PAGE = """<!DOCTYPE html>
     </form>
   </div>
   <script>
+    const form = document.querySelector("form.card");
     const fileInput = document.getElementById("note_file");
     const fields = {
       title: document.getElementById("title"),
@@ -261,93 +262,69 @@ HTML_PAGE = """<!DOCTYPE html>
       section_titles: document.getElementById("section_titles")
     };
 
+    const notice = document.createElement("div");
+    notice.className = "notice info";
+    notice.style.display = "none";
+    form.appendChild(notice);
+
+    function showNotice(message, level = "info") {
+      notice.className = `notice ${level}`;
+      notice.textContent = message;
+      notice.style.display = "block";
+    }
+
     function fillIfEmpty(input, value) {
       if (!input || input.value.trim() || !value) return;
       input.value = value;
     }
 
-    function normalizeList(value) {
-      if (Array.isArray(value)) return value.join(", ");
-      if (typeof value === "string") return value;
-      return "";
+    function applyMeta(meta) {
+      fillIfEmpty(fields.title, meta.title || "");
+      fillIfEmpty(fields.date, meta.date || "");
+      fillIfEmpty(fields.section, meta.section || "");
+      fillIfEmpty(fields.slug, meta.slug || "");
+      fillIfEmpty(fields.categories, meta.categories || "");
+      fillIfEmpty(fields.tags, meta.tags || "");
+      fillIfEmpty(fields.summary, meta.summary || "");
+      fillIfEmpty(fields.section_titles, meta.section_titles || "");
+      return {
+        title: fields.title.value,
+        date: fields.date.value,
+        section: fields.section.value,
+        slug: fields.slug.value,
+        categories: fields.categories.value,
+        tags: fields.tags.value,
+        summary: fields.summary.value,
+        section_titles: fields.section_titles.value
+      };
     }
 
-    function parseSimpleYaml(yamlText) {
-      const result = {};
-      let currentKey = null;
-      for (const rawLine of yamlText.split(/\r?\n/)) {
-        const line = rawLine.replace(/^\uFEFF/, "");
-        if (!line.trim()) continue;
-        if (/^\s*-\s+/.test(line) && currentKey) {
-          result[currentKey] = result[currentKey] || [];
-          result[currentKey].push(line.replace(/^\s*-\s+/, "").trim());
-          continue;
-        }
-        const match = line.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
-        if (!match) {
-          currentKey = null;
-          continue;
-        }
-        const key = match[1].trim();
-        let value = match[2].trim();
-        if (!value) {
-          result[key] = result[key] || [];
-          currentKey = key;
-          continue;
-        }
-        value = value.replace(/^['"]|['"]$/g, "");
-        result[key] = value;
-        currentKey = key;
+    async function parseSelectedFile(file) {
+      const data = new FormData();
+      data.append("note_file", file, file.name);
+      const response = await fetch("/parse", { method: "POST", body: data });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const rawText = await response.text();
+        throw new Error(`?????? JSON ?????????????????????${rawText.slice(0, 80)}`);
       }
-      return result;
-    }
-
-    function defaultSlugFromName(name) {
-      return name.replace(/\.[^.]+$/, "").trim();
-    }
-
-    function fillFromText(file, text) {
-      const cleaned = String(text || "").replace(/^﻿/, "");
-      fillIfEmpty(fields.title, file.name.replace(/\.[^.]+$/, ""));
-      fillIfEmpty(fields.slug, defaultSlugFromName(file.name));
-
-      const headingMatch = cleaned.match(/^#\s+(.+)$/m);
-      if (headingMatch) {
-        fillIfEmpty(fields.title, headingMatch[1].trim());
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "????");
       }
-
-      const match = cleaned.match(/^---\s*?
-([\s\S]*?)?
----\s*(?:?
-|$)/);
-      if (!match) return;
-
-      const meta = parseSimpleYaml(match[1]);
-      fillIfEmpty(fields.title, meta.title);
-      fillIfEmpty(fields.date, meta.date);
-      fillIfEmpty(fields.slug, meta.slug);
-      fillIfEmpty(fields.section, meta.section || meta.path || meta.dir || meta.sections);
-      fillIfEmpty(fields.categories, normalizeList(meta.categories));
-      fillIfEmpty(fields.tags, normalizeList(meta.tags));
-      fillIfEmpty(fields.summary, meta.summary);
-      if (meta.section_titles && !fields.section_titles.value.trim() && typeof meta.section_titles === "string") {
-        fields.section_titles.value = meta.section_titles;
-      }
+      const serverMeta = payload.meta || {};
+      const filledMeta = applyMeta(serverMeta);
+      showNotice(`??????${file.name}\n\n????????${JSON.stringify(serverMeta, null, 2)}\n\n??????${JSON.stringify(filledMeta, null, 2)}`, "ok");
     }
 
-    fileInput.addEventListener("change", (event) => {
+    fileInput.addEventListener("change", async (event) => {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        fillFromText(file, reader.result || "");
-      };
-      reader.onerror = () => {
-        fillIfEmpty(fields.title, file.name.replace(/\.[^.]+$/, ""));
-        fillIfEmpty(fields.slug, defaultSlugFromName(file.name));
-      };
-      reader.readAsText(file, "utf-8");
+      try {
+        await parseSelectedFile(file);
+      } catch (error) {
+        showNotice(`?????${error.message || error}`, "err");
+      }
     });
   </script>
 </body>
@@ -374,6 +351,48 @@ def parse_section_titles(value: str) -> dict[str, str]:
     return result
 
 
+def metadata_to_form_values(filename: str, content: bytes) -> dict[str, str]:
+    """???? Markdown ??????????"""
+    text = content.decode("utf-8-sig")
+    meta, body = pub.parse_front_matter(text)
+    body = body.lstrip("﻿").lstrip()
+    if body.startswith("---"):
+        body = body[3:].lstrip()
+
+    title = pub.normalize_text(meta.get("title")) or Path(filename).stem
+    heading_match = None
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            heading_match = stripped[2:].strip()
+            break
+    if heading_match and not pub.normalize_text(meta.get("title")):
+        title = heading_match
+
+    raw_section = meta.get("section") or meta.get("path") or meta.get("dir") or meta.get("sections")
+    section_value = ""
+    if isinstance(raw_section, list):
+        section_value = "/".join(str(item).strip() for item in raw_section if str(item).strip())
+    elif raw_section is not None:
+        section_value = str(raw_section).strip()
+
+    section_titles = meta.get("section_titles") or {}
+    if isinstance(section_titles, dict):
+        section_titles_text = "; ".join(f"{key}={value}" for key, value in section_titles.items())
+    else:
+        section_titles_text = ""
+
+    return {
+        "title": title,
+        "date": pub.normalize_text(meta.get("date")),
+        "section": section_value,
+        "slug": pub.normalize_text(meta.get("slug")) or Path(filename).stem,
+        "categories": ", ".join(pub.normalize_list(meta.get("categories"))),
+        "tags": ", ".join(pub.normalize_list(meta.get("tags"))),
+        "summary": pub.normalize_text(meta.get("summary")),
+        "section_titles": section_titles_text,
+    }
+
 def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: dict[str, Any]) -> str:
     """将上传的笔记内容发布到站点。"""
     posts, sections = pub.load_state(site_root)
@@ -395,6 +414,8 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             "summary": form.get("summary", "").strip(),
             "featured": form.get("featured") == "on",
             "section_titles": parse_section_titles(form.get("section_titles", "")),
+            # ????????????????? section ???????????
+            "_fallback_section": split_csv(form.get("categories", ""))[0] if not form.get("section", "").strip() and split_csv(form.get("categories", "")) else "",
         }
 
         meta, body = pub.parse_front_matter(text)
@@ -424,41 +445,42 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
 
 
 class PublishHandler(BaseHTTPRequestHandler):
-    """处理网页表单请求。"""
+    """?????????"""
 
     site_root: Path = Path.cwd()
 
     def do_GET(self) -> None:
         self.respond(message="", level="info")
 
+    def parse_request_form(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(length)
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            raise ValueError("??????????? multipart/form-data")
+        import cgi
+        environ = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": content_type,
+            "CONTENT_LENGTH": str(length),
+        }
+        temp = tempfile.SpooledTemporaryFile()
+        temp.write(body)
+        temp.seek(0)
+        return cgi.FieldStorage(fp=temp, headers=self.headers, environ=environ)
+
     def do_POST(self) -> None:
         try:
-            length = int(self.headers.get("Content-Length", "0"))
-            body = self.rfile.read(length)
-            content_type = self.headers.get("Content-Type", "")
-
-            if "multipart/form-data" not in content_type:
-                raise ValueError("请求类型错误，必须使用 multipart/form-data")
-
-            import cgi
-            environ = {"REQUEST_METHOD": "POST"}
-            headers = {"content-type": content_type}
-            fs = cgi.FieldStorage(
-                fp=tempfile.SpooledTemporaryFile(),
-                headers=self.headers,
-                environ={**environ, "CONTENT_TYPE": content_type, "CONTENT_LENGTH": str(length)},
-            )
-            fs.file.write(body)
-            fs.file.seek(0)
-            fs = cgi.FieldStorage(
-                fp=fs.file,
-                headers=self.headers,
-                environ={**environ, "CONTENT_TYPE": content_type, "CONTENT_LENGTH": str(length)},
-            )
-
+            fs = self.parse_request_form()
             note_item = fs["note_file"] if "note_file" in fs else None
             if note_item is None or not getattr(note_item, "filename", ""):
-                raise ValueError("请先选择一个 Markdown 文件")
+                raise ValueError("?????? Markdown ??")
+
+            route = self.path.rstrip("/") or "/"
+            if route == "/parse":
+                meta = metadata_to_form_values(Path(note_item.filename).name, note_item.file.read())
+                self.respond_json({"ok": True, "meta": meta})
+                return
 
             form = {
                 key: fs.getvalue(key, "")
@@ -468,7 +490,11 @@ class PublishHandler(BaseHTTPRequestHandler):
             level = "info" if form.get("dry_run") == "on" else "ok"
             self.respond(message=message, level=level)
         except Exception as error:
-            self.respond(message=f"发布失败\n\n{error}", level="err")
+            route = self.path.rstrip("/") or "/"
+            if route == "/parse":
+                self.respond_json({"ok": False, "error": str(error)}, status=400)
+                return
+            self.respond(message=f"????\n\n{error}", level="err")
 
     def log_message(self, format: str, *args: object) -> None:
         return
@@ -481,6 +507,14 @@ class PublishHandler(BaseHTTPRequestHandler):
         encoded = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def respond_json(self, payload: dict[str, Any], status: int = 200) -> None:
+        encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)

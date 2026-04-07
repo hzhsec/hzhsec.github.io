@@ -392,7 +392,13 @@ def build_note(note_path: Path, existing: Optional[PostRecord], sections: dict[s
     if body.startswith("---"):
         body = body[3:].lstrip()
     title = normalize_text(meta.get("title")) or note_path.stem
-    raw_section = meta.get("section") or meta.get("path") or meta.get("dir") or meta.get("sections")
+    raw_section = (
+        meta.get("section")
+        or meta.get("path")
+        or meta.get("dir")
+        or meta.get("sections")
+        or meta.get("_fallback_section")
+    )
     section_path = normalize_list(raw_section)
     if len(section_path) == 1 and "/" in section_path[0]:
         section_path = [item for item in section_path[0].split("/") if item]
