@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.钓鱼邮件分析与排查</title><meta charset="utf-8"><meta name="description" content="Ladder@免责声明：本文仅用于授权场景下的安全分析、检测与应急排查，请勿用于未授权测试或违法用途。 一、概述 电子邮件相关协议主要包括： `SMTP`：发送和转发邮件 `POP3`：拉取邮件 `IMAP`：同步和管理邮件 钓鱼邮件分析的核心目标通常有三个： 判断这封邮件是否为恶意或伪造邮件 判断附件、链接、发件源是否存在风险 判断收件人是否已经点击、登录、执行附件并造"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/4.diao-yu-you-jian-fen-xi-yu-pai-cha/"><meta property="og:title" content="4.钓鱼邮件分析与排查" /><meta property="og:description" content="免责声明：本文仅用于授权场景下的安全分析、检测与应急排查，请勿用于未授权测试或违法用途。 一、概述 电子邮件相关协议主要包括： `SMTP`：发送和转发邮件 `POP3`：拉取邮件 `IMAP`：同步和管理邮件 钓鱼邮件分析的核心目标通常有三个： 判断这封邮件是否为恶意或伪造邮件 判断附件、链接、发件源是否存在风险 判断收件人是否已经点击、登录、执行附件并造" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/4.diao-yu-you-jian-fen-xi-yu-pai-cha/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-04-07T22:20:17.149685+08:00" /><meta property="article:modified_time" content="2026-04-07T22:20:17.149685+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="4.钓鱼邮件分析与排查"/><meta name="twitter:description" content="免责声明：本文仅用于授权场景下的安全分析、检测与应急排查，请勿用于未授权测试或违法用途。 一、概述 电子邮件相关协议主要包括： `SMTP`：发送和转发邮件 `POP3`：拉取邮件 `IMAP`：同步和管理邮件 钓鱼邮件分析的核心目标通常有三个： 判断这封邮件是否为恶意或伪造邮件 判断附件、链接、发件源是否存在风险 判断收件人是否已经点击、登录、执行附件并造"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>4.钓鱼邮件分析与排查</h1></header><p><small>April 7, 2026&nbsp;· 2785 words&nbsp;· 14 min</small><p><div class="blog-toc"><nav id="TableOfContents"><ul><li><a href="#一概述">一、概述</a></li><li><a href="#二smtp-基础">二、SMTP 基础</a></li><li><a href="#1-smtp-是什么">1. SMTP 是什么</a></li><li><a href="#2-smtp-大致通信流程">2. SMTP 大致通信流程</a></li><li><a href="#建立连接">建立连接</a></li><li><a href="#发送邮件">发送邮件</a></li><li><a href="#关闭连接">关闭连接</a></li><li><a href="#三邮件伪造原理">三、邮件伪造原理</a></li><li><a href="#1-为什么能伪造">1. 为什么能伪造</a></li><li><a href="#2-常见防伪造机制">2. 常见防伪造机制</a></li><li><a href="#spf">SPF</a></li><li><a href="#dkim">DKIM</a></li><li><a href="#dmarc">DMARC</a></li><li><a href="#3-查看域名是否配置-spf--dkim">3. 查看域名是否配置 SPF / DKIM</a></li><li><a href="#dkim-示例">DKIM 示例</a></li><li><a href="#spf-示例">SPF 示例</a></li><li><a href="#四spf-记录">四、SPF 记录</a></li><li><a href="#1-示例">1. 示例</a></li><li><a href="#2-字段说明">2. 字段说明</a></li><li><a href="#3-限定符">3. 限定符</a></li><li><a href="#4-常见写法">4. 常见写法</a></li><li><a href="#五伪造测试与原理验证">五、伪造测试与原理验证</a></li><li><a href="#1-swaks">1. Swaks</a></li><li><a href="#2-简单伪造示例">2. 简单伪造示例</a></li><li><a href="#3-spf-绕过中常见的代发思路">3. SPF 绕过中常见的代发思路</a></li><li><a href="#六钓鱼邮件分析与排查流程">六、钓鱼邮件分析与排查流程</a></li><li><a href="#总体流程">总体流程</a></li><li><a href="#初步判断是否为钓鱼邮件">初步判断是否为钓鱼邮件</a></li><li><a href="#邮件头分析">邮件头分析</a></li><li><a href="#1-建议先导出原始邮件">1. 建议先导出原始邮件</a></li><li><a href="#2-邮件头重点字段">2. 邮件头重点字段</a></li><li><a href="#3-重点看">3. 重点看</a></li><li><a href="#ioc-提取与情报分析">IOC 提取与情报分析</a></li><li><a href="#1-建议提取的-ioc">1. 建议提取的 IOC</a></li><li><a href="#2-情报分析思路">2. 情报分析思路</a></li><li><a href="#正文分析">正文分析</a></li><li><a href="#1-重点检查项">1. 重点检查项</a></li><li><a href="#2-建议">2. 建议</a></li><li><a href="#附件分析">附件分析</a></li><li><a href="#1-高风险附件类型">1. 高风险附件类型</a></li><li><a href="#2-分析流程">2. 分析流程</a></li><li><a href="#3-沙箱重点看什么">3. 沙箱重点看什么</a></li><li><a href="#4-建议">4. 建议</a></li><li><a href="#七处置建议">七、处置建议</a></li><li><a href="#1-未点击未打开附件">1. 未点击、未打开附件</a></li><li><a href="#2-已点击链接">2. 已点击链接</a></li><li><a href="#3-已打开附件">3. 已打开附件</a></li><li><a href="#八实战中的判断思路">八、实战中的判断思路</a></li></ul></nav></div><section class="blog-content"><blockquote><p>免责声明：本文仅用于授权场景下的安全分析、检测与应急排查，请勿用于未授权测试或违法用途。</p></blockquote>
+<hr>
+<h2 id="一概述">一、概述</h2>
+<p>电子邮件相关协议主要包括：</p>
+<ul><li><code>SMTP</code>：发送和转发邮件</li><li><code>POP3</code>：拉取邮件</li><li><code>IMAP</code>：同步和管理邮件</li></ul>
+<p>钓鱼邮件分析的核心目标通常有三个：</p>
+<ol><li>判断这封邮件是否为恶意或伪造邮件</li><li>判断附件、链接、发件源是否存在风险</li><li>判断收件人是否已经点击、登录、执行附件并造成影响</li></ol>
+<p>常见钓鱼关键词和场景:</p>
+<ul><li>财务报销</li><li>发票</li><li>快递异常</li><li>密码过期</li><li>学校通知</li><li>OA / VPN 登录</li><li>领导催办</li></ul>
+<hr>
+<h2 id="二smtp-基础">二、SMTP 基础</h2>
+<h3 id="1-smtp-是什么">1. SMTP 是什么</h3>
+<p><code>SMTP</code>（Simple Mail Transfer Protocol）是客户端与服务器、以及服务器之间发送和转发电子邮件的应用层协议。</p>
+<h3 id="2-smtp-大致通信流程">2. SMTP 大致通信流程</h3>
+<h4 id="建立连接">建立连接</h4>
+<ul><li>客户端与服务器基于 TCP 建立连接，默认端口为 <code>25</code></li><li>服务器返回 <code>220</code>，表示服务已就绪</li><li>客户端发送 <code>EHLO</code> 或 <code>HELO</code></li><li>服务器返回 <code>250</code>，并在 <code>EHLO</code> 情况下告知支持的扩展功能，如：</li><li><code>STARTTLS</code></li><li><code>AUTH</code></li></ul>
+<h4 id="发送邮件">发送邮件</h4>
+<ul><li>客户端发送 <code>MAIL FROM:&amp;lt;发件人地址&amp;gt;</code></li><li>服务器返回 <code>250</code></li><li>客户端发送一个或多个 <code>RCPT TO:&amp;lt;收件人地址&amp;gt;</code></li><li>服务器返回 <code>250</code></li><li>客户端发送 <code>DATA</code></li><li>服务器返回 <code>354</code></li><li>客户端逐行发送邮件头和正文</li><li>最后以单独一行的 <code>.</code> 结束</li><li>服务器返回 <code>250</code>，表示邮件已接收并排队</li></ul>
+<h4 id="关闭连接">关闭连接</h4>
+<ul><li>客户端发送 <code>QUIT</code></li><li>服务器返回 <code>221</code></li></ul>
+<hr>
+<h2 id="三邮件伪造原理">三、邮件伪造原理</h2>
+<h3 id="1-为什么能伪造">1. 为什么能伪造</h3>
+<p>在 SMTP 交互中，发件人地址本质上是发送端声明的，因此如果缺少校验机制，<code>From</code> 字段可以被伪造。</p>
+<p>示例邮件内容：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">Date: Wed, 06 Aug 2025 14:57:55 +0800
+To: example@example.com
+From: 110@110.com
+Subject: test Wed, 06 Aug 2025 14:57:55 +0800
+Message-Id:
+X-Mailer:
+Content-Type: text/html
+
+This is a test</code></pre></div>
+<p>常见字段含义：</p>
+<ul><li><code>Message-Id</code>：消息唯一标识</li><li><code>X-Mailer</code>：发件工具或客户端</li><li><code>Subject</code>：邮件标题</li><li><code>To</code>：收件人地址</li><li><code>From</code>：表面显示的发件人地址</li></ul>
+<h3 id="2-常见防伪造机制">2. 常见防伪造机制</h3>
+<h4 id="spf">SPF</h4>
+<p>发件人策略框架，用来声明哪些服务器被授权为该域发送邮件。</p>
+<h4 id="dkim">DKIM</h4>
+<p>通过域名公私钥机制对邮件头做数字签名，验证邮件是否被伪造或篡改。</p>
+<h4 id="dmarc">DMARC</h4>
+<p>在 SPF 和 DKIM 校验结果基础上，告诉接收服务器该如何处理邮件，如放行、标记、隔离或拒收。</p>
+<h3 id="3-查看域名是否配置-spf--dkim">3. 查看域名是否配置 SPF / DKIM</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">dig +short TXT iport._domainkey.cisco.com</code></pre></div>
+<p>其中 <code>iport._domainkey.cisco.com</code> 可以替换为对应域名。</p>
+<h4 id="dkim-示例">DKIM 示例</h4>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402114926810.png" alt="DKIM 示例"></p>
+<h4 id="spf-示例">SPF 示例</h4>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402114951856.png" alt="SPF 示例"></p>
+<hr>
+<h2 id="四spf-记录">四、SPF 记录</h2>
+<h3 id="1-示例">1. 示例</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">v=spf1 ip4:192.0.2.0/24 include:_spf.example.com redirect=example.net -all</code></pre></div>
+<h3 id="2-字段说明">2. 字段说明</h3>
+<ul><li><code>v=spf1</code>：SPF 协议版本</li><li><code>ip4/ip6</code>：允许的 IP 段</li><li><code>a</code> / <code>mx</code>：允许与域名 A 记录或 MX 记录匹配的主机</li><li><code>include:</code>：引入其他域的 SPF 规则</li><li><code>redirect=</code>：当前规则不匹配时，跳转检查其他域 SPF</li></ul>
+<h3 id="3-限定符">3. 限定符</h3>
+<ul><li>无符号或 <code>+</code>：<code>Pass</code></li><li><code>-</code>：<code>Fail</code></li><li><code>~</code>：<code>SoftFail</code></li><li><code>?</code>：<code>Neutral</code></li></ul>
+<h3 id="4-常见写法">4. 常见写法</h3>
+<ul><li><code>-all</code>：未匹配者硬拒绝</li><li><code>~all</code>：未匹配者标记可疑</li></ul>
+<hr>
+<h2 id="五伪造测试与原理验证">五、伪造测试与原理验证</h2>
+<blockquote><p>这一部分更适合理解“为什么能伪造”和“为什么会被拦截”，实战中重点还是放在分析与排查。</p></blockquote>
+<h3 id="1-swaks">1. Swaks</h3>
+<p><code>Swaks</code> 是一个命令行 SMTP 测试工具，常被称为 “SMTP 瑞士军刀”，可用于测试 SMTP 服务、模拟发信流程和观察服务器响应。</p>
+<p>安装：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">apt install swaks</code></pre></div>
+<h3 id="2-简单伪造示例">2. 简单伪造示例</h3>
+<p>比如临时邮箱网站：</p>
+<p><a href="https://tempmail.so/">https://tempmail.so/</a></p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402115424652.png" alt="临时邮箱示例"></p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">swaks \
+  --from &quot;admin@pku.edu.cn&quot; \
+  --to &quot;example@example.com&quot; \
+  --ehlo &quot;pku.edu.cn&quot; \
+  --header &quot;X-Mailer: Gmail&quot; \
+  --header &quot;Content-Type: text/html; charset=UTF-8&quot; \
+  --header &quot;Subject: test&quot; \
+  --body &quot;test&quot;</code></pre></div>
+<h3 id="3-spf-绕过中常见的代发思路">3. SPF 绕过中常见的代发思路</h3>
+<p>代发场景中：</p>
+<ul><li><code>--from</code>：真实发件人地址</li><li><code>--h-From</code>：显示给收件人的伪造发件人地址</li></ul>
+<p>示例：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">swaks \
+  --from &quot;username&quot; \
+  --h-From &quot;admin@pku.edu.cn&quot; \
+  --to &quot;example@example.com&quot; \
+  --ehlo &quot;pku.edu.cn&quot; \
+  --header &quot;X-Mailer: Gmail&quot; \
+  --header &quot;Content-Type: text/html; charset=UTF-8&quot; \
+  --header &quot;Subject: 北京大学录取通知书&quot; \
+  --body @./test.html \
+  --server smtp.qiye.aliyun.com \
+  --au &quot;username&quot; \
+  --ap &quot;password&quot;</code></pre></div>
+<p>参数说明：</p>
+<ul><li><code>from</code>：真实发件人账号</li><li><code>h-From</code>：伪造展示的发件人</li><li><code>ehlo</code>：声明的域名</li><li><code>header</code>：自定义头</li><li><code>body</code>：正文内容</li><li><code>server</code>：SMTP 服务器</li><li><code>au</code>：SMTP 认证用户名</li><li><code>ap</code>：SMTP 认证密码</li></ul>
+<p>原文中的测试场景里，目标域未配置相关验证，因此可以直接构造伪造邮件：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402115405584.png" alt="未配置验证示例"></p>
+<p>对应伪造邮件成功送达的效果如下：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402115746554.png" alt="伪造邮件送达示例"></p>
+<hr>
+<h2 id="六钓鱼邮件分析与排查流程">六、钓鱼邮件分析与排查流程</h2>
+<h3 id="总体流程">总体流程</h3>
+<ol><li>判断邮件是否可疑</li><li>导出 <code>eml</code> / <code>msg</code> 原始邮件</li><li>分析邮件头、发件链路与认证结果</li><li>提取 IOC</li><li>分析正文链接和附件</li><li>判断收件人是否已经点击或执行</li><li>做处置、加固、封禁和溯源</li></ol>
+<hr>
+<h3 id="初步判断是否为钓鱼邮件">初步判断是否为钓鱼邮件</h3>
+<p>先做表面判断，重点看以下内容：</p>
+<ul><li>发件人显示名与真实邮箱是否一致</li><li>是否为“代发”邮件</li><li>标题是否诱导性强、制造紧迫感</li><li>内容是否要求登录、转账、下载附件、扫码</li><li>是否包含可疑链接、短链接、二维码</li><li>是否包含压缩包、Office 文档、脚本、可执行文件</li><li>是否冒充领导、财务、人事、学校、快递、运营商等高频身份</li></ul>
+<h3 id="邮件头分析">邮件头分析</h3>
+<h4 id="1-建议先导出原始邮件">1. 建议先导出原始邮件</h4>
+<p>优先导出：</p>
+<ul><li><code>eml</code></li><li><code>msg</code></li></ul>
+<p>不要只看 Web 邮箱界面，因为很多关键字段默认不会显示完整。</p>
+<h4 id="2-邮件头重点字段">2. 邮件头重点字段</h4>
+<p><strong>基础字段</strong></p>
+<ul><li><code>From</code>：显示发件人</li><li><code>To</code>：收件人</li><li><code>Subject</code>：标题</li><li><code>Date</code>：发送时间</li><li><code>Message-ID</code>：消息唯一标识</li><li><code>X-Mailer</code>：发件客户端或工具</li></ul>
+<p><strong>真实性和路由相关字段</strong></p>
+<ul><li><code>Return-Path</code>：退信地址，常能看出真实发件来源</li><li><code>Reply-To</code>：回复地址，常用于诱导用户回复到其他邮箱</li><li><code>Received</code>：邮件传输链路，通常需要自下而上分析</li><li><code>Authentication-Results</code>：SPF、DKIM、DMARC 的校验结果</li><li><code>Received-SPF</code>：SPF 检测结果</li><li><code>DKIM-Signature</code>：DKIM 签名字段</li></ul>
+<h4 id="3-重点看">3. 重点看</h4>
+<p><strong>是否为代发</strong></p>
+<ul><li><code>From</code> 域名、<code>Return-Path</code> 域名、<code>Reply-To</code> 域名是否一致</li><li>发件显示名是否与真实邮箱匹配</li><li>邮箱页面是否显示“代发”</li></ul>
+<p>代发场景在邮件界面中通常会有明显提示：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402120940590.png" alt="代发提示示例"></p>
+<p>也可以导出 <code>eml</code> 文件进一步分析：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402121441036.png" alt="导出 EML 示例"></p>
+<p>头部中通常能看到代发域名、发件 IP 等信息：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402121655894.png" alt="EML 头部示例"></p>
+<p><strong>是否为伪造</strong></p>
+<ul><li>SPF 是否失败</li><li>DKIM 是否缺失或验证失败</li><li>DMARC 是否失败</li><li><code>Message-ID</code> 域名是否与 <code>From</code> 域名不一致</li></ul>
+<p><strong>是否使用钓鱼平台或异常客户端</strong></p>
+<ul><li><code>X-Mailer</code> 是否显示：</li><li><code>gophish</code></li><li>异常脚本工具</li><li>罕见批量发信组件</li></ul>
+<p>例如可以通过 <code>X-Mailer</code> 字段看出邮件可能由 <code>gophish</code> 发出：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402121853243.png" alt="X-Mailer 分析示例"></p>
+<p><strong>发件链路是否异常</strong></p>
+<ul><li><code>Received</code> 中是否出现异常跳转</li><li>第一跳发件 IP 是否可疑</li><li>发件服务器与发件域是否明显不匹配</li></ul>
+<h3 id="ioc-提取与情报分析">IOC 提取与情报分析</h3>
+<h4 id="1-建议提取的-ioc">1. 建议提取的 IOC</h4>
+<ul><li>发件人邮箱</li><li><code>Return-Path</code></li><li><code>Reply-To</code></li><li>发件 IP</li><li>中继 IP</li><li>发件域名</li><li>正文链接</li><li>跳转域名</li><li>附件文件名</li><li>附件哈希：</li><li><code>MD5</code></li><li><code>SHA1</code></li><li><code>SHA256</code></li></ul>
+<h4 id="2-情报分析思路">2. 情报分析思路</h4>
+<p>可将提取到的 IP、域名、哈希放到情报平台分析，例如：</p>
+<ul><li><a href="https://x.threatbook.com/">微步在线情报平台</a></li><li><a href="https://s.threatbook.com/">微步云沙箱</a></li></ul>
+<p>重点看：</p>
+<ul><li>是否命中恶意情报</li><li>是否为新注册域名</li><li>是否为一次性邮箱域名</li><li>是否有历史恶意行为</li><li>是否与已知钓鱼活动关联</li></ul>
+<p>情报分析示例：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402122501119.png" alt="情报分析示例 1"></p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402122604198.png" alt="情报分析示例 2"></p>
+<h3 id="正文分析">正文分析</h3>
+<h4 id="1-重点检查项">1. 重点检查项</h4>
+<ul><li>链接显示文本和真实跳转地址是否一致</li><li>是否使用短链接、重定向、跳板页面</li><li>是否使用相似域名、同形异义字符、错拼域名</li><li>是否诱导输入账号密码、验证码、邮箱口令</li><li>是否伪装成：</li><li>企业登录页</li><li>Office 365</li><li>QQ 邮箱</li><li>银行</li><li>学校</li><li>OA / VPN</li></ul>
+<h4 id="2-建议">2. 建议</h4>
+<ul><li>不要直接在办公机点击链接</li><li>先提取 URL 做情报查询</li><li>必要时在隔离环境中访问</li><li>看是否存在：</li><li>重定向</li><li>表单提交</li><li>凭据收集</li><li>下载恶意文件</li></ul>
+<h3 id="附件分析">附件分析</h3>
+<h4 id="1-高风险附件类型">1. 高风险附件类型</h4>
+<p><strong>常见危险文件类型：</strong></p>
+<ul><li><strong>压缩包</strong>：.zip、.rar、.7z</li><li><strong>Office文档</strong>：.doc、.docm、.xls、.xlsm</li><li><strong>PDF文件</strong>：.pdf</li><li><strong>脚本文件</strong>：.js、.vbs、.ps1、.bat、.cmd</li><li><strong>可执行文件</strong>：.exe、.dll、.scr</li><li><strong>快捷方式</strong>：.lnk</li><li><strong>磁盘镜像</strong>：.iso、.img</li></ul>
+<h4 id="2-分析流程">2. 分析流程</h4>
+<ol><li>先计算哈希</li><li>查情报</li><li>上传沙箱</li><li>看行为</li><li>再决定是否需要逆向分析</li></ol>
+<h4 id="3-沙箱重点看什么">3. 沙箱重点看什么</h4>
+<ul><li>是否释放落地文件</li><li>是否创建计划任务、注册表启动项</li><li>是否拉起脚本解释器：</li><li><code>powershell</code></li><li><code>wscript</code></li><li><code>cmd</code></li><li>是否外联恶意 IP / 域名</li><li>是否下载二阶段载荷</li><li>是否窃取浏览器、邮箱、VPN、IM 凭据</li></ul>
+<h4 id="4-建议">4. 建议</h4>
+<p>带附件的钓鱼邮件，优先上传沙箱分析，确认是否为恶意程序、属于什么木马家族、是否有后续外联和持久化动作。</p>
+<p>附件上传沙箱分析示例：</p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260402122831186.png" alt="沙箱分析示例"></p>
+<hr>
+<h2 id="七处置建议">七、处置建议</h2>
+<h3 id="1-未点击未打开附件">1. 未点击、未打开附件</h3>
+<ul><li>标记为钓鱼邮件</li><li>删除或隔离邮件</li><li>封禁发件地址、发件域名、源 IP、URL、哈希</li><li>在网关、邮件系统、EDR、代理设备中同步规则</li></ul>
+<h3 id="2-已点击链接">2. 已点击链接</h3>
+<ul><li>立刻断开风险访问</li><li>修改相关账号密码</li><li>检查 MFA 状态</li><li>强制下线所有会话</li><li>排查是否存在 OAuth 授权滥用、邮箱规则投毒</li></ul>
+<h3 id="3-已打开附件">3. 已打开附件</h3>
+<ul><li>隔离主机</li><li>保留样本与日志</li><li>排查进程、网络连接、持久化</li><li>查询全网是否有相同哈希或相同外联</li><li>必要时做内存取证和深度查杀</li></ul>
+<hr>
+<h2 id="八实战中的判断思路">八、实战中的判断思路</h2>
+<p>可以按下面这条线走：</p>
+<p>判断是否可疑邮件 -&gt; 看发件人显示名、域名、代发情况 -&gt; 导出 <code>eml</code> 分析头部 -&gt; 提取发件 IP、域名、链接、附件哈希 -&gt; 分析 SPF / DKIM / DMARC -&gt; 分析附件和正文链接 -&gt; 判断用户是否点击、登录、执行 -&gt; 做隔离、封禁、告警扩线、溯源</p></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/3.wa-kuang-bing-du-pai-cha-fen-xi/"><span>3.挖矿病毒排查分析</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

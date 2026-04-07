@@ -238,10 +238,16 @@ HTML_PAGE = """<!DOCTYPE html>
           <label style="margin: 0;"><input class="checkbox" name="dry_run" type="checkbox" checked>仅预览，不写入文件</label>
           <label style="margin: 0;"><input class="checkbox" name="no_backup" type="checkbox">不备份源 md</label>
         </div>
+
+        <div class="full">
+          <label for="commit_message">提交说明</label>
+          <input id="commit_message" name="commit_message" type="text" placeholder="留空则自动生成 commit 信息">
+        </div>
       </div>
 
       <div class="actions">
         <button class="primary" type="submit">发布 / 预览</button>
+        <button class="primary" type="submit" name="git_push" value="on">发布并推送</button>
         <button class="ghost" type="button" onclick="window.location.reload()">清空表单</button>
       </div>
 
@@ -306,15 +312,15 @@ HTML_PAGE = """<!DOCTYPE html>
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         const rawText = await response.text();
-        throw new Error(`?????? JSON ?????????????????????${rawText.slice(0, 80)}`);
+        throw new Error(`服务端没有返回 JSON，可能还是旧版服务或返回了 HTML：${rawText.slice(0, 80)}`);
       }
       const payload = await response.json();
       if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || "????");
+        throw new Error(payload.error || "解析失败");
       }
       const serverMeta = payload.meta || {};
       const filledMeta = applyMeta(serverMeta);
-      showNotice(`??????${file.name}\n\n????????${JSON.stringify(serverMeta, null, 2)}\n\n??????${JSON.stringify(filledMeta, null, 2)}`, "ok");
+      showNotice(`已读取文件：${file.name}\n\n服务端解析结果：${JSON.stringify(serverMeta, null, 2)}\n\n当前表单值：${JSON.stringify(filledMeta, null, 2)}`, "ok");
     }
 
     fileInput.addEventListener("change", async (event) => {
@@ -323,7 +329,7 @@ HTML_PAGE = """<!DOCTYPE html>
       try {
         await parseSelectedFile(file);
       } catch (error) {
-        showNotice(`?????${error.message || error}`, "err");
+        showNotice(`读取失败：${error.message || error}`, "err");
       }
     });
   </script>
@@ -352,7 +358,7 @@ def parse_section_titles(value: str) -> dict[str, str]:
 
 
 def metadata_to_form_values(filename: str, content: bytes) -> dict[str, str]:
-    """???? Markdown ??????????"""
+    """解析 Markdown 元数据并转换成表单默认值。"""
     text = content.decode("utf-8-sig")
     meta, body = pub.parse_front_matter(text)
     body = body.lstrip("﻿").lstrip()
@@ -394,11 +400,11 @@ def metadata_to_form_values(filename: str, content: bytes) -> dict[str, str]:
     }
 
 def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: dict[str, Any]) -> str:
-    """??????????????"""
+    """将上传的笔记内容发布到站点。"""
     posts, sections = pub.load_state(site_root)
     text = content.decode("utf-8-sig")
 
-    # ??????????????????? md?
+    # 用临时文件承接正文，但不会改动用户原始 md。
     with tempfile.TemporaryDirectory() as tmp_dir:
         temp_note = Path(tmp_dir) / filename
         with temp_note.open("w", encoding="utf-8", newline="") as file:
@@ -414,7 +420,7 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             "summary": form.get("summary", "").strip(),
             "featured": form.get("featured") == "on",
             "section_titles": parse_section_titles(form.get("section_titles", "")),
-            # ????????????????????
+            # 没填目录时，优先用第一分类作为默认目录。
             "_fallback_section": split_csv(form.get("categories", ""))[0] if not form.get("section", "").strip() and split_csv(form.get("categories", "")) else "",
         }
 
@@ -429,11 +435,11 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
         post.source_note = filename
         posts = pub.upsert(posts, post)
 
-        categories_text = ", ".join(post.categories) or "?"
-        tags_text = ", ".join(post.tags) or "?"
+        categories_text = ", ".join(post.categories) or "无"
+        tags_text = ", ".join(post.tags) or "无"
 
         if form.get("dry_run") == "on":
-            return f"????\n\n???{post.title}\n???/{post.rel_permalink}/\n???{categories_text}\n???{tags_text}"
+            return f"预览成功\n\n标题：{post.title}\n路径：/{post.rel_permalink}/\n分类：{categories_text}\n标签：{tags_text}"
 
         pub.rebuild(site_root, posts, sections)
         pub.save_state(site_root, posts, sections)
@@ -444,14 +450,14 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             with (backup_dir / filename).open("w", encoding="utf-8", newline="") as file:
                 file.write(text)
 
-        result = f"????\n\n???{post.title}\n???/{post.rel_permalink}/"
+        result = f"发布完成\n\n标题：{post.title}\n路径：/{post.rel_permalink}/"
         if form.get("git_push") == "on":
             commit_message = form.get("commit_message", "").strip() or f"publish {post.title}"
             result += "\n\n" + pub.auto_git_push(site_root, commit_message)
         return result
 
 class PublishHandler(BaseHTTPRequestHandler):
-    """?????????"""
+    """本地网页发布处理器。"""
 
     site_root: Path = Path.cwd()
 
@@ -463,7 +469,7 @@ class PublishHandler(BaseHTTPRequestHandler):
         body = self.rfile.read(length)
         content_type = self.headers.get("Content-Type", "")
         if "multipart/form-data" not in content_type:
-            raise ValueError("??????????? multipart/form-data")
+            raise ValueError("请求必须使用 multipart/form-data")
         import cgi
         environ = {
             "REQUEST_METHOD": "POST",
@@ -480,7 +486,7 @@ class PublishHandler(BaseHTTPRequestHandler):
             fs = self.parse_request_form()
             note_item = fs["note_file"] if "note_file" in fs else None
             if note_item is None or not getattr(note_item, "filename", ""):
-                raise ValueError("?????? Markdown ??")
+                raise ValueError("请选择一个 Markdown 文件")
 
             route = self.path.rstrip("/") or "/"
             if route == "/parse":
@@ -500,7 +506,7 @@ class PublishHandler(BaseHTTPRequestHandler):
             if route == "/parse":
                 self.respond_json({"ok": False, "error": str(error)}, status=400)
                 return
-            self.respond(message=f"????\n\n{error}", level="err")
+            self.respond(message=f"发布失败\n\n{error}", level="err")
 
     def log_message(self, format: str, *args: object) -> None:
         return
