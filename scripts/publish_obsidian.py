@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from __future__ import annotations
@@ -9,6 +9,8 @@ import datetime as dt
 import html
 import json
 import math
+import os
+import sys
 import re
 import shutil
 import subprocess
@@ -22,6 +24,7 @@ import yaml
 from bs4 import BeautifulSoup
 from jinja2 import Environment
 
+DEFAULT_SITE_ROOT = Path(__file__).resolve().parent.parent
 SITE_URL = "https://hzhsec.github.io"
 SITE_TITLE = "Hzhsec home"
 SITE_AUTHOR = "hzhsec"
@@ -93,6 +96,27 @@ class PostRecord:
     body_html: str = ""
     toc_html: str = ""
     article_body_text: str = ""
+
+
+def configure_windows_console() -> None:
+    """?? Windows ????? UTF-8 ???"""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.SetConsoleOutputCP(65001)
+        kernel32.SetConsoleCP(65001)
+    except Exception:
+        pass
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except Exception:
+                pass
 
 
 def is_publishable_post(post: PostRecord) -> bool:
@@ -516,10 +540,10 @@ def upsert(posts: list[PostRecord], post: PostRecord) -> list[PostRecord]:
 def detect_publish_action(posts: list[PostRecord], post: PostRecord, source_note: str = "") -> str:
     """??????????????"""
     if any(item.rel_permalink == post.rel_permalink for item in posts):
-        return "??"
+        return "NEW"
     if source_note and any(item.source_note == source_note for item in posts):
-        return "??"
-    return "??"
+        return "NEW"
+    return "NEW"
 
 def rebuild(site_root: Path, posts: list[PostRecord], sections: dict[str, SectionInfo]) -> None:
     posts = [item for item in posts if is_publishable_post(item)]
@@ -579,6 +603,48 @@ def backup(site_root: Path, note_path: Path, slug: str) -> None:
     shutil.copyfile(note_path, target / f"{slug}.md")
 
 
+def collect_note_paths(note_input: str, batch: bool) -> list[Path]:
+    """?????? Markdown ?????"""
+    note_path = Path(note_input).expanduser().resolve()
+    if not note_path.exists():
+        raise FileNotFoundError(f"File or directory not found: {note_path}")
+    if batch:
+        if not note_path.is_dir():
+            raise ValueError("--batch can only be used with a directory")
+        return sorted(
+            path
+            for path in note_path.rglob("*")
+            if path.is_file() and path.suffix.lower() in {".md", ".markdown"}
+        )
+    if note_path.is_dir():
+        raise ValueError("Use --batch when passing a directory")
+    return [note_path]
+
+
+def publish_notes(
+    site_root: Path,
+    posts: list[PostRecord],
+    sections: dict[str, SectionInfo],
+    note_paths: list[Path],
+    dry_run: bool,
+    no_backup: bool,
+) -> tuple[list[PostRecord], list[str], list[PostRecord]]:
+    """??????????????????????"""
+    results: list[str] = []
+    published_posts: list[PostRecord] = []
+    current_posts = posts
+    for note_path in note_paths:
+        existing = next((item for item in current_posts if item.source_note == str(note_path)), None)
+        post = build_note(note_path, existing, sections)
+        action_text = detect_publish_action(current_posts, post, str(note_path))
+        current_posts = upsert(current_posts, post)
+        results.append(f"{action_text}?{post.title} -> /{post.rel_permalink}/")
+        published_posts.append(post)
+        if not dry_run and not no_backup:
+            backup(site_root, note_path, post.slug)
+    return current_posts, results, published_posts
+
+
 def run_git(site_root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     """?? git ????????"""
     return subprocess.run(
@@ -593,62 +659,71 @@ def run_git(site_root: Path, args: list[str]) -> subprocess.CompletedProcess[str
 
 
 def auto_git_push(site_root: Path, message: str) -> str:
-    """??????????????"""
+    """????????????"""
     status = run_git(site_root, ["status", "--short"]).stdout.strip()
     if not status:
-        return "??????? git ?????????"
+        return "No git changes detected, skipped commit and push"
 
     run_git(site_root, ["add", "-A"])
     run_git(site_root, ["commit", "-m", message])
     push_result = run_git(site_root, ["push"])
     output = (push_result.stdout or push_result.stderr).strip()
-    return f"Git ?????{message}" + (f"\n{output}" if output else "")
+    return f"Git push done: {message}" + (f"\n{output}" if output else "")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="? Obsidian ????????????")
-    parser.add_argument("note", nargs="?", help="Obsidian ?????")
-    parser.add_argument("--site-root", default=".")
+    parser = argparse.ArgumentParser(description="Publish Markdown from Obsidian to site")
+    parser.add_argument("note", nargs="?", help="Obsidian note file or directory")
+    parser.add_argument("--site-root", default=str(DEFAULT_SITE_ROOT))
+    parser.add_argument("--batch", action="store_true", help="Publish all Markdown files in a directory")
     parser.add_argument("--rebuild-only", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-backup", action="store_true")
-    parser.add_argument("--git-push", action="store_true", help="????? git add?commit?push")
-    parser.add_argument("--commit-message", default="", help="??? git commit ??")
+    parser.add_argument("--git-push", action="store_true", help="Run git add/commit/push after publishing")
+    parser.add_argument("--commit-message", default="", help="Custom git commit message")
+    configure_windows_console()
     args = parser.parse_args()
-    site_root = Path(args.site_root).resolve()
+    site_root = Path(args.site_root).expanduser().resolve()
     posts, sections = load_state(site_root)
     if args.rebuild_only:
         if args.dry_run:
-            print(f"?????? {state_path(site_root)} ????")
+            print(f"PREVIEW READY: {state_path(site_root)}")
             return 0
         rebuild(site_root, posts, sections)
         save_state(site_root, posts, sections)
-        print(f"???????? {len(posts)} ???")
+        print(f"REBUILD DONE: {len(posts)} posts")
         if args.git_push:
             message = args.commit_message.strip() or f"rebuild site {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             print(auto_git_push(site_root, message))
         return 0
     if not args.note:
-        parser.error("???????????? --rebuild-only")
-    note_path = Path(args.note).expanduser().resolve()
-    if not note_path.exists():
-        raise FileNotFoundError(f"??????{note_path}")
-    existing = next((item for item in posts if item.source_note == str(note_path)), None)
-    post = build_note(note_path, existing, sections)
-    action_text = detect_publish_action(posts, post, str(note_path))
-    posts = upsert(posts, post)
+        parser.error("Please provide a note path or use --rebuild-only")
+    note_paths = collect_note_paths(args.note, args.batch)
+    if args.batch and not note_paths:
+        raise ValueError("No Markdown files found in the directory")
+    posts, results, published_posts = publish_notes(
+        site_root,
+        posts,
+        sections,
+        note_paths,
+        args.dry_run,
+        args.no_backup,
+    )
     if args.dry_run:
-        print(f"{action_text}???{post.title} -> /{post.rel_permalink}/")
-        print(f"???{', '.join(post.categories) or '?'}")
-        print(f"???{', '.join(post.tags) or '?'}")
+        for line in results:
+            print(line.replace("?", " PREVIEW: ", 1))
+        if published_posts:
+            print(f"TOTAL: {len(published_posts)}")
         return 0
     rebuild(site_root, posts, sections)
     save_state(site_root, posts, sections)
-    if not args.no_backup:
-        backup(site_root, note_path, post.slug)
-    print(f"{action_text}???/{post.rel_permalink}/")
+    for line in results:
+        print(line.replace("?", " DONE: ", 1))
+    if args.batch:
+        print(f"BATCH DONE: {len(published_posts)}")
     if args.git_push:
-        message = args.commit_message.strip() or f"publish {post.title}"
+        default_message = f"batch publish {len(published_posts)} posts" if args.batch else f"publish {published_posts[-1].title}"
+        message = args.commit_message.strip() or default_message
         print(auto_git_push(site_root, message))
     return 0
 

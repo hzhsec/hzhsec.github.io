@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import publish_obsidian as pub
 
+DEFAULT_SITE_ROOT = Path(__file__).resolve().parent.parent
+
 HOST = "0.0.0.0"
 PORT = 8765
 
@@ -548,7 +550,7 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=PORT)
     args = parser.parse_args()
 
-    PublishHandler.site_root = Path(args.site_root).resolve()
+    PublishHandler.site_root = Path(args.site_root).expanduser().resolve()
     server = ThreadingHTTPServer((args.host, args.port), PublishHandler)
     print(f"发布器已启动: http://{args.host}:{args.port}")
     print("浏览器打开这个地址，填表后即可发布。")
