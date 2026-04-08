@@ -171,7 +171,7 @@ figcaption {
   }
 }
 
-/* ??????????? */
+/* ?????????????? */
 .blog-single .blog-toc {
   margin: 1.8rem 0 2.2rem;
   padding: 0;
@@ -181,7 +181,7 @@ figcaption {
   overflow: hidden;
 }
 
-.blog-single .blog-toc summary {
+.blog-single .blog-toc > summary {
   cursor: pointer;
   list-style: none;
   padding: 1rem 1.4rem;
@@ -189,18 +189,18 @@ figcaption {
   user-select: none;
 }
 
-.blog-single .blog-toc summary::-webkit-details-marker {
+.blog-single .blog-toc > summary::-webkit-details-marker {
   display: none;
 }
 
-.blog-single .blog-toc summary::after {
+.blog-single .blog-toc > summary::after {
   content: 'Expand';
   float: right;
   font-size: 0.9em;
   color: #666;
 }
 
-.blog-single .blog-toc[open] summary::after {
+.blog-single .blog-toc[open] > summary::after {
   content: 'Collapse';
 }
 
@@ -215,23 +215,35 @@ figcaption {
   padding-left: 0;
 }
 
-.blog-single .blog-toc li {
-  margin: 0.35rem 0;
+.blog-single .blog-toc .toc-item {
+  margin: 0.3rem 0;
   line-height: 1.7;
 }
 
-.blog-single .blog-toc li > ul {
-  margin-top: 0.35rem;
-  margin-left: 1.1rem;
-  padding-left: 1rem;
+.blog-single .blog-toc .toc-branch {
   border-left: 1px dashed rgba(148, 163, 184, 0.35);
+  padding-left: 0.9rem;
 }
 
-.blog-single .blog-toc a {
-  display: inline-block;
+.blog-single .blog-toc nav > ul > .toc-item > .toc-branch {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.blog-single .blog-toc .toc-branch > summary {
+  cursor: pointer;
+}
+
+.blog-single .blog-toc .toc-link {
+  display: inline;
   text-decoration: none;
 }
 
-.blog-single .blog-toc a:hover {
+.blog-single .blog-toc .toc-link:hover {
   text-decoration: underline;
+}
+
+.blog-single .blog-toc .toc-children {
+  margin-top: 0.3rem;
+  margin-left: 1rem;
 }

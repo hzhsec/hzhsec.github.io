@@ -181,7 +181,7 @@ def build_toc(headings: list[tuple[int, str, str]]) -> str:
     if not filtered:
         return ""
 
-    # ???????????????????????
+    # ????????????????????????
     root: list[dict[str, Any]] = []
     stack: list[tuple[int, list[dict[str, Any]]]] = [(0, root)]
     for level, hid, title in filtered:
@@ -191,11 +191,25 @@ def build_toc(headings: list[tuple[int, str, str]]) -> str:
         stack[-1][1].append(node)
         stack.append((level, node["children"]))
 
-    def render_nodes(nodes: list[dict[str, Any]]) -> str:
+    def render_nodes(nodes: list[dict[str, Any]], depth: int = 1) -> str:
         items = []
         for node in nodes:
-            children_html = render_nodes(node["children"]) if node["children"] else ""
-            items.append(f'<li><a href="#{node["hid"]}">{html.escape(node["title"])}</a>{children_html}</li>')
+            title_html = html.escape(node["title"])
+            link_html = f'<a class="toc-link" href="#{node["hid"]}">{title_html}</a>'
+            if node["children"]:
+                open_attr = ''
+                children_html = render_nodes(node["children"], depth + 1)
+                body_html = f'<div class="toc-children">{children_html}</div>'
+                items.append(
+                    f'<li class="toc-item toc-depth-{depth}">'
+                    f'<details class="toc-branch toc-depth-{depth}"{open_attr}>'
+                    f'<summary>{link_html}</summary>'
+                    f'{body_html}'
+                    f'</details>'
+                    f'</li>'
+                )
+            else:
+                items.append(f'<li class="toc-item toc-depth-{depth}">{link_html}</li>')
         return f'<ul>{"".join(items)}</ul>'
 
     return f'<nav id="TableOfContents">{render_nodes(root)}</nav>'
