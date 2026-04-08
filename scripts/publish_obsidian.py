@@ -31,6 +31,8 @@ INTRO_TITLE = "hzhsec"
 INTRO_SUBTITLE = "阅读｜思考｜产出｜进步"
 INTRO_TEXT = "从未停止对未知的探索,一切始于热爱"
 AVATAR = "https://cdn.jsdmirror.com/gh/hzhsec/upload@main/hzhsec.png"
+HOME_POST_LIMIT = 4
+TOC_MAX_LEVEL = 3
 FM_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 INVALID_SEGMENT = re.compile(r'[<>:"/\\|?*]+')
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -175,10 +177,43 @@ def slugify_heading(text: str, used: set[str]) -> str:
     return candidate
 
 def build_toc(headings: list[tuple[int, str, str]]) -> str:
-    if not headings:
+    filtered = [(level, hid, title) for level, hid, title in headings if level <= TOC_MAX_LEVEL]
+    if not filtered:
         return ""
-    items = [f'<li><a href="#{hid}">{html.escape(title)}</a></li>' for _, hid, title in headings]
-    return '<nav id="TableOfContents"><ul>' + ''.join(items) + '</ul></nav>'
+
+    # ???????????????????????
+    root: list[dict[str, Any]] = []
+    stack: list[tuple[int, list[dict[str, Any]]]] = [(0, root)]
+    for level, hid, title in filtered:
+        while stack and level <= stack[-1][0]:
+            stack.pop()
+        node = {"hid": hid, "title": title, "children": []}
+        stack[-1][1].append(node)
+        stack.append((level, node["children"]))
+
+    def render_nodes(nodes: list[dict[str, Any]]) -> str:
+        items = []
+        for node in nodes:
+            children_html = render_nodes(node["children"]) if node["children"] else ""
+            items.append(f'<li><a href="#{node["hid"]}">{html.escape(node["title"])}</a>{children_html}</li>')
+        return f'<ul>{"".join(items)}</ul>'
+
+    return f'<nav id="TableOfContents">{render_nodes(root)}</nav>'
+
+def refresh_post_toc(post: PostRecord) -> PostRecord:
+    # ??????????????????????
+    if not post.body_html:
+        return post
+    soup = BeautifulSoup(post.body_html, "html.parser")
+    headings = []
+    for tag in soup.find_all(re.compile(r"^h[1-6]$")):
+        heading_id = tag.get("id", "").strip()
+        title = tag.get_text(strip=True)
+        if not heading_id or not title:
+            continue
+        headings.append((int(tag.name[1]), heading_id, title))
+    post.toc_html = build_toc(headings)
+    return post
 
 def render_markdown(text: str) -> tuple[str, str, str, int]:
     lines = text.replace("\r\n", "\n").split("\n")
@@ -336,7 +371,7 @@ def load_state(site_root: Path) -> tuple[list[PostRecord], dict[str, SectionInfo
     file = state_path(site_root)
     if file.exists():
         data = json.loads(file.read_text(encoding="utf-8"))
-        posts = [PostRecord(**item) for item in data.get("posts", [])]
+        posts = [refresh_post_toc(PostRecord(**item)) for item in data.get("posts", [])]
         posts = [post for post in posts if is_publishable_post(post)]
         return posts, {slug: SectionInfo(**info) for slug, info in data.get("sections", {}).items()}
     return bootstrap(site_root)
@@ -359,18 +394,9 @@ def render_listing(title: str, canonical_path: str, posts: list[PostRecord], chi
     return page(title, canonical_path, content, desc)
 
 def render_home(posts: list[PostRecord]) -> str:
-    featured = [post for post in posts if post.featured]
-    seen = {post.rel_permalink for post in featured}
-    for post in posts:
-        if len(featured) >= 6:
-            break
-        if post.rel_permalink in seen:
-            continue
-        featured.append(post)
-        seen.add(post.rel_permalink)
-
     cards = []
-    for post in featured[:6]:
+    # ?????????????????????????????
+    for post in posts[:HOME_POST_LIMIT]:
         cards.append(
             f'<article class="featured-single"><h4><a href="/{quote_path(post.rel_permalink).strip("/")}">{html.escape(post.title)}</a></h4><p><small>{minute_text(post)}</small><p></article>'
         )
@@ -386,7 +412,7 @@ def render_home(posts: list[PostRecord]) -> str:
         f'<div class="intro-avatar" style="flex:0 0 auto;"><img src="{html.escape(AVATAR)}" alt="{html.escape(INTRO_TITLE)}" style="width:120px;height:120px;border-radius:9999px;object-fit:cover;display:block;"></div>'
         '</section>'
         '<div class="featured">'
-        '<h2>Featured Posts</h2>'
+        '<h2>Latest Posts</h2>'
         f'<div class="featured-list">{"".join(cards)}</div>'
         '</div>'
         '</div>'
@@ -426,7 +452,7 @@ def render_article(post: PostRecord, prev_post: Optional[PostRecord], next_post:
                 f'<a class="next" href="{abs_url(next_post.rel_permalink)}"><small>下一篇 →</small><span>{html.escape(next_post.title)}</span></a>'
             )
         paginator.append('</div>')
-    toc_block = f'<div class="blog-toc">{post.toc_html}</div>' if post.toc_html else ''
+    toc_block = f'<details class="blog-toc" open><summary>Contents</summary>{post.toc_html}</details>' if post.toc_html else ''
     content = f'<article class="blog-single"><header class="blog-title"><h1>{html.escape(post.title)}</h1></header><p><small>{minute_text(post)}</small><p>{toc_block}<section class="blog-content">{post.body_html}</section>{"".join(paginator)}</article>'
     return page(post.title, post.rel_permalink, content, post.summary, "article", post.date_iso)
 
@@ -472,6 +498,14 @@ def upsert(posts: list[PostRecord], post: PostRecord) -> list[PostRecord]:
     result = [item for item in result if is_publishable_post(item)]
     result.sort(key=lambda item: item.date_iso, reverse=True)
     return result
+
+def detect_publish_action(posts: list[PostRecord], post: PostRecord, source_note: str = "") -> str:
+    """??????????????"""
+    if any(item.rel_permalink == post.rel_permalink for item in posts):
+        return "??"
+    if source_note and any(item.source_note == source_note for item in posts):
+        return "??"
+    return "??"
 
 def rebuild(site_root: Path, posts: list[PostRecord], sections: dict[str, SectionInfo]) -> None:
     posts = [item for item in posts if is_publishable_post(item)]
@@ -587,9 +621,10 @@ def main() -> int:
         raise FileNotFoundError(f"??????{note_path}")
     existing = next((item for item in posts if item.source_note == str(note_path)), None)
     post = build_note(note_path, existing, sections)
+    action_text = detect_publish_action(posts, post, str(note_path))
     posts = upsert(posts, post)
     if args.dry_run:
-        print(f"???????{post.title}?? /{post.rel_permalink}/")
+        print(f"{action_text}???{post.title} -> /{post.rel_permalink}/")
         print(f"???{', '.join(post.categories) or '?'}")
         print(f"???{', '.join(post.tags) or '?'}")
         return 0
@@ -597,7 +632,7 @@ def main() -> int:
     save_state(site_root, posts, sections)
     if not args.no_backup:
         backup(site_root, note_path, post.slug)
-    print(f"?????/{post.rel_permalink}/")
+    print(f"{action_text}???/{post.rel_permalink}/")
     if args.git_push:
         message = args.commit_message.strip() or f"publish {post.title}"
         print(auto_git_push(site_root, message))

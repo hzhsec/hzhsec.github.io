@@ -17,30 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>浅谈电子邮件伪造</h1></header><p><small>October 9, 2025&nbsp;· 2026 words&nbsp;· 11 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#smtp-大致通信过程">SMTP 大致通信过程</a></li>
-</ul>
-<ul>
-<li><a href="#spf-简介与解析示例">SPF 简介与解析示例</a></li>
-</ul>
-<ul>
-<li>
-<ul>
-<li><a href="#安装">安装</a></li>
-<li><a href="#查询-spf示例">查询 SPF（示例）</a></li>
-<li><a href="#构造并发送伪造邮件">构造并发送伪造邮件</a></li>
-</ul>
-</li>
-</ul>
-<ul>
-<li>
-<ul>
-<li><a href="#代发使用---h-from">代发（使用 <code>--h-From</code>）</a></li>
-</ul>
-</li>
-</ul>
-</nav></div><section class="blog-content"><h1 id="smtp-简介">SMTP 简介</h1>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>浅谈电子邮件伪造</h1></header><p><small>October 9, 2025&nbsp;· 2026 words&nbsp;· 11 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#smtp-简介">SMTP 简介</a><ul><li><a href="#smtp-大致通信过程">SMTP 大致通信过程</a></li></ul></li><li><a href="#邮件伪造原理">邮件伪造原理</a></li><li><a href="#防范机制spf--dkim--dmarc">防范机制（SPF / DKIM / DMARC）</a><ul><li><a href="#spf-简介与解析示例">SPF 简介与解析示例</a></li></ul></li><li><a href="#实验使用-swaks-构造与发送测试邮件">实验：使用 swaks 构造与发送测试邮件</a><ul><li><a href="#安装">安装</a></li><li><a href="#查询-spf示例">查询 SPF（示例）</a></li><li><a href="#构造并发送伪造邮件">构造并发送伪造邮件</a></li></ul></li><li><a href="#spf-绕过与代发机制">SPF 绕过与代发机制</a><ul><li><a href="#代发使用---h-from">代发（使用--h-From）</a></li></ul></li><li><a href="#发现与测试结论">发现与测试结论</a></li><li><a href="#安全建议面向域名所有者与收件方">安全建议（面向域名所有者与收件方）</a></li><li><a href="#附常用-swaks-命令模板">附：常用 swaks 命令模板</a></li><li><a href="#总结">总结</a></li></ul></nav></details><section class="blog-content"><h1 id="smtp-简介">SMTP 简介</h1>
 <blockquote>
 <p>电子邮件协议主要包括 SMTP、POP3 和 IMAP。
 SMTP（Simple Mail Transfer Protocol）是用于在客户端与服务器、以及服务器之间发送和转发电子邮件的应用层协议，本文聚焦 <strong>SMTP 协议</strong> 及其被伪造时的原理与防护。</p>

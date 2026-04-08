@@ -17,21 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>SQL 注入实战与技巧</h1></header><p><small>April 20, 2024&nbsp;· 1709 words&nbsp;· 9 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#1-排序回显定位">1. 排序/回显定位</a></li>
-<li><a href="#2-在回显位置插入查询">2. 在回显位置插入查询</a></li>
-<li><a href="#3-利用-information_schema-枚举mysql--50">3. 利用 information_schema 枚举（MySQL &gt;= 5.0）</a></li>
-</ul>
-<ul>
-<li><a href="#1-单引号过滤策略">1. 单引号过滤策略</a></li>
-<li><a href="#2-编码逃逸示例">2. 编码逃逸（示例）</a></li>
-</ul>
-<ul>
-<li><a href="#access-数据库asp--mdb">Access 数据库（ASP + MDB）</a></li>
-<li><a href="#堆叠注入stacked-queries">堆叠注入（Stacked Queries）</a></li>
-</ul>
-</nav></div><section class="blog-content"><h1 id="一目标与概述">一、目标与概述</h1>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>SQL 注入实战与技巧</h1></header><p><small>April 20, 2024&nbsp;· 1709 words&nbsp;· 9 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#一目标与概述">一、目标与概述</a></li><li><a href="#二注入思路四条信息">二、注入思路（四条信息）</a></li><li><a href="#三常见注入示例回显型">三、常见注入示例（回显型）</a><ul><li><a href="#1-排序回显定位">1. 排序/回显定位</a></li><li><a href="#2-在回显位置插入查询">2. 在回显位置插入查询</a></li><li><a href="#3-利用-information_schema-枚举mysql--50">3. 利用 information_schema 枚举（MySQL &gt;= 5.0）</a></li></ul></li><li><a href="#四跨库查询php--mysql-场景">四、跨库查询（PHP + MySQL 场景）</a></li><li><a href="#五文件读写load_file--into-outfile">五、文件读写（load_file / into outfile）</a></li><li><a href="#六过滤绕过与编码技巧">六、过滤绕过与编码技巧</a><ul><li><a href="#1-单引号过滤策略">1. 单引号过滤策略</a></li><li><a href="#2-编码逃逸示例">2. 编码逃逸（示例）</a></li></ul></li><li><a href="#七accessmdb与堆叠注入">七、Access（MDB）与堆叠注入</a><ul><li><a href="#access-数据库asp--mdb">Access 数据库（ASP + MDB）</a></li><li><a href="#堆叠注入stacked-queries">堆叠注入（Stacked Queries）</a></li></ul></li><li><a href="#八读取技巧handler替代-select">八、读取技巧：HANDLER（替代 SELECT）</a></li><li><a href="#九常用工具与检测流程">九、常用工具与检测流程</a></li><li><a href="#十防护">十、防护</a></li><li><a href="#附常见-payload">附：常见 payload</a></li><li><a href="#参考">参考</a></li></ul></nav></details><section class="blog-content"><h1 id="一目标与概述">一、目标与概述</h1>
 <p><strong>目的</strong>：通过 SQL 注入（以 MySQL 为例）获取 Web 应用可操作的数据或权限（例如：查询数据库名称、表名、字段、读写文件、横向跨库取证等）。</p>
 <p>本笔记覆盖：</p>
 <ul>

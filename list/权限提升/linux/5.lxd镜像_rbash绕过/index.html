@@ -17,30 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>LXD&amp;docker镜像-rbash绕过</h1></header><p><small>November 16, 2025&nbsp;· 694 words&nbsp;· 4 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#1入口点">1、入口点</a></li>
-<li><a href="#2检测及利用">2、检测及利用</a></li>
-<li><a href="#3创建容器--挂载磁盘--进入宿主根目录--提权">3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权</a></li>
-</ul>
-<ul>
-<li><a href="#docker-本地提权条件">Docker 本地提权条件</a>
-<ul>
-<li><a href="#靶场速通流程">靶场速通流程</a></li>
-</ul>
-</li>
-</ul>
-<ul>
-<li><a href="#实验">实验</a></li>
-<li><a href="#复现靶机环境">复现靶机环境</a>
-<ul>
-<li><a href="#1入口点-2">1、入口点</a></li>
-<li><a href="#2rbash-绕过">2、Rbash 绕过</a></li>
-<li><a href="#3历史记录泄漏--提权">3、历史记录泄漏 → 提权</a></li>
-</ul>
-</li>
-</ul>
-</nav></div><section class="blog-content"><h1 id="lxd容器">LXD容器</h1>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>LXD&amp;docker镜像-rbash绕过</h1></header><p><small>November 16, 2025&nbsp;· 694 words&nbsp;· 4 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#lxd容器">LXD容器</a><ul><li><a href="#1入口点">1、入口点</a></li><li><a href="#2检测及利用">2、检测及利用</a></li><li><a href="#3创建容器--挂载磁盘--进入宿主根目录--提权">3、创建容器 → 挂载磁盘 → 进入宿主根目录 → 提权</a></li></ul></li><li><a href="#docker容器">Docker容器</a><ul><li><a href="#docker-本地提权条件">Docker 本地提权条件</a><ul><li><a href="#靶场速通流程">靶场速通流程</a></li></ul></li></ul></li><li><a href="#rbash绕过">Rbash绕过</a><ul><li><a href="#实验">实验</a></li><li><a href="#复现靶机环境">复现靶机环境</a><ul><li><a href="#1入口点-2">1、入口点</a></li><li><a href="#2rbash-绕过">2、Rbash 绕过</a></li><li><a href="#3历史记录泄漏--提权">3、历史记录泄漏 → 提权</a></li></ul></li></ul></li></ul></nav></details><section class="blog-content"><h1 id="lxd容器">LXD容器</h1>
 <blockquote>
 <p>LXD是基于LXC容器的管理程序，当前用户可操作容器，理解为用户创建一个容器，再用容器挂载宿主机磁盘，最后使用容器权限操作宿主机磁盘内容达到提权效果。</p>
 </blockquote>

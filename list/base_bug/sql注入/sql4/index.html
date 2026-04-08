@@ -17,25 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>MySQL进阶：二次注入、堆叠注入与带外</h1></header><p><small>April 24, 2024&nbsp;· 1100 words&nbsp;· 6 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#1-基本概念">1. 基本概念</a></li>
-<li><a href="#2-常见场景">2. 常见场景</a></li>
-<li><a href="#3-判定思路">3. 判定思路</a></li>
-<li><a href="#4-注入条件">4. 注入条件</a></li>
-</ul>
-<ul>
-<li><a href="#1-概念">1. 概念</a></li>
-<li><a href="#2-触发条件">2. 触发条件</a></li>
-<li><a href="#3-ctf--题型示例强网题">3. CTF / 题型示例（强网题）</a></li>
-</ul>
-<ul>
-<li><a href="#1-概念与适用场景">1. 概念与适用场景</a></li>
-<li><a href="#2-基本条件">2. 基本条件</a></li>
-<li><a href="#3-常用平台">3. 常用平台</a></li>
-<li><a href="#4-常见-payload使用-load_file-利用-smbunc-回连或-dns-查询">4. 常见 payload（使用 <code>LOAD_FILE</code> 利用 SMB/UNC 回连或 DNS 查询）</a></li>
-</ul>
-</nav></div><section class="blog-content"> 建议路径： content/漏洞复现/php-mysql-advanced-injection.md 
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>MySQL进阶：二次注入、堆叠注入与带外</h1></header><p><small>April 24, 2024&nbsp;· 1100 words&nbsp;· 6 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#概述">概述</a></li><li><a href="#一二次注入second-order-injection">一、二次注入（Second-order Injection）</a><ul><li><a href="#1-基本概念">1. 基本概念</a></li><li><a href="#2-常见场景">2. 常见场景</a></li><li><a href="#3-判定思路">3. 判定思路</a></li><li><a href="#4-注入条件">4. 注入条件</a></li></ul></li><li><a href="#二堆叠注入stacked-queries">二、堆叠注入（Stacked Queries）</a><ul><li><a href="#1-概念">1. 概念</a></li><li><a href="#2-触发条件">2. 触发条件</a></li><li><a href="#3-ctf--题型示例强网题">3. CTF / 题型示例（强网题）</a></li></ul></li><li><a href="#三带外注入out-of-band-injection-oob与-dnslog">三、带外注入（Out-of-Band Injection, OOB）与 DNSLOG</a><ul><li><a href="#1-概念与适用场景">1. 概念与适用场景</a></li><li><a href="#2-基本条件">2. 基本条件</a></li><li><a href="#3-常用平台">3. 常用平台</a></li><li><a href="#4-常见-payload使用-load_file-利用-smbunc-回连或-dns-查询">4. 常见 payload（使用LOAD_FILE利用 SMB/UNC 回连或 DNS 查询）</a></li></ul></li><li><a href="#四小结">四、小结</a></li><li><a href="#参考">参考</a></li></ul></nav></details><section class="blog-content"> 建议路径： content/漏洞复现/php-mysql-advanced-injection.md 
 <h1 id="概述">概述</h1>
 <p>本篇记录二次注入、堆叠注入（stacked queries）与带外注入（out-of-band, OOB）三类进阶注入技术的思路、触发条件与常见 DEMO。适合在有一定 SQL 注入基础后用于实战与题型训练（如 CTF）。</p>
 <hr/>

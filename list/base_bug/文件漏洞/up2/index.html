@@ -17,31 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>文件解析与存储方案：权限、解码与 OSS</h1></header><p><small>April 29, 2024&nbsp;· 1060 words&nbsp;· 6 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#概览">概览</a></li>
-<li><a href="#一文件--解析方案执行权限--解码还原">一、文件 — 解析方案：执行权限 &amp; 解码还原</a>
-<ul>
-<li><a href="#1-执行权限首要防护">1. 执行权限（首要防护）</a></li>
-<li><a href="#2-解码与还原存储与解析分离">2. 解码与还原（存储与解析分离）</a></li>
-</ul>
-</li>
-<li><a href="#二文件--存储方案分站存储--oss对象存储">二、文件 — 存储方案：分站存储 &amp; OSS（对象存储）</a>
-<ul>
-<li><a href="#1-分站存储接收展示分离">1. 分站存储（接收/展示分离）</a></li>
-<li><a href="#2-oss对象存储">2. OSS（对象存储）</a></li>
-</ul>
-</li>
-<li><a href="#三实例流程上传--解析--存储--展示">三、实例流程（上传 → 解析 → 存储 → 展示）</a></li>
-<li><a href="#四判断点与常见绕过">四、判断点与常见绕过</a>
-<ul>
-<li><a href="#检查点">检查点</a></li>
-<li><a href="#常见无解或高危场景">常见无解或高危场景</a></li>
-</ul>
-</li>
-<li><a href="#五结论与建议速查">五、结论与建议（速查）</a></li>
-</ul>
-</nav></div><section class="blog-content"><h2 id="概览">概览</h2>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>文件解析与存储方案：权限、解码与 OSS</h1></header><p><small>April 29, 2024&nbsp;· 1060 words&nbsp;· 6 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#概览">概览</a></li><li><a href="#一文件--解析方案执行权限--解码还原">一、文件 — 解析方案：执行权限 &amp; 解码还原</a><ul><li><a href="#1-执行权限首要防护">1. 执行权限（首要防护）</a></li><li><a href="#2-解码与还原存储与解析分离">2. 解码与还原（存储与解析分离）</a></li></ul></li><li><a href="#二文件--存储方案分站存储--oss对象存储">二、文件 — 存储方案：分站存储 &amp; OSS（对象存储）</a><ul><li><a href="#1-分站存储接收展示分离">1. 分站存储（接收/展示分离）</a></li><li><a href="#2-oss对象存储">2. OSS（对象存储）</a></li></ul></li><li><a href="#三实例流程上传--解析--存储--展示">三、实例流程（上传 → 解析 → 存储 → 展示）</a></li><li><a href="#四判断点与常见绕过">四、判断点与常见绕过</a><ul><li><a href="#检查点">检查点</a></li><li><a href="#常见无解或高危场景">常见无解或高危场景</a></li></ul></li><li><a href="#五结论与建议速查">五、结论与建议（速查）</a></li></ul></nav></details><section class="blog-content"><h2 id="概览">概览</h2>
 <p>本文对<strong>文件上传后的解析与存储方案</strong>做整理，聚焦三大主题：</p>
 <ul>
 <li>文件解析与执行权限（如何避免上传文件被执行）</li>

@@ -433,13 +433,19 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
         existing = next((item for item in posts if item.source_note == str(temp_note)), None)
         post = pub.build_note(temp_note, existing, sections)
         post.source_note = filename
+        action_text = pub.detect_publish_action(posts, post, filename)
         posts = pub.upsert(posts, post)
 
-        categories_text = ", ".join(post.categories) or "无"
-        tags_text = ", ".join(post.tags) or "无"
+        categories_text = ", ".join(post.categories) or "?"
+        tags_text = ", ".join(post.tags) or "?"
 
         if form.get("dry_run") == "on":
-            return f"预览成功\n\n标题：{post.title}\n路径：/{post.rel_permalink}/\n分类：{categories_text}\n标签：{tags_text}"
+            return f"{action_text}??
+
+???{post.title}
+???/{post.rel_permalink}/
+???{categories_text}
+???{tags_text}"
 
         pub.rebuild(site_root, posts, sections)
         pub.save_state(site_root, posts, sections)
@@ -450,7 +456,10 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             with (backup_dir / filename).open("w", encoding="utf-8", newline="") as file:
                 file.write(text)
 
-        result = f"发布完成\n\n标题：{post.title}\n路径：/{post.rel_permalink}/"
+        result = f"{action_text}??
+
+???{post.title}
+???/{post.rel_permalink}/"
         if form.get("git_push") == "on":
             commit_message = form.get("commit_message", "").strip() or f"publish {post.title}"
             result += "\n\n" + pub.auto_git_push(site_root, commit_message)

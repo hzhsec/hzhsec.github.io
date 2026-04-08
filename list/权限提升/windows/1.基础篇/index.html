@@ -17,31 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>础篇-工具简单复现 | Windows权限提升基础篇</h1></header><p><small>November 16, 2025&nbsp;· 863 words&nbsp;· 5 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#11-平台">1.1 平台</a></li>
-<li><a href="#12-web-开发语言权限差异">1.2 Web 开发语言权限差异</a></li>
-<li><a href="#13-系统用户权限差异">1.3 系统用户权限差异</a>
-<ul>
-<li><a href="#windows-权限分级">Windows 权限分级</a></li>
-<li><a href="#linux-用户权限">Linux 用户权限</a></li>
-</ul>
-</li>
-</ul>
-<ul>
-<li><a href="#21-宝塔面板---哥斯拉--msf">2.1 宝塔面板 - 哥斯拉 + MSF</a></li>
-<li><a href="#22-溢出漏洞利用---msf--cs">2.2 溢出漏洞利用 - MSF / CS</a></li>
-<li><a href="#221-msf-环境准备">2.2.1 MSF 环境准备</a>
-<ul>
-<li><a href="#docker-安装-msf">Docker 安装 MSF</a></li>
-</ul>
-</li>
-<li><a href="#222-生成反弹后门">2.2.2 生成反弹后门</a></li>
-<li><a href="#223-配置监听并接收会话">2.2.3 配置监听并接收会话</a></li>
-<li><a href="#224-自动化漏洞扫描-exp-suggester">2.2.4 自动化漏洞扫描 (EXP Suggester)</a></li>
-<li><a href="#225-漏洞溢出提权">2.2.5 漏洞溢出提权</a></li>
-</ul>
-</nav></div><section class="blog-content"><h1 id="1-web-到-windows-系统提权">1. Web 到 Windows 系统提权</h1>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>础篇-工具简单复现 | Windows权限提升基础篇</h1></header><p><small>November 16, 2025&nbsp;· 863 words&nbsp;· 5 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#1-web-到-windows-系统提权">1. Web 到 Windows 系统提权</a><ul><li><a href="#11-平台">1.1 平台</a></li><li><a href="#12-web-开发语言权限差异">1.2 Web 开发语言权限差异</a></li><li><a href="#13-系统用户权限差异">1.3 系统用户权限差异</a><ul><li><a href="#windows-权限分级">Windows 权限分级</a></li><li><a href="#linux-用户权限">Linux 用户权限</a></li></ul></li></ul></li><li><a href="#2-系统提权案例">2. 系统提权案例</a><ul><li><a href="#21-宝塔面板---哥斯拉--msf">2.1 宝塔面板 - 哥斯拉 + MSF</a></li><li><a href="#22-溢出漏洞利用---msf--cs">2.2 溢出漏洞利用 - MSF / CS</a></li><li><a href="#221-msf-环境准备">2.2.1 MSF 环境准备</a><ul><li><a href="#docker-安装-msf">Docker 安装 MSF</a></li></ul></li><li><a href="#222-生成反弹后门">2.2.2 生成反弹后门</a></li><li><a href="#223-配置监听并接收会话">2.2.3 配置监听并接收会话</a></li><li><a href="#224-自动化漏洞扫描-exp-suggester">2.2.4 自动化漏洞扫描 (EXP Suggester)</a></li><li><a href="#225-漏洞溢出提权">2.2.5 漏洞溢出提权</a></li></ul></li></ul></nav></details><section class="blog-content"><h1 id="1-web-到-windows-系统提权">1. Web 到 Windows 系统提权</h1>
 <p>本文围绕 <strong>从WEB SHELL / WEB执行权限 → Windows系统本地提权</strong> 的基础流程展开，重点关注：<br/>
 <strong>平台差异 → 语言差异 → 用户权限 → 工具复现 → 自动化提权 → Exploit利用</strong></p>
 <hr/>

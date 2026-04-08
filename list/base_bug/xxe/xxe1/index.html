@@ -17,18 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记</h1></header><p><small>April 26, 2024&nbsp;· 1549 words&nbsp;· 8 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#思路">思路</a></li>
-<li><a href="#常用初始探针快速探测">常用初始探针（快速探测）</a></li>
-</ul>
-<ul>
-<li><a href="#1-读取本地文件直接回显">1. 读取本地文件（直接回显）</a></li>
-<li><a href="#2-读取并-base64-编码-php-文件绕过无回显">2. 读取并 base64 编码 PHP 文件（绕过无回显）</a></li>
-<li><a href="#3-带外oob探测--dnshttp-回连">3. 带外（OOB）探测 —— DNS/HTTP 回连</a></li>
-<li><a href="#4-无回显读取--带外回连常用写法">4. 无回显读取 + 带外回连（常用写法）</a></li>
-</ul>
-</nav></div><section class="blog-content"><h1 id="概述">概述</h1>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>XML 与 XXE（外部实体注入）检测、利用与防护——实战笔记</h1></header><p><small>April 26, 2024&nbsp;· 1549 words&nbsp;· 8 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#概述">概述</a></li><li><a href="#xml-与-html-的主要差异">XML 与 HTML 的主要差异</a></li><li><a href="#xxe-漏洞的成因">XXE 漏洞的成因</a></li><li><a href="#黑盒测试外部探测">黑盒测试（外部探测）</a><ul><li><a href="#思路">思路</a></li><li><a href="#常用初始探针快速探测">常用初始探针（快速探测）</a></li></ul></li><li><a href="#白盒审计源码函数层面">白盒审计（源码/函数层面）</a></li><li><a href="#利用与示例payload">利用与示例（payload）</a><ul><li><a href="#1-读取本地文件直接回显">1. 读取本地文件（直接回显）</a></li><li><a href="#2-读取并-base64-编码-php-文件绕过无回显">2. 读取并 base64 编码 PHP 文件（绕过无回显）</a></li><li><a href="#3-带外oob探测--dnshttp-回连">3. 带外（OOB）探测 —— DNS/HTTP 回连</a></li><li><a href="#4-无回显读取--带外回连常用写法">4. 无回显读取 + 带外回连（常用写法）</a></li></ul></li><li><a href="#常见绕过与伪协议">常见绕过与伪协议</a></li><li><a href="#修复与防护建议">修复与防护建议</a></li><li><a href="#测试与检测建议工具链">测试与检测建议（工具链）</a></li><li><a href="#常见-payload-汇总便于复制使用">常见 Payload 汇总（便于复制使用）</a></li><li><a href="#其他参考与延伸">其他参考与延伸</a></li></ul></nav></details><section class="blog-content"><h1 id="概述">概述</h1>
 <p>XML（eXtensible Markup Language）用于传输与存储结构化数据，关注数据本身的语义，与用于显示的 HTML 不同。XXE（XML External Entity Injection）是指在应用解析不安全的 XML 输入时，允许外部实体（external entity）被解析，从而导致本地文件读取、敏感信息泄露、带外（out-of-band）回显、服务器端请求伪造（SSRF）、内网扫描甚至命令执行等严重后果。</p>
 <blockquote>
 <p>说明：以下示例和 payload 均为教学用途，请仅在授权环境或靶场演练，不要用于未授权目标。</p>

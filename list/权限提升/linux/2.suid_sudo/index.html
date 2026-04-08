@@ -17,36 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>SUID &amp; SUDO 提权总结</h1></header><p><small>November 16, 2025&nbsp;· 835 words&nbsp;· 5 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#基础概念说明">基础概念说明</a>
-<ul>
-<li><a href="#suid-set-owner-user-id-up-on-execution">SUID (Set owner User ID up on execution)</a></li>
-<li><a href="#sudo-权限">SUDO 权限</a></li>
-</ul>
-</li>
-<li><a href="#提权辅助手册参考">提权辅助手册参考</a></li>
-<li><a href="#suid-提权">SUID 提权</a>
-<ul>
-<li><a href="#1-suid--guid--自带系统程序提权">1️ SUID &amp; GUID — 自带系统程序提权</a></li>
-<li><a href="#2-suid--sudo--第三方程序提权">2️ SUID &amp; SUDO — 第三方程序提权</a></li>
-</ul>
-</li>
-<li><a href="#sudo--sudocve-提权">SUDO &amp; SUDO+CVE 提权</a>
-<ul>
-<li><a href="#1-基础-sudo-配置提权">1️ 基础 SUDO 配置提权</a></li>
-<li><a href="#2-sudo-cve-实战案例">2️ SUDO-CVE 实战案例</a></li>
-<li><a href="#利用思路与流程">利用思路与流程</a></li>
-</ul>
-</li>
-<li><a href="#sudo-漏洞利用合集">SUDO 漏洞利用合集</a>
-<ul>
-<li><a href="#cve-2021-3156">CVE-2021-3156</a></li>
-<li><a href="#cve-2025-32463">CVE-2025-32463</a></li>
-</ul>
-</li>
-</ul>
-</nav></div><section class="blog-content"><p>获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。</p>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>SUID &amp; SUDO 提权总结</h1></header><p><small>November 16, 2025&nbsp;· 835 words&nbsp;· 5 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#基础概念说明">基础概念说明</a><ul><li><a href="#suid-set-owner-user-id-up-on-execution">SUID (Set owner User ID up on execution)</a></li><li><a href="#sudo-权限">SUDO 权限</a></li></ul></li><li><a href="#提权辅助手册参考">提权辅助手册参考</a></li><li><a href="#suid-提权">SUID 提权</a><ul><li><a href="#1-suid--guid--自带系统程序提权">1️ SUID &amp; GUID — 自带系统程序提权</a></li><li><a href="#2-suid--sudo--第三方程序提权">2️ SUID &amp; SUDO — 第三方程序提权</a></li></ul></li><li><a href="#sudo--sudocve-提权">SUDO &amp; SUDO+CVE 提权</a><ul><li><a href="#1-基础-sudo-配置提权">1️ 基础 SUDO 配置提权</a></li><li><a href="#2-sudo-cve-实战案例">2️ SUDO-CVE 实战案例</a></li><li><a href="#利用思路与流程">利用思路与流程</a></li></ul></li><li><a href="#sudo-漏洞利用合集">SUDO 漏洞利用合集</a><ul><li><a href="#cve-2021-3156">CVE-2021-3156</a></li><li><a href="#cve-2025-32463">CVE-2025-32463</a></li></ul></li></ul></nav></details><section class="blog-content"><p>获取到 Web 权限或普通用户在 Linux 服务器上时进行的 SUID &amp; SUDO 提权。</p>
 <hr/>
 <h2 id="基础概念说明">基础概念说明</h2>
 <h3 id="suid-set-owner-user-id-up-on-execution">SUID (Set owner User ID up on execution)</h3>

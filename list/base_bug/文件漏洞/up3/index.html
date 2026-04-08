@@ -17,25 +17,7 @@
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
 <li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
 <li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
-<div id="content"><article class="blog-single"><header class="blog-title"><h1>文件包含原理、分类、利用与修复</h1></header><p><small>May 4, 2024&nbsp;· 1107 words&nbsp;· 6 min</small><p><div class="blog-toc"><nav id="TableOfContents">
-<ul>
-<li><a href="#文件包含-原理分类利用与修复">文件包含-原理、分类、利用与修复</a>
-<ul>
-<li><a href="#1-文件包含原理">1. 文件包含原理</a></li>
-<li><a href="#2-文件包含分类">2. 文件包含分类</a></li>
-<li><a href="#3-白盒审计---ctfshow">3. 白盒审计 - CTFSHOW</a></li>
-<li><a href="#4-黑盒分析">4. 黑盒分析</a></li>
-<li><a href="#5-php-伪协议">5. PHP 伪协议</a></li>
-<li><a href="#6-包含日志文件">6. 包含日志文件</a></li>
-<li><a href="#7-包含系统文件">7. 包含系统文件</a></li>
-<li><a href="#8-文件写入">8. 文件写入</a></li>
-<li><a href="#9-绕过技巧">9. 绕过技巧</a></li>
-<li><a href="#10-ctf-实战">10. CTF 实战</a></li>
-<li><a href="#11-其他伪协议与漏洞">11. 其他伪协议与漏洞</a></li>
-</ul>
-</li>
-</ul>
-</nav></div><section class="blog-content"><h2 id="文件包含-原理分类利用与修复">文件包含-原理、分类、利用与修复</h2>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>文件包含原理、分类、利用与修复</h1></header><p><small>May 4, 2024&nbsp;· 1107 words&nbsp;· 6 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li><a href="#文件包含-原理分类利用与修复">文件包含-原理、分类、利用与修复</a><ul><li><a href="#1-文件包含原理">1. 文件包含原理</a></li><li><a href="#2-文件包含分类">2. 文件包含分类</a></li><li><a href="#3-白盒审计---ctfshow">3. 白盒审计 - CTFSHOW</a></li><li><a href="#4-黑盒分析">4. 黑盒分析</a></li><li><a href="#5-php-伪协议">5. PHP 伪协议</a></li><li><a href="#6-包含日志文件">6. 包含日志文件</a></li><li><a href="#7-包含系统文件">7. 包含系统文件</a></li><li><a href="#8-文件写入">8. 文件写入</a></li><li><a href="#9-绕过技巧">9. 绕过技巧</a></li><li><a href="#10-ctf-实战">10. CTF 实战</a></li><li><a href="#11-其他伪协议与漏洞">11. 其他伪协议与漏洞</a></li></ul></li></ul></nav></details><section class="blog-content"><h2 id="文件包含-原理分类利用与修复">文件包含-原理、分类、利用与修复</h2>
 <h3 id="1-文件包含原理">1. 文件包含原理</h3>
 <p>文件包含是程序开发中的一种常见技术，通常用于复用代码。开发人员会将可复用的函数或代码模块写入一个单独的文件，其他文件可以直接调用该文件，而不必重复编写。</p>
 <h4 id="常见的-php-文件包含函数">常见的 PHP 文件包含函数：</h4>
