@@ -99,7 +99,7 @@ class PostRecord:
 
 
 def configure_windows_console() -> None:
-    """?? Windows ????? UTF-8 ???"""
+    """Ensure Windows console uses UTF-8 output."""
     if os.name != "nt":
         return
     try:
@@ -120,7 +120,7 @@ def configure_windows_console() -> None:
 
 
 def is_publishable_post(post: PostRecord) -> bool:
-    """??????????????????"""
+    """Return whether a post should be rendered into the site."""
     if post.slug in {"__index", "__index__"}:
         return False
     if "/__index" in post.rel_permalink:
@@ -205,7 +205,7 @@ def build_toc(headings: list[tuple[int, str, str]]) -> str:
     if not filtered:
         return ""
 
-    # ????????????????????????
+    # Build a heading tree first, then render it as nested TOC nodes.
     root: list[dict[str, Any]] = []
     stack: list[tuple[int, list[dict[str, Any]]]] = [(0, root)]
     for level, hid, title in filtered:
@@ -239,7 +239,7 @@ def build_toc(headings: list[tuple[int, str, str]]) -> str:
     return f'<nav id="TableOfContents">{render_nodes(root)}</nav>'
 
 def refresh_post_toc(post: PostRecord) -> PostRecord:
-    # ??????????????????????
+    # Rebuild TOC for older posts from headings in the stored article HTML.
     if not post.body_html:
         return post
     soup = BeautifulSoup(post.body_html, "html.parser")
@@ -433,7 +433,7 @@ def render_listing(title: str, canonical_path: str, posts: list[PostRecord], chi
 
 def render_home(posts: list[PostRecord]) -> str:
     cards = []
-    # ?????????????????????????????
+    # Home page only shows the latest four posts.
     for post in posts[:HOME_POST_LIMIT]:
         cards.append(
             f'<article class="featured-single"><h4><a href="/{quote_path(post.rel_permalink).strip("/")}">{html.escape(post.title)}</a></h4><p><small>{minute_text(post)}</small><p></article>'
@@ -515,7 +515,7 @@ def build_note(note_path: Path, existing: Optional[PostRecord], sections: dict[s
         guessed = sanitize_segment(note_file.parent.name)
         section_path = [guessed] if guessed else []
     if not section_path:
-        raise ValueError("???????? section??? ????/linux")
+        raise ValueError("No valid section found; set section or path in front matter")
     section_path = [sanitize_segment(item) for item in section_path]
     titles = meta.get("section_titles") or {}
     for depth in range(len(section_path)):
@@ -538,11 +538,11 @@ def upsert(posts: list[PostRecord], post: PostRecord) -> list[PostRecord]:
     return result
 
 def detect_publish_action(posts: list[PostRecord], post: PostRecord, source_note: str = "") -> str:
-    """??????????????"""
+    """Return whether this publish action is NEW or UPDATE."""
     if any(item.rel_permalink == post.rel_permalink for item in posts):
-        return "NEW"
+        return "UPDATE"
     if source_note and any(item.source_note == source_note for item in posts):
-        return "NEW"
+        return "UPDATE"
     return "NEW"
 
 def rebuild(site_root: Path, posts: list[PostRecord], sections: dict[str, SectionInfo]) -> None:
@@ -604,7 +604,7 @@ def backup(site_root: Path, note_path: Path, slug: str) -> None:
 
 
 def collect_note_paths(note_input: str, batch: bool) -> list[Path]:
-    """?????? Markdown ?????"""
+    """Collect Markdown note paths from a file or directory."""
     note_path = Path(note_input).expanduser().resolve()
     if not note_path.exists():
         raise FileNotFoundError(f"File or directory not found: {note_path}")
@@ -629,7 +629,7 @@ def publish_notes(
     dry_run: bool,
     no_backup: bool,
 ) -> tuple[list[PostRecord], list[str], list[PostRecord]]:
-    """??????????????????????"""
+    """Publish one or more notes and return summary messages."""
     results: list[str] = []
     published_posts: list[PostRecord] = []
     current_posts = posts
@@ -638,7 +638,7 @@ def publish_notes(
         post = build_note(note_path, existing, sections)
         action_text = detect_publish_action(current_posts, post, str(note_path))
         current_posts = upsert(current_posts, post)
-        results.append(f"{action_text}?{post.title} -> /{post.rel_permalink}/")
+        results.append(f"{action_text}: {post.title} -> /{post.rel_permalink}/")
         published_posts.append(post)
         if not dry_run and not no_backup:
             backup(site_root, note_path, post.slug)
@@ -646,7 +646,7 @@ def publish_notes(
 
 
 def run_git(site_root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
-    """?? git ????????"""
+    """Run a git command and return the completed process."""
     return subprocess.run(
         ["git", *args],
         cwd=str(site_root),
@@ -659,7 +659,7 @@ def run_git(site_root: Path, args: list[str]) -> subprocess.CompletedProcess[str
 
 
 def auto_git_push(site_root: Path, message: str) -> str:
-    """????????????"""
+    """Commit and push local changes automatically."""
     status = run_git(site_root, ["status", "--short"]).stdout.strip()
     if not status:
         return "No git changes detected, skipped commit and push"
@@ -711,14 +711,14 @@ def main() -> int:
     )
     if args.dry_run:
         for line in results:
-            print(line.replace("?", " PREVIEW: ", 1))
+            print(line.replace(": ", " PREVIEW: ", 1))
         if published_posts:
             print(f"TOTAL: {len(published_posts)}")
         return 0
     rebuild(site_root, posts, sections)
     save_state(site_root, posts, sections)
     for line in results:
-        print(line.replace("?", " DONE: ", 1))
+        print(line.replace(": ", " DONE: ", 1))
     if args.batch:
         print(f"BATCH DONE: {len(published_posts)}")
     if args.git_push:

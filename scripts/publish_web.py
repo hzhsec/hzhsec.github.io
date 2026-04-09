@@ -442,12 +442,13 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
         tags_text = ", ".join(post.tags) or "?"
 
         if form.get("dry_run") == "on":
-            return f"{action_text}??
-
-???{post.title}
-???/{post.rel_permalink}/
-???{categories_text}
-???{tags_text}"
+            return (
+                f"{action_text} PREVIEW\n\n"
+                f"Title: {post.title}\n"
+                f"Path: /{post.rel_permalink}/\n"
+                f"Categories: {categories_text}\n"
+                f"Tags: {tags_text}"
+            )
 
         pub.rebuild(site_root, posts, sections)
         pub.save_state(site_root, posts, sections)
@@ -458,10 +459,11 @@ def publish_uploaded_note(site_root: Path, filename: str, content: bytes, form: 
             with (backup_dir / filename).open("w", encoding="utf-8", newline="") as file:
                 file.write(text)
 
-        result = f"{action_text}??
-
-???{post.title}
-???/{post.rel_permalink}/"
+        result = (
+            f"{action_text} DONE\n\n"
+            f"Title: {post.title}\n"
+            f"Path: /{post.rel_permalink}/"
+        )
         if form.get("git_push") == "on":
             commit_message = form.get("commit_message", "").strip() or f"publish {post.title}"
             result += "\n\n" + pub.auto_git_push(site_root, commit_message)
