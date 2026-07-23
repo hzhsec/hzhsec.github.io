@@ -3615,5 +3615,288 @@
       "parent": "list",
       "order": 67
     }
+  },
+  "categories": {
+    "工具使用": {
+      "dir_name": "工具使用",
+      "posts": [
+        "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
+        "sqlmap-cheatsheet-and-advanced-usage",
+        "reconinspector-yi-kuan-ji-fofa-nuclei-yu-pocmo-ban-diao-shi-yu-yi-ti-de-ke-shi-hua-an-quan-xun-jian-ping-tai"
+      ],
+      "page": 1
+    },
+    "权限提升": {
+      "dir_name": "权限提升",
+      "posts": [
+        "windows-privilege-escalation-uac-dll-service",
+        "dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699",
+        "database-privilege-escalation-guide",
+        "computer-user-privilege-elevation-and-reduction",
+        "linux-privilege-escalation-mysql-udf-capability-ld-preload",
+        "windows-privilege-escalation-manual-potato",
+        "linux-privilege-escalation-lxd-docker-rbash",
+        "linux-privilege-escalation-nfs-cron-path",
+        "linux-privilege-escalation-suid-sudo-cve",
+        "windows-privilege-escalation-basic-guide",
+        "linux-kernel-exploit-privilege-escalation"
+      ],
+      "page": 1
+    },
+    "应急响应": {
+      "dir_name": "应急响应",
+      "posts": [
+        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong",
+        "an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong",
+        "2.c2hou-men-fa-xian-yu-chu-zhi",
+        "4.diao-yu-you-jian-fen-xi-yu-pai-cha",
+        "5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha",
+        "3.wa-kuang-bing-du-pai-cha-fen-xi",
+        "1.webru-qin-cha-sha-zhi-nan"
+      ],
+      "page": 1
+    },
+    "漏洞复现": {
+      "dir_name": "漏洞复现",
+      "posts": [
+        "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+        "cve-2025-8088-winrar",
+        "7ziplou-dong-fu-xian-he-ji",
+        "mongodblou-dong-fu-xian-cve-2025-14847",
+        "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+        "apache-solr-rcelou-dong-fu-xian",
+        "log4j2-cve-2021-44228lou-dong-fu-xian",
+        "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+        "cve-2025-55182de-fu-xian-yu-xiu-fu",
+        "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+        "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+        "cve-2025-55725",
+        "apache-struts2-ognl-rcezhu-ru"
+      ],
+      "page": 1
+    },
+    "RCE": {
+      "dir_name": "RCE",
+      "posts": [
+        "ld-preload-bypass-rce",
+        "apache-struts2-ognl-rcezhu-ru",
+        "rce-vulnerability-exploitation-bypass-techniques"
+      ],
+      "page": 1
+    },
+    "护网": {
+      "dir_name": "护网",
+      "posts": [
+        "护网面经"
+      ],
+      "page": 1
+    },
+    "内网渗透": {
+      "dir_name": "内网渗透",
+      "posts": [
+        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
+      ],
+      "page": 1
+    },
+    "环境搭建": {
+      "dir_name": "环境搭建",
+      "posts": [
+        "nei-wang-huan-jing-da-jian-zhi-dan-yu-da-jian"
+      ],
+      "page": 1
+    },
+    "云上攻防": {
+      "dir_name": "云上攻防",
+      "posts": [
+        "3-yun-yuan-sheng-dockertao-yi"
+      ],
+      "page": 1
+    },
+    "burpsuite靶场": {
+      "dir_name": "burpsuite靶场",
+      "posts": [
+        "1.jwtshi-yan-ba-chang",
+        "shang-ye-gui-ze-zhi-xing-bu-dang"
+      ],
+      "page": 1
+    },
+    "业务逻辑漏洞": {
+      "dir_name": "业务逻辑漏洞",
+      "posts": [
+        "1-qian-yue-lou-dong",
+        "2-gao-bing-fa"
+      ],
+      "page": 1
+    },
+    "top10": {
+      "dir_name": "top10",
+      "posts": [
+        "xss-defense-csp-httponly-filter",
+        "xxe-injection-analysis-detection-defense",
+        "ctf-file-upload-bypass-and-payloads",
+        "ssrf-vulnerability-principles-bypass-and-defense-guide",
+        "xss-exploitation-cookie-theft-business-logic-and-phishing",
+        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+        "xss-filter-bypass-techniques-and-waf-evasion",
+        "jsonp-data-leakage-and-clickjacking-defense",
+        "file-inclusion-vulnerability-guide",
+        "csrf-attack-detection-and-defense",
+        "file-upload-security-architecture-guide",
+        "sql-blind-injection-techniques",
+        "ssrf-protocols-gopher-internal-services",
+        "sql-injection-mysql-practice",
+        "sql-injection-request-types-php-mysql",
+        "file-and-directory-security-vulnerabilities",
+        "file-upload-vulnerability-complete-guide"
+      ],
+      "page": 1
+    },
+    "XSS": {
+      "dir_name": "XSS",
+      "posts": [
+        "xss-defense-csp-httponly-filter",
+        "xss-exploitation-cookie-theft-business-logic-and-phishing",
+        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+        "xss2",
+        "xss-filter-bypass-techniques-and-waf-evasion",
+        "jsonp-data-leakage-and-clickjacking-defense",
+        "xss1",
+        "xss4",
+        "xss3",
+        "xss6"
+      ],
+      "page": 1
+    },
+    "Web安全": {
+      "dir_name": "Web安全",
+      "posts": [
+        "ssrf-vulnerability-principles-bypass-and-defense-guide",
+        "ld-preload-bypass-rce",
+        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+        "xss1",
+        "ssrf-protocols-gopher-internal-services",
+        "file-inclusion-vulnerability-guide",
+        "sql-blind-injection-techniques",
+        "rce-vulnerability-exploitation-bypass-techniques",
+        "sql-injection-request-types-php-mysql",
+        "ctf-file-upload-bypass-and-payloads",
+        "xss2",
+        "csrf-attack-detection-and-defense",
+        "file-and-directory-security-vulnerabilities",
+        "xss6",
+        "xss-exploitation-cookie-theft-business-logic-and-phishing",
+        "xss-filter-bypass-techniques-and-waf-evasion",
+        "file-upload-security-architecture-guide",
+        "xss4",
+        "sql-injection-mysql-practice",
+        "xss3",
+        "file-upload-vulnerability-complete-guide",
+        "sqlmap-cheatsheet-and-advanced-usage"
+      ],
+      "page": 1
+    },
+    "XXE": {
+      "dir_name": "XXE",
+      "posts": [
+        "xxe-injection-analysis-detection-defense",
+        "test",
+        "xxe1"
+      ],
+      "page": 1
+    },
+    "杂项": {
+      "dir_name": "杂项",
+      "posts": [
+        "hello-halo",
+        "4.ji-suan-ji-yong-hu-ti-quan",
+        "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
+        "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
+        "rce",
+        "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
+        "xss6",
+        "sql4",
+        "up3",
+        "sql-advanced-injection-second-order-stacked-oob",
+        "sql2",
+        "xss1",
+        "3.nfs_path_cronti-quan",
+        "1.nei-he-lou-dong-ti-quan",
+        "3.shu-ju-ku-ti-quan",
+        "qian-tan-dian-zi-you-jian-wei-zao",
+        "cve-2025-8088-winrar-directory-traversal-exploit"
+      ],
+      "page": 1
+    },
+    "文件安全": {
+      "dir_name": "文件安全",
+      "posts": [
+        "ctf-file-upload-bypass-and-payloads",
+        "file-inclusion-vulnerability-guide",
+        "file-upload-security-architecture-guide",
+        "file-and-directory-security-vulnerabilities",
+        "file-upload-vulnerability-complete-guide"
+      ],
+      "page": 1
+    },
+    "PHP安全": {
+      "dir_name": "PHP安全",
+      "posts": [
+        "file-inclusion-vulnerability-guide"
+      ],
+      "page": 1
+    },
+    "SQL注入": {
+      "dir_name": "SQL注入",
+      "posts": [
+        "sql-blind-injection-techniques",
+        "sql-injection-request-types-php-mysql",
+        "sql-injection-mysql-practice",
+        "sqlmap-cheatsheet-and-advanced-usage"
+      ],
+      "page": 1
+    },
+    "SSRF": {
+      "dir_name": "SSRF",
+      "posts": [
+        "ssrf-vulnerability-principles-bypass-and-defense-guide",
+        "ssrf-protocols-gopher-internal-services",
+        "ssrf2",
+        "ssrf1"
+      ],
+      "page": 1
+    },
+    "跨域安全": {
+      "dir_name": "跨域安全",
+      "posts": [
+        "xss6"
+      ],
+      "page": 1
+    },
+    "移动安全": {
+      "dir_name": "移动安全",
+      "posts": [
+        "app1",
+        "app3",
+        "app2"
+      ],
+      "page": 1
+    },
+    "逆向工程": {
+      "dir_name": "逆向工程",
+      "posts": [
+        "app3"
+      ],
+      "page": 1
+    },
+    "CSRF": {
+      "dir_name": "CSRF",
+      "posts": [
+        "csrf"
+      ],
+      "page": 1
+    }
   }
 }
