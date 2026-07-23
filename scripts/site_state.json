@@ -1388,24 +1388,787 @@
       "word_count": 0,
       "reading_minutes": 0,
       "source_note": ""
+    },
+    {
+      "slug": "rce",
+      "title": "rce",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/rce",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql注入",
+      "title": "sql注入",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/sql注入",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ssrf",
+      "title": "ssrf",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/ssrf",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss",
+      "title": "xss",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/xss",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xxe",
+      "title": "xxe",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/xxe",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "文件漏洞",
+      "title": "文件漏洞",
+      "categories": [
+        "base_bug"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/base_bug/文件漏洞",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "jsonp-data-leakage-and-clickjacking-defense",
+      "title": "jsonp-data-leakage-and-clickjacking-defense",
+      "categories": [
+        "top10"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/top10/jsonp-data-leakage-and-clickjacking-defense",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+      "title": "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "csrf-attack-detection-and-defense",
+      "title": "csrf-attack-detection-and-defense",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/csrf-attack-detection-and-defense",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ctf-file-upload-bypass-and-payloads",
+      "title": "ctf-file-upload-bypass-and-payloads",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/ctf-file-upload-bypass-and-payloads",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "file-and-directory-security-vulnerabilities",
+      "title": "file-and-directory-security-vulnerabilities",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/file-and-directory-security-vulnerabilities",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "file-inclusion-vulnerability-guide",
+      "title": "file-inclusion-vulnerability-guide",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/file-inclusion-vulnerability-guide",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "file-upload-security-architecture-guide",
+      "title": "file-upload-security-architecture-guide",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/file-upload-security-architecture-guide",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "file-upload-vulnerability-complete-guide",
+      "title": "file-upload-vulnerability-complete-guide",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/file-upload-vulnerability-complete-guide",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ld-preload-bypass-rce",
+      "title": "ld-preload-bypass-rce",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/ld-preload-bypass-rce",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "rce-vulnerability-exploitation-bypass-techniques",
+      "title": "rce-vulnerability-exploitation-bypass-techniques",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/rce-vulnerability-exploitation-bypass-techniques",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql-blind-injection-techniques",
+      "title": "sql-blind-injection-techniques",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/sql-blind-injection-techniques",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql-injection-mysql-practice",
+      "title": "sql-injection-mysql-practice",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/sql-injection-mysql-practice",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql-injection-request-types-php-mysql",
+      "title": "sql-injection-request-types-php-mysql",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/sql-injection-request-types-php-mysql",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sqlmap-cheatsheet-and-advanced-usage",
+      "title": "sqlmap-cheatsheet-and-advanced-usage",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/sqlmap-cheatsheet-and-advanced-usage",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ssrf-protocols-gopher-internal-services",
+      "title": "ssrf-protocols-gopher-internal-services",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/ssrf-protocols-gopher-internal-services",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ssrf-vulnerability-principles-bypass-and-defense-guide",
+      "title": "ssrf-vulnerability-principles-bypass-and-defense-guide",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/ssrf-vulnerability-principles-bypass-and-defense-guide",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss-exploitation-cookie-theft-business-logic-and-phishing",
+      "title": "xss-exploitation-cookie-theft-business-logic-and-phishing",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/xss-exploitation-cookie-theft-business-logic-and-phishing",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss-filter-bypass-techniques-and-waf-evasion",
+      "title": "xss-filter-bypass-techniques-and-waf-evasion",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/xss-filter-bypass-techniques-and-waf-evasion",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+      "title": "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+      "categories": [
+        "Web安全"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/Web安全/xss-vulnerability-comprehensive-guide-reflected-stored-dom",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss-defense-csp-httponly-filter",
+      "title": "xss-defense-csp-httponly-filter",
+      "categories": [
+        "XSS"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/XSS/xss-defense-csp-httponly-filter",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xxe-injection-analysis-detection-defense",
+      "title": "xxe-injection-analysis-detection-defense",
+      "categories": [
+        "XXE"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/XXE/xxe-injection-analysis-detection-defense",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "1.nei-he-lou-dong-ti-quan",
+      "title": "1.nei-he-lou-dong-ti-quan",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/1.nei-he-lou-dong-ti-quan",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "3.nfs_path_cronti-quan",
+      "title": "3.nfs_path_cronti-quan",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/3.nfs_path_cronti-quan",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "3.shu-ju-ku-ti-quan",
+      "title": "3.shu-ju-ku-ti-quan",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/3.shu-ju-ku-ti-quan",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
+      "title": "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "4.ji-suan-ji-yong-hu-ti-quan",
+      "title": "4.ji-suan-ji-yong-hu-ti-quan",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/4.ji-suan-ji-yong-hu-ti-quan",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "cve-2025-8088-winrar-directory-traversal-exploit",
+      "title": "cve-2025-8088-winrar-directory-traversal-exploit",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/cve-2025-8088-winrar-directory-traversal-exploit",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "hello-halo",
+      "title": "hello-halo",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/hello-halo",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
+      "title": "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "qian-tan-dian-zi-you-jian-wei-zao",
+      "title": "qian-tan-dian-zi-you-jian-wei-zao",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/qian-tan-dian-zi-you-jian-wei-zao",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql-advanced-injection-second-order-stacked-oob",
+      "title": "sql-advanced-injection-second-order-stacked-oob",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/sql-advanced-injection-second-order-stacked-oob",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql2",
+      "title": "sql2",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/sql2",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "sql4",
+      "title": "sql4",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/sql4",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "up3",
+      "title": "up3",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/up3",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss1",
+      "title": "xss1",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/xss1",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "xss6",
+      "title": "xss6",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/xss6",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
+      "title": "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
+      "categories": [
+        "杂项"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/杂项/yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "linux",
+      "title": "linux",
+      "categories": [
+        "权限提升"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/权限提升/linux",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "windows",
+      "title": "windows",
+      "categories": [
+        "权限提升"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/权限提升/windows",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "7ziplou-dong-fu-xian-he-ji",
+      "title": "7ziplou-dong-fu-xian-he-ji",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/7ziplou-dong-fu-xian-he-ji",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "apache-solr-rcelou-dong-fu-xian",
+      "title": "apache-solr-rcelou-dong-fu-xian",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/apache-solr-rcelou-dong-fu-xian",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "apache-struts2-ognl-rcezhu-ru",
+      "title": "apache-struts2-ognl-rcezhu-ru",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/apache-struts2-ognl-rcezhu-ru",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+      "title": "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "cve-2025-55182de-fu-xian-yu-xiu-fu",
+      "title": "cve-2025-55182de-fu-xian-yu-xiu-fu",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/cve-2025-55182de-fu-xian-yu-xiu-fu",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "cve-2025-55725",
+      "title": "cve-2025-55725",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/cve-2025-55725",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+      "title": "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+      "title": "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "log4j2-cve-2021-44228lou-dong-fu-xian",
+      "title": "log4j2-cve-2021-44228lou-dong-fu-xian",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/log4j2-cve-2021-44228lou-dong-fu-xian",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "mongodblou-dong-fu-xian-cve-2025-14847",
+      "title": "mongodblou-dong-fu-xian-cve-2025-14847",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/mongodblou-dong-fu-xian-cve-2025-14847",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+      "title": "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+      "word_count": 0,
+      "reading_minutes": 0
+    },
+    {
+      "slug": "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+      "title": "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [],
+      "date_iso": "",
+      "rel_permalink": "list/漏洞复现/spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+      "word_count": 0,
+      "reading_minutes": 0
     }
   ],
   "sections": {
-    "权限提升": {
-      "dir_name": "权限提升",
+    "app": {
+      "dir_name": "app",
       "posts": [
-        "linux-privilege-escalation-suid-sudo-cve",
-        "computer-user-privilege-elevation-and-reduction",
-        "dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699",
-        "database-privilege-escalation-guide",
-        "windows-privilege-escalation-manual-potato",
-        "linux-privilege-escalation-nfs-cron-path",
-        "linux-kernel-exploit-privilege-escalation",
-        "windows-privilege-escalation-uac-dll-service",
-        "windows-privilege-escalation-basic-guide",
-        "linux-privilege-escalation-mysql-udf-capability-ld-preload",
-        "linux-privilege-escalation-lxd-docker-rbash",
-        "linux-fuse-page-cache-本地权限提升漏洞cve-2026-31694"
+        "app1",
+        "app2",
+        "app3"
+      ],
+      "page": 1
+    },
+    "base_bug": {
+      "dir_name": "base_bug",
+      "posts": [
+        "csrf",
+        "rce",
+        "sql注入",
+        "ssrf",
+        "xss",
+        "xxe",
+        "文件漏洞"
+      ],
+      "page": 1
+    },
+    "burpsuite靶场": {
+      "dir_name": "burpsuite靶场",
+      "posts": [
+        "1.jwtshi-yan-ba-chang",
+        "shang-ye-gui-ze-zhi-xing-bu-dang"
+      ],
+      "page": 1
+    },
+    "top10": {
+      "dir_name": "top10",
+      "posts": [
+        "jsonp-data-leakage-and-clickjacking-defense"
+      ],
+      "page": 1
+    },
+    "Web安全": {
+      "dir_name": "Web安全",
+      "posts": [
+        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
+        "csrf-attack-detection-and-defense",
+        "ctf-file-upload-bypass-and-payloads",
+        "file-and-directory-security-vulnerabilities",
+        "file-inclusion-vulnerability-guide",
+        "file-upload-security-architecture-guide",
+        "file-upload-vulnerability-complete-guide",
+        "ld-preload-bypass-rce",
+        "rce-vulnerability-exploitation-bypass-techniques",
+        "sql-blind-injection-techniques",
+        "sql-injection-mysql-practice",
+        "sql-injection-request-types-php-mysql",
+        "sqlmap-cheatsheet-and-advanced-usage",
+        "ssrf-protocols-gopher-internal-services",
+        "ssrf-vulnerability-principles-bypass-and-defense-guide",
+        "xss-exploitation-cookie-theft-business-logic-and-phishing",
+        "xss-filter-bypass-techniques-and-waf-evasion",
+        "xss-vulnerability-comprehensive-guide-reflected-stored-dom"
+      ],
+      "page": 1
+    },
+    "XSS": {
+      "dir_name": "XSS",
+      "posts": [
+        "xss-defense-csp-httponly-filter"
+      ],
+      "page": 1
+    },
+    "XXE": {
+      "dir_name": "XXE",
+      "posts": [
+        "xxe-injection-analysis-detection-defense"
+      ],
+      "page": 1
+    },
+    "业务逻辑漏洞": {
+      "dir_name": "业务逻辑漏洞",
+      "posts": [
+        "1-qian-yue-lou-dong",
+        "2-gao-bing-fa"
+      ],
+      "page": 1
+    },
+    "云上攻防": {
+      "dir_name": "云上攻防",
+      "posts": [
+        "3-yun-yuan-sheng-dockertao-yi"
+      ],
+      "page": 1
+    },
+    "内网渗透": {
+      "dir_name": "内网渗透",
+      "posts": [
+        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
       ],
       "page": 1
     },
@@ -1421,12 +2184,12 @@
       "dir_name": "应急响应",
       "posts": [
         "1.webru-qin-cha-sha-zhi-nan",
+        "2.c2hou-men-fa-xian-yu-chu-zhi",
+        "3.wa-kuang-bing-du-pai-cha-fen-xi",
         "4.diao-yu-you-jian-fen-xi-yu-pai-cha",
         "5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha",
-        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong",
         "an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong",
-        "3.wa-kuang-bing-du-pai-cha-fen-xi",
-        "2.c2hou-men-fa-xian-yu-chu-zhi"
+        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong"
       ],
       "page": 1
     },
@@ -1437,10 +2200,67 @@
       ],
       "page": 1
     },
-    "内网渗透": {
-      "dir_name": "内网渗透",
+    "杂项": {
+      "dir_name": "杂项",
       "posts": [
-        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
+        "1.nei-he-lou-dong-ti-quan",
+        "3.nfs_path_cronti-quan",
+        "3.shu-ju-ku-ti-quan",
+        "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
+        "4.ji-suan-ji-yong-hu-ti-quan",
+        "cloud1",
+        "cve-2025-55182",
+        "cve-2025-8088-winrar-directory-traversal-exploit",
+        "hello-halo",
+        "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
+        "qian-tan-dian-zi-you-jian-wei-zao",
+        "rce",
+        "sql-advanced-injection-second-order-stacked-oob",
+        "sql2",
+        "sql4",
+        "uacrao-guo_bu-tong-ti-quan-shou-fa",
+        "up3",
+        "xss1",
+        "xss6",
+        "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue"
+      ],
+      "page": 1
+    },
+    "权限提升": {
+      "dir_name": "权限提升",
+      "posts": [
+        "computer-user-privilege-elevation-and-reduction",
+        "database-privilege-escalation-guide",
+        "dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699",
+        "linux",
+        "linux-kernel-exploit-privilege-escalation",
+        "linux-privilege-escalation-lxd-docker-rbash",
+        "linux-privilege-escalation-mysql-udf-capability-ld-preload",
+        "linux-privilege-escalation-nfs-cron-path",
+        "linux-privilege-escalation-suid-sudo-cve",
+        "windows",
+        "windows-privilege-escalation-basic-guide",
+        "windows-privilege-escalation-manual-potato",
+        "windows-privilege-escalation-uac-dll-service"
+      ],
+      "page": 1
+    },
+    "漏洞复现": {
+      "dir_name": "漏洞复现",
+      "posts": [
+        "7ziplou-dong-fu-xian-he-ji",
+        "apache-solr-rcelou-dong-fu-xian",
+        "apache-struts2-ognl-rcezhu-ru",
+        "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+        "cve-2025-55182de-fu-xian-yu-xiu-fu",
+        "cve-2025-55725",
+        "cve-2025-8088-winrar",
+        "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+        "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+        "log4j2-cve-2021-44228lou-dong-fu-xian",
+        "mongodblou-dong-fu-xian-cve-2025-14847",
+        "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+        "spring4shell-cve-2022-22965yuan-li-ji-fu-xian"
       ],
       "page": 1
     },
@@ -1448,69 +2268,6 @@
       "dir_name": "环境搭建",
       "posts": [
         "nei-wang-huan-jing-da-jian-zhi-dan-yu-da-jian"
-      ],
-      "page": 1
-    },
-    "云上攻防": {
-      "dir_name": "云上攻防",
-      "posts": [
-        "3-yun-yuan-sheng-dockertao-yi"
-      ],
-      "page": 1
-    },
-    "burpsuite靶场": {
-      "dir_name": "burpsuite靶场",
-      "posts": [
-        "shang-ye-gui-ze-zhi-xing-bu-dang",
-        "1.jwtshi-yan-ba-chang"
-      ],
-      "page": 1
-    },
-    "业务逻辑漏洞": {
-      "dir_name": "业务逻辑漏洞",
-      "posts": [
-        "1-qian-yue-lou-dong",
-        "2-gao-bing-fa"
-      ],
-      "page": 1
-    },
-    "移动安全": {
-      "dir_name": "移动安全",
-      "posts": [
-        "app1",
-        "app2",
-        "app3"
-      ],
-      "page": 1
-    },
-    "逆向工程": {
-      "dir_name": "逆向工程",
-      "posts": [
-        "app3"
-      ],
-      "page": 1
-    },
-    "SSRF": {
-      "dir_name": "SSRF",
-      "posts": [
-        "ssrf2",
-        "ssrf1"
-      ],
-      "page": 1
-    },
-    "CSRF": {
-      "dir_name": "CSRF",
-      "posts": [
-        "csrf"
-      ],
-      "page": 1
-    },
-    "APP攻防": {
-      "dir_name": "APP攻防",
-      "posts": [
-        "app1",
-        "app2",
-        "app3"
       ],
       "page": 1
     }
