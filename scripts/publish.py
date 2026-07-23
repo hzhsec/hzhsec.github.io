@@ -18,11 +18,21 @@ PUBLISH_SCRIPT = SITE_ROOT / "scripts" / "publish_obsidian.py"
 CONFIG_FILE = SITE_ROOT / "scripts" / ".publish_config.json"
 
 CATEGORIES = [
-    "Web安全", "漏洞复现", "权限提升", "应急响应", "XSS",
-    "SQL注入", "SSRF", "XXE", "RCE", "文件安全",
-    "工具使用", "杂项", "业务逻辑漏洞", "云上攻防",
-    "内网渗透", "环境搭建", "护网", "PHP安全", "跨域安全",
-    "burpsuite靶场", "top10", "移动安全",
+    {"label": "权限提升", "subs": ["Linux", "Windows"]},
+    {"label": "漏洞复现", "subs": []},
+    {"label": "应急响应", "subs": []},
+    {"label": "APP攻防", "subs": []},
+    {"label": "基础漏洞", "subs": ["CSRF", "RCE", "SQL注入", "SSRF", "XSS", "XXE", "文件漏洞"]},
+    {"label": "burpsuite靶场", "subs": []},
+    {"label": "业务逻辑漏洞", "subs": []},
+    {"label": "工具使用", "subs": []},
+    {"label": "云上攻防", "subs": []},
+    {"label": "内网渗透", "subs": []},
+    {"label": "护网", "subs": []},
+    {"label": "移动安全", "subs": []},
+    {"label": "逆向工程", "subs": []},
+    {"label": "CSRF", "subs": []},
+    {"label": "SSRF", "subs": []},
 ]
 
 
@@ -82,7 +92,18 @@ def add_frontmatter(filepath):
 
     title = ask("📌 标题", filepath.stem)
     slug = ask("🔗 链接别名", slugify(title))
-    cat = pick("📂 分类", CATEGORIES)
+    cat_labels = [c["label"] for c in CATEGORIES]
+    main_cat = pick("📂 主分类", cat_labels)
+    cat_obj = next(c for c in CATEGORIES if c["label"] == main_cat)
+    if cat_obj["subs"]:
+        sub = pick(f"  📂 子分类 ({main_cat})", cat_obj["subs"])
+        cat = f"{main_cat}/{sub}"
+    else:
+        cat = main_cat
+    # 允许自定义分类
+    custom = ask("  📝 或输入自定义分类（留空使用上面的）", "")
+    if custom:
+        cat = custom
     cfg["last_category"] = cat
     tags_raw = ask("🏷️  标签(逗号分隔)", ", ".join(last_tags))
     tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
