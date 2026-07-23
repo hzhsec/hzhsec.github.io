@@ -137,6 +137,27 @@
       "article_body_text": "![1 3.jpg](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/1%203.jpg)\n![2 3.jpg](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/2%203.jpg)\n➢ 验证码突破-回传显示&规律爆破\n➢ 验证目标-重定向用户&重定向发送\n➢ 验证逻辑-修改响应包&跳过步骤URL\n一、验证码突破\n演示：某APP验证码爆破 某目标回显显示\n1、回传显示\n通过手机找回密码，响应包中包含短信验证码。\n2、规律爆破\n找回密码时使用位数较少的短信验证码，或者验证码没有设置有效时间限制，导致攻击者借助自动化工具在一定时间范围内爆破获得短信验证码，从而导致重置任意账号密码。\n二、验证目标\n演示：某CMS重定向用户 某CMS重定向发送\n1、重定向发送\n当我们输入正确的手机号和正确的短信验证码，然后进入重置密码的最后一步，也就是输入新的密码，输入密码后提交到服务端的post数据包需要包含当前用户的身份信息。而一般网站是通过用户名或用户ID来标识用户身份的，如果这个用户名或用户ID没有和当前手机号、短信验证码进行绑定。也就是说服务端只验证用户名、ID是否存在，而不去验证用户和当前手机号是否匹配，那么我们就可以通过修改用户名、ID去修改其他用户的密码了。当然可以修改的地方不限于找回密码的数据包，比如修改资料的地方也可能存在这样的漏洞。\n就是通过自己验证成功后的数据包修改电话号码为其他人的电话号码，实现登录\n2、重定向用户\n如果数据包存在发送验证邮箱或目标地址，尝试修改到自己接受地，实现拦截获取\n就是将发送的邮箱地址或者发送的ip修改为自己的，从而获取验证链接或验证码\n三、验证逻辑\n演示：某APP修改响应包 某APP跳过步骤URL\n1、修改响应包\n通过手机找回密码一般需要短信验证码验证，服务端需要告诉客户端，输入的验证码是否正确，如果客户端收到true的信息，那么就会向带着true的信息向服务端请求进入下一步，而服务端收到true的信息，就会允许客户端进入下一步，反之，如果是false的信息，服务端就不会允许客户端进入下一步。也就是说我们进入下一步的关键是让服务端收到客户端的true信息，而借助burpsuite，我们可以修改服务端返回到客户端的信息，这样一来，我们就可以输入任意短信验证码，然后将服务端返回的false信息改为true就可以绕过短信验证码的验证了。\n2、跳过步骤URL\n找回密码流程一般需要四个步骤：\n流程：验证用户名-验证短信验证码-输入新密码-重置成功\n这四个步骤应该紧紧相连，互相相关，只有通过了第一个步骤验证才可以进入下一个步骤，如果每个步骤之间没有进行关联性验证，就可能导致跳过关键验证步骤，从而导致重置任意账号密码。"
     },
     {
+      "slug": "fuzz模糊测试篇",
+      "title": "FUZZ模糊测试篇",
+      "source_note": "F:\\hugo\\hzhsec.github.io\\drafts\\FUZZ模糊测试篇.md",
+      "summary": "1、Fuzz 是一种基于黑盒的自动化软件模糊测试技术,简单的说一种懒惰且暴力的技术融合了常见的以及精心构建的数据文本进行网站、软件安全性测试。 2、Fuzz的核心思想: 口令Fuzz(弱口令) 目录Fuzz(漏洞点) 参数Fuzz(利用参数) PayloadFuzz(Bypass) 3、Fuzz应用场景： -爆破用户口令 -爆破敏感目录 -爆破文件地址 -爆",
+      "date_iso": "2026-07-23T10:00:00+08:00",
+      "word_count": 279,
+      "reading_minutes": 2,
+      "rel_permalink": "list/业务逻辑漏洞/fuzz模糊测试篇",
+      "section_path": [
+        "业务逻辑漏洞"
+      ],
+      "categories": [
+        "业务逻辑漏洞"
+      ],
+      "tags": [],
+      "featured": false,
+      "body_html": "<h1 id=\"1fuzz\">1、Fuzz</h1>\n<p>是一种基于黑盒的自动化软件模糊测试技术,简单的说一种懒惰且暴力的技术融合了常见的以及精心构建的数据文本进行网站、软件安全性测试。</p>\n<h1 id=\"2fuzz的核心思想\">2、Fuzz的核心思想:</h1>\n<p>口令Fuzz(弱口令) 目录Fuzz(漏洞点) 参数Fuzz(利用参数) PayloadFuzz(Bypass)</p>\n<h1 id=\"3fuzz应用场景\">3、Fuzz应用场景：</h1>\n<p>-爆破用户口令 -爆破敏感目录 -爆破文件地址 -爆破未知参数名 -Payload测漏洞（绕过等也可以用）</p>\n<p>在实战黑盒中，目标有很多没有显示或其他工具扫描不到的文件或目录等，我们就可以通过大量的字典Fuzz找到的隐藏的文件进行测试。</p>\n<h2 id=\"4fuzz项目\">4、Fuzz项目：</h2>\n<p>https://github.com/fuzzdb-project/fuzzdb</p>\n<p>https://github.com/TheKingOfDuck/fuzzDicts</p>\n<p>https://github.com/danielmiessler/SecLists</p>\n<h1 id=\"fuzz技术-用户口令-常规模块js插件\">Fuzz技术-用户口令-常规&amp;模块&amp;JS插件</h1>\n<p>https://github.com/c0ny1/jsEncrypter</p>\n<p>https://github.com/whwlsfb/BurpCrypto</p>\n<h1 id=\"fuzz技术-目录文件-目录探针文件探针\">Fuzz技术-目录文件-目录探针&amp;文件探针</h1>\n<h1 id=\"fuzz技术-未知参数名-文件参数隐藏参数\">Fuzz技术-未知参数名-文件参数&amp;隐藏参数</h1>\n<h1 id=\"fuzz技术-构造参数值-漏洞攻击恶意payload\">Fuzz技术-构造参数值-漏洞攻击恶意Payload</h1>",
+      "toc_html": "<nav id=\"TableOfContents\"><ul><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#1fuzz\">1、Fuzz</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#2fuzz的核心思想\">2、Fuzz的核心思想:</a></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#3fuzz应用场景\">3、Fuzz应用场景：</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#4fuzz项目\">4、Fuzz项目：</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#fuzz技术-用户口令-常规模块js插件\">Fuzz技术-用户口令-常规&amp;模块&amp;JS插件</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#fuzz技术-目录文件-目录探针文件探针\">Fuzz技术-目录文件-目录探针&amp;文件探针</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#fuzz技术-未知参数名-文件参数隐藏参数\">Fuzz技术-未知参数名-文件参数&amp;隐藏参数</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#fuzz技术-构造参数值-漏洞攻击恶意payload\">Fuzz技术-构造参数值-漏洞攻击恶意Payload</a></li></ul></nav>",
+      "article_body_text": "1、Fuzz\n是一种基于黑盒的自动化软件模糊测试技术,简单的说一种懒惰且暴力的技术融合了常见的以及精心构建的数据文本进行网站、软件安全性测试。\n2、Fuzz的核心思想:\n口令Fuzz(弱口令) 目录Fuzz(漏洞点) 参数Fuzz(利用参数) PayloadFuzz(Bypass)\n3、Fuzz应用场景：\n-爆破用户口令 -爆破敏感目录 -爆破文件地址 -爆破未知参数名 -Payload测漏洞（绕过等也可以用）\n在实战黑盒中，目标有很多没有显示或其他工具扫描不到的文件或目录等，我们就可以通过大量的字典Fuzz找到的隐藏的文件进行测试。\n4、Fuzz项目：\nhttps://github.com/fuzzdb-project/fuzzdb\nhttps://github.com/TheKingOfDuck/fuzzDicts\nhttps://github.com/danielmiessler/SecLists\nFuzz技术-用户口令-常规&模块&JS插件\nhttps://github.com/c0ny1/jsEncrypter\nhttps://github.com/whwlsfb/BurpCrypto\nFuzz技术-目录文件-目录探针&文件探针\nFuzz技术-未知参数名-文件参数&隐藏参数\nFuzz技术-构造参数值-漏洞攻击恶意Payload"
+    },
+    {
       "slug": "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
       "title": "AICryptoProxy：AI 赋能逆向Web 加密流量",
       "source_note": "F:\\hugo\\bak\\halo_to_publish\\工具使用\\aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang.md",
