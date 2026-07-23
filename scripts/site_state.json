@@ -2296,9 +2296,9 @@
         "xss"
       ],
       "categories": [
-        "jsonp点击劫持",
-        "web-安全",
-        "xss"
+        "跨域安全",
+        "Web安全",
+        "XSS"
       ],
       "tags": [
         "csp",
@@ -2570,8 +2570,8 @@
         "xss"
       ],
       "categories": [
-        "web-安全",
-        "xss"
+        "Web安全",
+        "XSS"
       ],
       "tags": [
         "csp",
@@ -2599,8 +2599,8 @@
         "xss"
       ],
       "categories": [
-        "web-安全",
-        "xss"
+        "Web安全",
+        "XSS"
       ],
       "tags": [
         "beef",
@@ -2630,8 +2630,8 @@
         "xss"
       ],
       "categories": [
-        "web-安全",
-        "xss"
+        "Web安全",
+        "XSS"
       ],
       "tags": [
         "flash",
@@ -2662,8 +2662,8 @@
         "xss"
       ],
       "categories": [
-        "web-安全",
-        "xss"
+        "Web安全",
+        "XSS"
       ],
       "tags": [
         "dom-xss",
@@ -2774,7 +2774,7 @@
         "ssrf"
       ],
       "categories": [
-        "ssrf"
+        "SSRF"
       ],
       "tags": [],
       "featured": false,
@@ -2796,7 +2796,7 @@
         "ssrf"
       ],
       "categories": [
-        "ssrf"
+        "SSRF"
       ],
       "tags": [],
       "featured": false,
@@ -2818,7 +2818,7 @@
         "csrf"
       ],
       "categories": [
-        "csrf"
+        "CSRF"
       ],
       "tags": [],
       "featured": false,
@@ -2989,7 +2989,7 @@
         "xxe"
       ],
       "categories": [
-        "xxe注入"
+        "XXE"
       ],
       "tags": [],
       "featured": false,
@@ -3011,7 +3011,7 @@
         "xxe"
       ],
       "categories": [
-        "xxe注入"
+        "XXE"
       ],
       "tags": [
         "xml",
@@ -3614,313 +3614,6 @@
       "title": "环境搭建",
       "parent": "list",
       "order": 67
-    }
-  },
-  "categories": {
-    "工具使用": {
-      "dir_name": "工具使用",
-      "posts": [
-        "reconinspector-yi-kuan-ji-fofa-nuclei-yu-pocmo-ban-diao-shi-yu-yi-ti-de-ke-shi-hua-an-quan-xun-jian-ping-tai",
-        "sqlmap-cheatsheet-and-advanced-usage",
-        "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang"
-      ],
-      "page": 1
-    },
-    "权限提升": {
-      "dir_name": "权限提升",
-      "posts": [
-        "linux-privilege-escalation-lxd-docker-rbash",
-        "database-privilege-escalation-guide",
-        "windows-privilege-escalation-manual-potato",
-        "linux-privilege-escalation-nfs-cron-path",
-        "windows-privilege-escalation-basic-guide",
-        "computer-user-privilege-elevation-and-reduction",
-        "dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699",
-        "linux-privilege-escalation-suid-sudo-cve",
-        "linux-kernel-exploit-privilege-escalation",
-        "linux-privilege-escalation-mysql-udf-capability-ld-preload",
-        "windows-privilege-escalation-uac-dll-service"
-      ],
-      "page": 1
-    },
-    "应急响应": {
-      "dir_name": "应急响应",
-      "posts": [
-        "3.wa-kuang-bing-du-pai-cha-fen-xi",
-        "4.diao-yu-you-jian-fen-xi-yu-pai-cha",
-        "an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong",
-        "1.webru-qin-cha-sha-zhi-nan",
-        "5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha",
-        "2.c2hou-men-fa-xian-yu-chu-zhi",
-        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong"
-      ],
-      "page": 1
-    },
-    "漏洞复现": {
-      "dir_name": "漏洞复现",
-      "posts": [
-        "apache-solr-rcelou-dong-fu-xian",
-        "cve-2025-55182de-fu-xian-yu-xiu-fu",
-        "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
-        "7ziplou-dong-fu-xian-he-ji",
-        "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
-        "cve-2025-55725",
-        "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
-        "log4j2-cve-2021-44228lou-dong-fu-xian",
-        "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
-        "cve-2025-8088-winrar",
-        "mongodblou-dong-fu-xian-cve-2025-14847",
-        "apache-struts2-ognl-rcezhu-ru",
-        "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844"
-      ],
-      "page": 1
-    },
-    "RCE": {
-      "dir_name": "RCE",
-      "posts": [
-        "ld-preload-bypass-rce",
-        "apache-struts2-ognl-rcezhu-ru",
-        "rce-vulnerability-exploitation-bypass-techniques"
-      ],
-      "page": 1
-    },
-    "护网": {
-      "dir_name": "护网",
-      "posts": [
-        "护网面经"
-      ],
-      "page": 1
-    },
-    "内网渗透": {
-      "dir_name": "内网渗透",
-      "posts": [
-        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
-      ],
-      "page": 1
-    },
-    "环境搭建": {
-      "dir_name": "环境搭建",
-      "posts": [
-        "nei-wang-huan-jing-da-jian-zhi-dan-yu-da-jian"
-      ],
-      "page": 1
-    },
-    "云上攻防": {
-      "dir_name": "云上攻防",
-      "posts": [
-        "3-yun-yuan-sheng-dockertao-yi"
-      ],
-      "page": 1
-    },
-    "burpsuite靶场": {
-      "dir_name": "burpsuite靶场",
-      "posts": [
-        "shang-ye-gui-ze-zhi-xing-bu-dang",
-        "1.jwtshi-yan-ba-chang"
-      ],
-      "page": 1
-    },
-    "业务逻辑漏洞": {
-      "dir_name": "业务逻辑漏洞",
-      "posts": [
-        "1-qian-yue-lou-dong",
-        "2-gao-bing-fa"
-      ],
-      "page": 1
-    },
-    "top10": {
-      "dir_name": "top10",
-      "posts": [
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "xxe-injection-analysis-detection-defense",
-        "jsonp-data-leakage-and-clickjacking-defense",
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "xss-defense-csp-httponly-filter",
-        "sql-injection-mysql-practice",
-        "sql-blind-injection-techniques",
-        "file-and-directory-security-vulnerabilities",
-        "file-upload-vulnerability-complete-guide",
-        "file-inclusion-vulnerability-guide",
-        "file-upload-security-architecture-guide",
-        "sql-injection-request-types-php-mysql",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "ssrf-protocols-gopher-internal-services",
-        "xss-filter-bypass-techniques-and-waf-evasion",
-        "csrf-attack-detection-and-defense",
-        "ctf-file-upload-bypass-and-payloads"
-      ],
-      "page": 1
-    },
-    "XSS": {
-      "dir_name": "XSS",
-      "posts": [
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "jsonp-data-leakage-and-clickjacking-defense",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "xss-defense-csp-httponly-filter",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "xss-filter-bypass-techniques-and-waf-evasion"
-      ],
-      "page": 1
-    },
-    "Web安全": {
-      "dir_name": "Web安全",
-      "posts": [
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "sqlmap-cheatsheet-and-advanced-usage",
-        "ld-preload-bypass-rce",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "sql-injection-mysql-practice",
-        "sql-blind-injection-techniques",
-        "file-and-directory-security-vulnerabilities",
-        "file-upload-vulnerability-complete-guide",
-        "file-inclusion-vulnerability-guide",
-        "file-upload-security-architecture-guide",
-        "rce-vulnerability-exploitation-bypass-techniques",
-        "sql-injection-request-types-php-mysql",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "ssrf-protocols-gopher-internal-services",
-        "xss-filter-bypass-techniques-and-waf-evasion",
-        "csrf-attack-detection-and-defense",
-        "ctf-file-upload-bypass-and-payloads"
-      ],
-      "page": 1
-    },
-    "XXE": {
-      "dir_name": "XXE",
-      "posts": [
-        "xxe-injection-analysis-detection-defense"
-      ],
-      "page": 1
-    },
-    "杂项": {
-      "dir_name": "杂项",
-      "posts": [
-        "3.nfs_path_cronti-quan",
-        "cve-2025-8088-winrar-directory-traversal-exploit",
-        "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
-        "xss1",
-        "up3",
-        "4.ji-suan-ji-yong-hu-ti-quan",
-        "rce",
-        "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
-        "sql-advanced-injection-second-order-stacked-oob",
-        "qian-tan-dian-zi-you-jian-wei-zao",
-        "sql4",
-        "xss6",
-        "1.nei-he-lou-dong-ti-quan",
-        "3.shu-ju-ku-ti-quan",
-        "hello-halo",
-        "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
-        "sql2"
-      ],
-      "page": 1
-    },
-    "文件安全": {
-      "dir_name": "文件安全",
-      "posts": [
-        "file-upload-vulnerability-complete-guide",
-        "file-upload-security-architecture-guide",
-        "file-inclusion-vulnerability-guide",
-        "file-and-directory-security-vulnerabilities",
-        "ctf-file-upload-bypass-and-payloads"
-      ],
-      "page": 1
-    },
-    "PHP安全": {
-      "dir_name": "PHP安全",
-      "posts": [
-        "file-inclusion-vulnerability-guide"
-      ],
-      "page": 1
-    },
-    "SQL注入": {
-      "dir_name": "SQL注入",
-      "posts": [
-        "sql-blind-injection-techniques",
-        "sqlmap-cheatsheet-and-advanced-usage",
-        "sql-injection-request-types-php-mysql",
-        "sql-injection-mysql-practice"
-      ],
-      "page": 1
-    },
-    "SSRF": {
-      "dir_name": "SSRF",
-      "posts": [
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "ssrf-protocols-gopher-internal-services"
-      ],
-      "page": 1
-    },
-    "jsonp点击劫持": {
-      "dir_name": "jsonp点击劫持",
-      "posts": [
-        "xss6"
-      ],
-      "page": 1
-    },
-    "web-安全": {
-      "dir_name": "web-安全",
-      "posts": [
-        "xss1",
-        "xss2",
-        "xss6",
-        "xss4",
-        "xss3"
-      ],
-      "page": 1
-    },
-    "xss": {
-      "dir_name": "xss",
-      "posts": [
-        "xss1",
-        "xss2",
-        "xss6",
-        "xss4",
-        "xss3"
-      ],
-      "page": 1
-    },
-    "移动安全": {
-      "dir_name": "移动安全",
-      "posts": [
-        "app3",
-        "app2",
-        "app1"
-      ],
-      "page": 1
-    },
-    "逆向工程": {
-      "dir_name": "逆向工程",
-      "posts": [
-        "app3"
-      ],
-      "page": 1
-    },
-    "ssrf": {
-      "dir_name": "ssrf",
-      "posts": [
-        "ssrf2",
-        "ssrf1"
-      ],
-      "page": 1
-    },
-    "csrf": {
-      "dir_name": "csrf",
-      "posts": [
-        "csrf"
-      ],
-      "page": 1
-    },
-    "xxe注入": {
-      "dir_name": "xxe注入",
-      "posts": [
-        "test",
-        "xxe1"
-      ],
-      "page": 1
     }
   }
 }
