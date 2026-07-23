@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AICryptoProxy：AI 赋能逆向Web 加密流量</title><meta charset="utf-8"><meta name="description" content="Ladder@当 Burp Suite 里全是 base64 密文，你还在手动抠 JS、断点调试、Python 补环境吗？ 让 AI 替你完成这一切 —— 从逆向分析到代理部署，5 分钟上线。 一、前言 想象一下这个画面： 你拿到一个渗透测试目标，打开 Burp Suite 配置好代理，满怀期待地点开第一个请求 POST /api/encrypt HTTP/1.1 Con"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/halo_to_publish/aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang/"><meta property="og:title" content="AICryptoProxy：AI 赋能逆向Web 加密流量" /><meta property="og:description" content="当 Burp Suite 里全是 base64 密文，你还在手动抠 JS、断点调试、Python 补环境吗？ 让 AI 替你完成这一切 —— 从逆向分析到代理部署，5 分钟上线。 一、前言 想象一下这个画面： 你拿到一个渗透测试目标，打开 Burp Suite 配置好代理，满怀期待地点开第一个请求 POST /api/encrypt HTTP/1.1 Con" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/halo_to_publish/aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-05-08T10:00:00+08:00" /><meta property="article:modified_time" content="2026-05-08T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="AICryptoProxy：AI 赋能逆向Web 加密流量"/><meta name="twitter:description" content="当 Burp Suite 里全是 base64 密文，你还在手动抠 JS、断点调试、Python 补环境吗？ 让 AI 替你完成这一切 —— 从逆向分析到代理部署，5 分钟上线。 一、前言 想象一下这个画面： 你拿到一个渗透测试目标，打开 Burp Suite 配置好代理，满怀期待地点开第一个请求 POST /api/encrypt HTTP/1.1 Con"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>AICryptoProxy：AI 赋能逆向Web 加密流量</h1></header><p><small>May 8, 2026&nbsp;· 3178 words&nbsp;· 16 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><a class="toc-link" href="#一前言">一、前言</a></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#二aicryptoproxy-是什么">二、AICryptoProxy 是什么</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#两种工作模式">两种工作模式</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#三测试环境">三、测试环境</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#31-靶场介绍">3.1 靶场介绍</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#32-本地环境">3.2 本地环境</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#四step-1启动-claude-code-并连上浏览器">四、Step 1：启动 Claude Code 并连上浏览器</a></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#五step-2实战让-ai-自动分析靶场加密逻辑">五、Step 2：实战:让 AI 自动分析靶场加密逻辑</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#stage-1观察observe">Stage 1：观察（Observe）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#stage-2捕获capture">Stage 2：捕获（Capture）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#stage-3重建rebuild">Stage 3：重建（Rebuild）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#stage-4部署patch">Stage 4：部署（Patch）</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#六step-3配置并启动代理链路">六、Step 3：配置并启动代理链路</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#61-启动-burp-suite">6.1 启动 Burp Suite</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#62-启动下游解密代理">6.2 启动下游解密代理</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#63-启动上游加密代理">6.3 启动上游加密代理</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#64-配置浏览器代理">6.4 配置浏览器代理</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#65-配置-burp-上游代理">6.5 配置 Burp 上游代理</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#七step-4验证--见证奇迹的时刻">七、Step 4：验证 —— 见证奇迹的时刻</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#71-在靶场页面提交数据">7.1 在靶场页面提交数据</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#72-查看-burp-proxy--全是明文">7.2 查看 Burp Proxy —— 全是明文！</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#73-查看终端日志">7.3 查看终端日志</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#74-在-repeater-中修改重放">7.4 在 Repeater 中修改重放</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#八整个链路的完整流程">八、整个链路的完整流程</a></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#九常见问题">九、常见问题</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#q1burp-里看到的还是密文">Q1：Burp 里看到的还是密文？</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#q2上游代理报解密失败">Q2：上游代理报解密失败？</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#q3ai-提取的-key-不对怎么办">Q3：AI 提取的 Key 不对怎么办？</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#十总结">十、总结</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#101-我们做到了什么">10.1 我们做到了什么？</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#102-核心优势">10.2 核心优势</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#103-什么时候用模式-b">10.3 什么时候用模式 B？</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#104-最后的建议">10.4 最后的建议</a></li></ul></div></details></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#参考资源">参考资源</a></li></ul></nav></details><section class="blog-content"><blockquote><p>当 Burp Suite 里全是 base64 密文，你还在手动抠 JS、断点调试、Python 补环境吗？ 让 AI 替你完成这一切 —— 从逆向分析到代理部署，5 分钟上线。</p></blockquote>
+<hr>
+<h2 id="一前言">一、前言</h2>
+<p>想象一下这个画面： 你拿到一个渗透测试目标，打开 Burp Suite 配置好代理，满怀期待地点开第一个请求</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">POST /api/encrypt HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+encryptedData=U2FsdGVkX1+7PfewV3eJIzf0M2jL4...</code></pre></div>
+<p>你愣住了。所有参数都是密文。 你想修改 userId 越权测试？想重放请求测试重放漏洞？想在 Repeater 里观察响应变化？<strong>全都做不到</strong>，因为你看到的是一堆乱码。 传统解决路径只有一条：<strong>JS 逆向 —— 扣代码 —— 补环境 —— 写代理脚本</strong>。这一套下来，3 到 10 个小时就没了，而且每个加密目标都要重复一遍。 但现在，情况变了。</p>
+<hr>
+<h2 id="二aicryptoproxy-是什么">二、AICryptoProxy 是什么</h2>
+<blockquote><p><strong>一句话：AI 自动分析网站加密逻辑，生成加解密代理，让 Burp Suite 里只看到明文。</strong></p></blockquote>
+<p>项目地址：<code>https://github.com/hzhsec/AICryptoProxy</code></p>
+<p>核心思路极其简单：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">传统模式: 人看混淆代码 → 人断点调试 → 人写 Python 脚本
+AI 模式:  AI 操作浏览器 → AI 逆向分析 → AI 生成脚本 → 你只需启动</code></pre></div>
+<p>它基于 <strong>Claude Code + MCP (js-reverse)</strong> 的能力，让 AI 可以直接操控浏览器（打开页面、搜索脚本、下断点、读变量），像资深逆向工程师一样完成整套 JS 逆向工作流。</p>
+<h3 id="两种工作模式">两种工作模式</h3>
+<p>| 模式 | 名称 | 一句话概括 | 适用场景 | |------|------|-----------|---------| | <strong>A</strong> | Direct Crypto | AI 逆向算法提取 Key，Python 本地计算 | 标准算法、Key 固定 | | <strong>B</strong> | JSRPC Bridge | 浏览器原生执行加解密，WebSocket 桥接给代理 | 算法复杂、Key 动态、混淆严重 |</p>
+<p>本文以 <strong>模式 A</strong> 为例，用一个真实的加密靶场带你完整走一遍流程。</p>
+<hr>
+<h2 id="三测试环境">三、测试环境</h2>
+<h3 id="31-靶场介绍">3.1 靶场介绍</h3>
+<p>靶场:<a href="https://github.com/SwagXz/encrypt-labs">https://github.com/SwagXz/encrypt-labs</a> 这里使用 <code>encrypt</code> 靶场的 AES 加密接口：</p>
+<ul><li><strong>URL</strong>: <code>http://10.140.136.108:88/encrypt/aes.php</code></li><li><strong>请求格式</strong>: <code>POST</code> + <code>application/x-www-form-urlencoded</code></li><li><strong>加密字段</strong>: <code>encryptedData</code></li><li><strong>算法</strong>: AES-128-CBC + PKCS7 填充</li><li><strong>Key/IV</strong>: 固定 16 字节（base64 编码后传输）</li></ul>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506211114311.png" alt="image.png"></p>
+<p>正常请求：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">POST /encrypt/aes.php
+Content-Type: application/x-www-form-urlencoded
+
+encryptedData=U2FsdGVkX18...</code></pre></div>
+<p>解密后明文（JSON）：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-json" data-lang="json">{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;433214&quot;}</code></pre></div>
+<h3 id="32-本地环境">3.2 本地环境</h3>
+<ul><li>操作系统：Windows 11</li><li>Python 3.12+</li><li>Burp Suite Professional（监听 8080 端口）</li><li>mitmproxy 10+</li><li>Claude Code(DeepSeek附身)（已配置 js-reverse MCP 服务）</li></ul>
+<p>感谢DeepSeek的大力支持,大善人!!!</p>
+<hr>
+<h2 id="四step-1启动-claude-code-并连上浏览器">四、Step 1：启动 Claude Code 并连上浏览器</h2>
+<p>在项目根目录启动 Claude Code：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">cd AICryptoProxy
+claude
+如果不想一直回车可以这样启动:claude --dangerously-skip-permissions</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506211316950.png" alt="image.png"> 首先需要加载<code>skill</code>进你的<code>claude</code>,直接和<code>claude</code>说就可以了:<strong>将本地skills目录的skill加载到你的skill中</strong></p>
+<p>之后就是调用skill技能:</p>
+<ul><li><code>mitm_proxy</code>是使用传统逆向参数的手法,写逆向脚本,进行加解密</li><li><code>jsrpc-mitm-auto </code>是使用jsrpc远程调试技术,直接在浏览器进行调用浏览器自带的加解密函数,进行加解密</li></ul>
+<p>Claude Code 启动后,调用指定skill，它会先自动通过 MCP 的 <code>js-reverse</code> 服务连接 Chrome 浏览器。你可以看到类似这样的日志输出：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[js-reverse] 正在连接 Chrome DevTools...
+[js-reverse] 连接成功，调试端口: 9222</code></pre></div>
+<hr>
+<h2 id="五step-2实战让-ai-自动分析靶场加密逻辑">五、Step 2：实战:让 AI 自动分析靶场加密逻辑</h2>
+<p>在 Claude Code 中输入指令。模式 A 对应的 Skill 叫 <code>mitm_proxy</code>：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">用 mitm_proxy 技能帮我分析 http://10.140.136.108:88 的加密逻辑，生成加解密代理</code></pre></div>
+<p>接下来就是见证奇迹的时刻 —— AI 会自动执行以下流程：</p>
+<h3 id="stage-1观察observe">Stage 1：观察（Observe）</h3>
+<p>AI 通过 MCP 连接浏览器，打开目标网页，收集所有 JavaScript 脚本：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[AI] 正在连接浏览器...
+[AI] 已导航到 http://10.140.136.108:88
+[AI] 正在搜索加密关键字...
+[AI] 在以下文件中发现可疑加密代码:
+  - /encrypt/aes.php (匹配: encrypt, AES)
+  - 页面内联脚本 (匹配: CryptoJS)
+[AI] 检测到算法: AES-CBC-Pkcs7</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506212000409.png" alt="image.png"></p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506212042676.png" alt="image.png"> 对了要手动点击确认,失败登录时,不然会一直卡着 <strong>分析完成:</strong> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506212503515.png" alt="image.png"> 选择工作模式,双向代理(浏览器---&gt;mitmproxy解密----&gt;burpsuite----&gt;mitmproxy加密) <strong>AI 在这一步自动执行了：</strong></p>
+<ul><li><code>new_page(&quot;http://10.140.136.108:88&quot;)</code> → 打开靶场</li><li><code>search_in_sources(&quot;encrypt&quot;)</code> → 全局搜索加密关键字</li><li><code>list_scripts</code> → 列出页面加载的所有 JS</li><li><code>detect_crypto(code)</code> → 调用代码分析识别算法类型</li></ul>
+<h3 id="stage-2捕获capture">Stage 2：捕获（Capture）</h3>
+<p>AI 自动定位到加密函数，通过 hook 追踪调用并提取 Key：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[AI] 正在追踪加密函数调用...
+[AI] 发现加密函数: CryptoJS.AES.encrypt
+[AI] 正在提取加密参数...
+[AI] 已提取:
+  - 算法: AES-CBC-Pkcs7
+  - Key:  &quot;1234567890123456&quot;
+  - IV:   &quot;1234567890123456&quot;
+  - 输出编码: Base64</code></pre></div>
+<p><strong>AI 在这一步自动执行了：</strong></p>
+<ul><li><code>hook_function(&quot;CryptoJS.AES.encrypt&quot;)</code> → 追踪加密调用</li><li><code>get_hook_data(hookId)</code> → 捕获函数的参数和返回值</li><li><code>evaluate_script(&quot;key&quot;)</code> → 在浏览器中提取 Key 的变量值</li><li><code>network_request(action=&quot;list&quot;)</code> → 查看真实发出的网络请求格式</li></ul>
+<h3 id="stage-3重建rebuild">Stage 3：重建（Rebuild）</h3>
+<p>AI 分析完加密逻辑后，自动在 <code>10.140.136.108_88</code> 目录下生成两个完整的 mitmproxy 代理脚本：</p>
+<p><strong>下游解密代理</strong> <code>downstream_decrypt_proxy.py</code>（浏览器 -&gt; Burp 方向解密密文） <strong>上游加密代理</strong> <code>upstream_encrypt_proxy.py</code>（Burp -&gt; 服务器方向加密明文） <strong>加密分析报告</strong><code>ANALYSIS_REPORT.md</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213220684.png" alt="image.png"></p>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213235864.png" alt="image.png"></p>
+<h3 id="stage-4部署patch">Stage 4：部署（Patch）</h3>
+<p>AI 给出完整的启动命令：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[AI] 所有脚本已生成至 proxy_scripts/ 目录
+[AI] 启动顺序：
+  1. Burp Suite → 监听 127.0.0.1:8080
+  2. 启动下游解密代理:
+     mitmdump -s proxy_scripts/downstream_decrypt_proxy.py ^
+              --mode upstream:http://127.0.0.1:8080 -p 8082
+  3. 启动上游加密代理:
+     mitmdump -s proxy_scripts/upstream_encrypt_proxy.py -p 8083
+  4. 浏览器代理 → 127.0.0.1:8082
+  5. Burp 上游代理 → 127.0.0.1:8083</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213338041.png" alt="image.png"> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213352387.png" alt="image.png"></p>
+<hr>
+<h2 id="六step-3配置并启动代理链路">六、Step 3：配置并启动代理链路</h2>
+<p>根据 AI 给出的启动命令，我们依次启动各个组件。</p>
+<h3 id="61-启动-burp-suite">6.1 启动 Burp Suite</h3>
+<p>Burp Suite 监听在 <code>127.0.0.1:8080</code>，作为中间节点接收下游代理转发的明文请求。 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213529351.png" alt="image.png"></p>
+<h3 id="62-启动下游解密代理">6.2 启动下游解密代理</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash"> mitmdump -s &quot;10.140.136.108_88/downstream_decrypt_proxy.py&quot; --mode upstream:http://127.0.0.1:8080 -p 8082</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213643264.png" alt="image.png"></p>
+<p><strong>注意</strong>：<code>--mode upstream:http://127.0.0.1:8080</code> 这个参数<strong>不能少</strong>，它告诉下游代理解密后把流量转发到 Burp 的 8080 端口。</p>
+<h3 id="63-启动上游加密代理">6.3 启动上游加密代理</h3>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">mitmdump -s 10.140.136.108_88/upstream_encrypt_proxy.py -p 8083</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213721870.png" alt="image.png"></p>
+<h3 id="64-配置浏览器代理">6.4 配置浏览器代理</h3>
+<p>使用浏览器代理插件（如 SwitchyOmega 或 Proxy SwitchySharp），将流量指向下游代理：</p>
+<ul><li><strong>代理地址</strong>: <code>127.0.0.1</code></li><li><strong>端口</strong>: <code>8082</code></li></ul>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213801232.png" alt="20260506213801232.png"></p>
+<h3 id="65-配置-burp-上游代理">6.5 配置 Burp 上游代理</h3>
+<p>在 Burp Suite 中设置上游代理（Upstream Proxy）：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">Burp → Settings → Network → Connections → Upstream Proxy Servers
+  Destination Host: *
+  Proxy Host: 127.0.0.1
+  Proxy Port: 8083</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506213927571.png" alt="image.png"></p>
+<hr>
+<h2 id="七step-4验证--见证奇迹的时刻">七、Step 4：验证 —— 见证奇迹的时刻</h2>
+<h3 id="71-在靶场页面提交数据">7.1 在靶场页面提交数据</h3>
+<p>回到浏览器，在靶场表单中输入 username 和 password，点击提交。</p>
+<blockquote><p>图片: 靶场页面输入数据的截图</p></blockquote>
+<h3 id="72-查看-burp-proxy--全是明文">7.2 查看 Burp Proxy —— 全是明文！</h3>
+<p>回到 Burp Suite，在 Proxy -&gt; HTTP History 中找到刚才的请求：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">POST /encrypt/aes.php HTTP/1.1
+Content-Type: application/json
+Host: 10.140.136.108:88
+
+{&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;123456&quot;}</code></pre></div>
+<p><strong>没有乱码，没有 base64，只有清晰可见的明文 JSON！</strong></p>
+<blockquote><p>图片: Burp Suite 中显示明文请求的截图 —— 这是最激动人心的一步</p></blockquote>
+<h3 id="73-查看终端日志">7.3 查看终端日志</h3>
+<p>在下游代理的终端窗口中，你可以看到解密日志：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[下游解密] http://10.140.136.108:88/encrypt/aes.php
+    [请求解密] username: admin
+    [请求解密] password: 123456</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506214137695.png" alt="20260506214137695.png"></p>
+<p>在上游代理的终端中，你会看到加密日志：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">[上游加密] http://10.140.136.108:88/encrypt/aes.php
+    [加密] {&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;123456&quot;} -&gt; encryptedData=U2FsdGVkX1...</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506214214036.png" alt="image.png"></p>
+<p><strong>Burpsuite</strong>: <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506214016679.png" alt="20260506214016679.png"> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506214103133.png" alt="image.png"></p>
+<h3 id="74-在-repeater-中修改重放">7.4 在 Repeater 中修改重放</h3>
+<p>现在你可以像对待普通接口一样，在 Repeater 中修改 JSON 参数并发送： 测试爆破模块,进行爆破: <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260506214528641.png" alt="image.png"> Burp 发送的是明文 JSON，上游代理会自动加密后发给服务器。<strong>你完全感受不到加密的存在。</strong></p>
+<hr>
+<h2 id="八整个链路的完整流程">八、整个链路的完整流程</h2>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">浏览器 (用户输入表单)
+    │ POST /encrypt/aes.php
+    │ encryptedData=U2FsdGVkX1...  (浏览器原生加密)
+    ▼
+┌──────────────────────────────────────────────────┐
+│ 下游解密代理 (mitmdump :8082)                      │
+│  1. 收到密文请求                                   │
+│  2. AES-CBC 解密 encryptedData                     │
+│  3. 替换请求体为 JSON 明文                          │
+│  4. 转发给 Burp                                   │
+│  --mode upstream:http://127.0.0.1:8080            │
+└─────────────────┬────────────────────────────────┘
+                  │ {&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;123456&quot;}
+                  ▼
+┌──────────────────────────────────────────────────┐
+│  Burp Suite (:8080)  ← 在这里操作明文！             │
+│  - 修改参数测试越权                                 │
+│  - Repeater 重放测试                                │
+│  - Scanner 扫描明文接口                             │
+└─────────────────┬────────────────────────────────┘
+                  │ {&quot;username&quot;:&quot;admin&quot;,&quot;password&quot;:&quot;123456&quot;}
+                  ▼
+┌──────────────────────────────────────────────────┐
+│ 上游加密代理 (mitmdump :8083)                      │
+│  1. 收到 Burp 的明文 JSON                          │
+│  2. AES-CBC 加密为 base64                          │
+│  3. 包装为 form-urlencoded 格式                     │
+│  4. 转发给目标服务器                               │
+└─────────────────┬────────────────────────────────┘
+                  │ encryptedData=U2FsdGVkX1...
+                  ▼
+           目标服务器 (接收到的还是密文)</code></pre></div>
+<p><strong>关键要点</strong>：</p>
+<ul><li><strong>Burp 只看到明文</strong> —— 可以自由修改、重放、扫描</li><li><strong>浏览器与服务器间始终是密文</strong> —— 不会触发前端校验</li><li><strong>下游代理必须用 <code>--mode upstream</code></strong> —— 否则流量不会经过 Burp，你就会看到密文</li></ul>
+<hr>
+<h2 id="九常见问题">九、常见问题</h2>
+<h3 id="q1burp-里看到的还是密文">Q1：Burp 里看到的还是密文？</h3>
+<p><strong>原因</strong>：下游代理没有正确转发流量给 Burp。</p>
+<p><strong>检查</strong>：启动下游代理时是否加了 <code>--mode upstream:http://127.0.0.1:8080</code> 参数？</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">正确: mitmdump -s downstream_decrypt_proxy.py --mode upstream:http://127.0.0.1:8080 -p 8082
+错误: mitmdump -s downstream_decrypt_proxy.py -p 8082</code></pre></div>
+<h3 id="q2上游代理报解密失败">Q2：上游代理报解密失败？</h3>
+<p><strong>检查点</strong>：</p>
+<ol><li>浏览器是否已经信任了 mitmproxy 的 CA 证书？</li><li>靶场的 Key/IV 是否和脚本中一致？</li><li>浏览器代理是否配置为 8082 端口？</li></ol>
+<h3 id="q3ai-提取的-key-不对怎么办">Q3：AI 提取的 Key 不对怎么办？</h3>
+<p>在指令中提供更多上下文，例如：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">&quot;加密函数在页面的内联脚本中，Key 是固定字符串 &#x27;1234567890123456&#x27;&quot;</code></pre></div>
+<hr>
+<h2 id="十总结">十、总结</h2>
+<h3 id="101-我们做到了什么">10.1 我们做到了什么？</h3>
+<p>在不到 <strong>5 分钟</strong> 的时间里，我们完成了：</p>
+<ol><li>AI 自动逆向靶场的 AES-CBC 加密逻辑</li><li>AI 自动提取 Key 和 IV</li><li>AI 自动生成两个完整的 mitmproxy 代理脚本</li><li>配置浏览器和 Burp 的代理链路</li><li><strong>在 Burp Suite 中直接操作明文请求</strong></li></ol>
+<h3 id="102-核心优势">10.2 核心优势</h3>
+<p>| 维度 | 传统手动逆向 | AICryptoProxy | |------|------------|---------------| | 平均耗时 | 3 - 10 小时 | 5 - 15 分钟 | | 经验要求 | 精通 JS 混淆和逆向 | 零门槛 | | 动态 Key | 需要额外分析 | 模式 B 自动适配 | | 重复劳动 | 每个目标重来一遍 | AI 自动完成 |</p>
+<h3 id="103-什么时候用模式-b">10.3 什么时候用模式 B？</h3>
+<p>如果你的目标满足以下任一条件，建议使用模式 B（JSRPC Bridge）：</p>
+<ul><li>加密 Key 是动态生成的，每次请求都不一样</li><li>算法是自定义的，无法用标准库解密</li><li>代码混淆严重，AI 也难提取关键参数</li><li>你只是想快速开始测试，不想花时间等 AI 分析</li></ul>
+<p>模式 B 的思路更"暴力"：<strong>完全不逆向算法</strong>，直接把加解密逻辑留在浏览器里执行，通过 WebSocket 桥接给 mitmproxy 调用。</p>
+<h3 id="104-最后的建议">10.4 最后的建议</h3>
+<p>AI 工具再强大，也只是辅助。理解原理、能排查问题，才是你自己的能力。建议你在 AI 生成的脚本基础上，试着读懂 AES-CBC 加解密的代码逻辑，这样遇到异常时才能快速定位问题。</p>
+<p>毕竟，<strong>AI 替你干活，但你不能变成只会发指令的人。</strong></p>
+<hr>
+<h2 id="参考资源">参考资源</h2>
+<ul><li><a href="https://github.com/hzhsec/AICryptoProxy">AICryptoProxy</a> — 完整项目代码</li><li><a href="https://github.com/jxhczhl/JsRpc">JsRpc</a> — JSRPC 远程调用浏览器方法</li><li><a href="https://docs.mitmproxy.org/">mitmproxy 官方文档</a> — mitmproxy 脚本开发指南</li><li><a href="https://claude.ai/code">Claude Code</a> — AI 编程助手</li><li><a href="https://portswigger.net/burp">Burp Suite</a> — Web 安全测试工具</li></ul>
+<p><strong>参考文章</strong> [1] 前端自动化加解密: mitmproxy+burpsuit联动 <a href="https://mp.weixin.qq.com/s/3xXpkObDQ3x7UB_yGCk6cw">https://mp.weixin.qq.com/s/3xXpkObDQ3x7UB_yGCk6cw</a> [2] Web Crypto Proxy Skill 全自动网站加密逻辑分析与双向透明加解密代理工具 <a href="https://mp.weixin.qq.com/s/wxgVCYm8yqEuN8JXqQsBqQ">https://mp.weixin.qq.com/s/wxgVCYm8yqEuN8JXqQsBqQ</a></p></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/halo_to_publish/dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699/"><small>← 上一篇</small><span>DirtyFrag_Linux内核本地提权漏洞QVD-2026-24699</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

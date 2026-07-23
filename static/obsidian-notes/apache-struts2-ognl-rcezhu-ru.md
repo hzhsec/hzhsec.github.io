@@ -1,7 +1,8 @@
 ---
-title: Apache Struts2 OGNL RCE注入
+title: "Apache Struts2 OGNL RCE注入"
 slug: apache-struts2-ognl-rcezhu-ru
 cover: ""
+date: 2026-01-16
 categories:
   - 漏洞复现
   - RCE

