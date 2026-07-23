@@ -4,9 +4,7 @@ slug: sql-advanced-injection-second-order-stacked-oob
 cover: ""
 date: 2026-01-08
 categories:
-  - Web安全
-  - SQL注入
-  - top10
+  - 杂项
 tags:
   - 二次注入
   - 堆叠注入

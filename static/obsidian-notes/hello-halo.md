@@ -3,6 +3,8 @@ title: "Hello Halo"
 slug: hello-halo
 cover: ""
 date: 2026-01-08
+categories:
+  - 杂项
 tags:
   - c33ceabb-d8f1-4711-8991-bb8f5c92ad7c
 halo:

@@ -3,10 +3,12 @@ title: "XSS1"
 slug: xss1
 cover: ""
 date: 2024-04-08
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: 5060a958-3980-4f4e-9eeb-53d0fe2c1260
-  publish: false
+  publish: true
 ---
 
 <!--more-->

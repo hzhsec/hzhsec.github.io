@@ -3,10 +3,12 @@ title: "XSS6"
 slug: xss6
 cover: ""
 date: 2024-09-13
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: 497e810f-5b7d-4442-b7ea-5fd1d0399415
-  publish: false
+  publish: true
 ---
 
 JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是**利用 `<script>` 标签的跨域特性绕过同源策略**。通过将返回内容包裹在回调函数中，使得数据以 JavaScript 的形式被执行。

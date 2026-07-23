@@ -3,10 +3,12 @@ title: "sql4"
 slug: sql4
 cover: ""
 date: 2025-03-25
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: cb881272-ae5b-4f9d-b466-b479db57e159
-  publish: false
+  publish: true
 ---
 
 <!--more-->

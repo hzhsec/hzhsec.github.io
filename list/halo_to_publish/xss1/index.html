@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XSS1</title><meta charset="utf-8"><meta name="description" content="Ladder@<!--more--> XSS 跨站 — 输入/输出、原理、分类与闭合 **漏洞概述** XSS（跨站脚本）本质上是：**接收外部输入 → 输出到页面并被浏览器解析/执行**。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。 漏洞原理 **原理简述**：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据）"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/halo_to_publish/xss1/"><meta property="og:title" content="XSS1" /><meta property="og:description" content="<!--more--> XSS 跨站 — 输入/输出、原理、分类与闭合 **漏洞概述** XSS（跨站脚本）本质上是：**接收外部输入 → 输出到页面并被浏览器解析/执行**。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。 漏洞原理 **原理简述**：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据）" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/halo_to_publish/xss1/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2024-04-08T10:00:00+08:00" /><meta property="article:modified_time" content="2024-04-08T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="XSS1"/><meta name="twitter:description" content="<!--more--> XSS 跨站 — 输入/输出、原理、分类与闭合 **漏洞概述** XSS（跨站脚本）本质上是：**接收外部输入 → 输出到页面并被浏览器解析/执行**。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。 漏洞原理 **原理简述**：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据）"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>XSS1</h1></header><p><small>April 8, 2024&nbsp;· 1338 words&nbsp;· 7 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#xss-跨站--输入输出原理分类与闭合">XSS 跨站 — 输入/输出、原理、分类与闭合</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#漏洞原理">漏洞原理</a></li><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#基础类型">基础类型</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#反射型reflected-xss">反射型（Reflected XSS）</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#存储型stored-xss">存储型（Stored XSS）</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#dom-型dom-based-xss">DOM 型（DOM-based XSS）</a></li></ul></div></details></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#拓展类型与常见载体">拓展类型与常见载体</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#攻击利用与可能后果">攻击利用与可能后果</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#测试流程与检测点实用步骤">测试流程与检测点（实用步骤）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#安全修复与防护要点">安全修复与防护要点</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#常见测试点汇总">常见测试点汇总</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#小结">小结</a></li></ul></div></details></li></ul></nav></details><section class="blog-content"><p>&lt;!--more--&gt;</p>
+<h1 id="xss-跨站--输入输出原理分类与闭合">XSS 跨站 — 输入/输出、原理、分类与闭合</h1>
+<p><strong>漏洞概述</strong> XSS（跨站脚本）本质上是：<strong>接收外部输入 → 输出到页面并被浏览器解析/执行</strong>。根据输入/输出的保存与执行位置，XSS 可以分为反射型、存储型、DOM 型等。</p>
+<hr>
+<h2 id="漏洞原理">漏洞原理</h2>
+<p><strong>原理简述</strong>：应用接收不可信输入并在输出时未做适当处理（或客户端脚本不安全地使用这些数据），导致攻击者构造的脚本在受害者浏览器中执行。 关键链路：<strong>输入点 → 服务器/客户端处理 → 输出到页面上下文 → 浏览器执行</strong>。</p>
+<hr>
+<h2 id="基础类型">基础类型</h2>
+<h3 id="反射型reflected-xss">反射型（Reflected XSS）</h3>
+<p><strong>定义</strong>：攻击载荷随请求参数发送，服务器在响应中直接回显（不持久化）。通常通过构造恶意链接诱导用户点击从而触发一次性攻击（one-to-one）。 <strong>常见场景</strong>：</p>
+<ul><li>搜索、错误消息、重定向参数直接回显</li><li>表单回填未编码</li></ul>
+<p><strong>检测要点</strong>：向参数注入探针，观察响应是否按预期回显并执行。</p>
+<p><strong>示意：反射型 XSS 攻击流程图</strong> &lt;img src="/static/image 1.jpg" alt="反射型 XSS 流程图"&gt;</p>
+<hr>
+<h3 id="存储型stored-xss">存储型（Stored XSS）</h3>
+<p><strong>定义</strong>：恶意脚本被服务器持久化（如数据库、留言、评论、用户资料等），当其他用户查看包含该内容的页面时触发执行（one-to-many），危害范围更广。 <strong>常见场景</strong>：</p>
+<ul><li>评论、论坛发帖、富文本编辑器内容存储后回显</li><li>用户资料（昵称、签名）被当作 HTML 回显</li></ul>
+<p><strong>检测要点</strong>：在能写入后端存储的位置注入 payload，随后访问回显页面查看是否执行。</p>
+<p><strong>示意：存储型 XSS 攻击流程图</strong> &lt;img src="/static/image1.jpg" alt="存储型 XSS 流程图"&gt;</p>
+<hr>
+<h3 id="dom-型dom-based-xss">DOM 型（DOM-based XSS）</h3>
+<p><strong>定义</strong>：漏洞发生在浏览器端。页面的 JavaScript 将来自 <code>location</code>、<code>hash</code>、<code>document.referrer</code>、<code>postMessage</code>、<code>localStorage</code> 等来源的数据不安全地写入 DOM（例如使用 <code>innerHTML</code>、<code>document.write</code>、<code>eval</code>），从而触发脚本执行。服务器响应本身可能“干净”。 <strong>特点</strong>：</p>
+<ul><li>发生/触发都在客户端（浏览器）侧</li><li>需要审计前端 JS 的数据流（source → sink）</li></ul>
+<p><strong>检测要点</strong>：在浏览器环境修改 <code>location.hash</code>/<code>location.search</code> 或模拟 postMessage，然后观察 DOM 是否被不安全插入或执行。</p>
+<p><strong>示意：HTML DOM 树形结构（便于理解数据如何被插入 DOM）</strong> &lt;img src="/static/image2 2.jpg" alt="HTML DOM 树形结构"&gt;</p>
+<hr>
+<h2 id="拓展类型与常见载体">拓展类型与常见载体</h2>
+<ul><li>jQuery 相关不当 API 使用导致的 XSS（如 <code>.html()</code> 直接插入未经消毒的内容）</li><li>MXSS / UXSS / PDF XSS / Flash XSS / 上传类 XSS（文件名、图片 EXIF、SVG 等）</li><li>富文本编辑器（富文本内容若未严格过滤或未使用安全 sanitizer，极易引入 Stored XSS）</li></ul>
+<hr>
+<h2 id="攻击利用与可能后果">攻击利用与可能后果</h2>
+<p>常见利用方式与影响包括但不限于：</p>
+<ul><li>恶意重定向、页面劫持</li><li>cookie / 会话凭证窃取（若 cookie 非 HttpOnly）</li><li>持久化的钓鱼页面或权限维持（植入后门）</li><li>行为伪造（利用受害者权限在后台操作）</li></ul>
+<hr>
+<h2 id="测试流程与检测点实用步骤">测试流程与检测点（实用步骤）</h2>
+<ol><li><strong>发现输入点</strong>：所有能提交/控制内容的字段（GET、POST、Headers、文件上传、富文本）。</li><li><strong>观察输出点</strong>：页面回显、模板渲染、JS DOM 操作、动态模板/脚本注入位置。</li><li><strong>注入探针</strong>：从简单的 <code>&quot;&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;</code> 到更隐蔽的 payload（可绕过过滤器）逐步测试。</li><li><strong>针对 DOM XSS</strong>：在浏览器 Console 手动或脚本化地修改 <code>location.search/hash</code>、<code>postMessage</code>、<code>localStorage</code>，观察是否被 JS 插入到危险 sink（<code>innerHTML</code>、<code>eval</code> 等）。</li><li><strong>记录与证据</strong>：截图/持久化日志/response 保存，便于复现与修复跟踪。</li><li><strong>避免盲测生产</strong>：若为生产环境，优先使用抽样与低频率测试并在授权范围内进行。</li></ol>
+<hr>
+<h2 id="安全修复与防护要点">安全修复与防护要点</h2>
+<ul><li><strong>输出编码（上下文相关）</strong>：HTML、Attribute、JavaScript、URL 等按上下文进行编码。</li><li><strong>尽量避免危险 API</strong>：前端尽量不用 <code>innerHTML</code> / <code>document.write</code> / <code>eval</code>，而用 <code>textContent</code>、<code>createTextNode</code> 等。</li><li><strong>使用成熟的 Sanitizer</strong>：如 DOMPurify 等，在必须允许部分 HTML 的场景中清洗输入。</li><li><strong>Content Security Policy（CSP）</strong>：配置严格的 CSP（禁用 <code>unsafe-inline</code>、限制 script 源），降低攻击影响范围。</li><li><strong>HttpOnly / Secure / SameSite Cookie</strong>：防止 JS 直接读取 cookie，并降低 CSRF 等风险。</li><li><strong>White-list 验证</strong>：对输入采用白名单策略，尤其是对可插入 DOM 的参数进行严格校验。</li><li><strong>WAF 与检测</strong>：部署 WAF 作第一道防线，但不要依赖 WAF 替代编码/消毒（WAF 可作为补充）。</li><li><strong>最小化数据暴露</strong>：页面尽量不输出敏感信息（例如完整 cookie、token），只输出必要数据。</li></ul>
+<hr>
+<h2 id="常见测试点汇总">常见测试点汇总</h2>
+<ul><li>用户资料、签名、昵称回显点</li><li>评论/论坛/富文本编辑器内容</li><li>文件名、图片元数据（EXIF、SVG）</li><li>URL 参数（query、fragment/hash）、referer、postMessage、localStorage 内容</li><li>第三方组件（WYSIWYG 编辑器、插件）未正确配置或未消毒内容的地方</li></ul>
+<hr>
+<h2 id="小结">小结</h2>
+<ul><li><strong>反射型</strong>：一次性回显，常通过恶意链接触发。</li><li><strong>存储型</strong>：持久化到服务器，影响范围广，危害大。</li><li><strong>DOM 型</strong>：客户端脚本不安全处理数据导致执行，服务器端响应可能并未直接包含 payload。</li></ul>
+<hr></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/_deleted/3.nfs_path_cronti-quan/"><small>← 上一篇</small><span>3.NFS_PATH_Cron提权</span></a><a class="next" href="https://hzhsec.github.io/list/_deleted/xss1/"><small>下一篇 →</small><span>XSS1</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

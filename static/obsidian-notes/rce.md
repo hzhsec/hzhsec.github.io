@@ -3,10 +3,12 @@ title: "RCE"
 slug: rce
 cover: ""
 date: 2024-07-07
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: e7633f60-7c6e-4ec4-b251-8b5a1e77a471
-  publish: false
+  publish: true
 ---
 
 *RCE 代码 & 命令执行 & 过滤绕过 & 异或无字符 & 无回显方案 & 黑白盒挖掘*

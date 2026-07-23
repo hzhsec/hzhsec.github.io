@@ -3,10 +3,12 @@ title: "up3"
 slug: up3
 cover: ""
 date: 2025-05-01
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: c9ee2c82-55de-4431-9653-1caa638fefc9
-  publish: false
+  publish: true
 ---
 
 +++

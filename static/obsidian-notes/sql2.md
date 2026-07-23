@@ -3,10 +3,12 @@ title: "sql2"
 slug: sql2
 cover: ""
 date: 2025-01-23
+categories:
+  - 杂项
 halo:
   site: http://www.hzhsec.top
   name: 1de0174f-cc58-457f-88a2-e6afc054c2ff
-  publish: false
+  publish: true
 ---
 
 <!--more-->

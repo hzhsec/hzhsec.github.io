@@ -2,11 +2,15 @@
 title: "7zip漏洞复现合集"
 slug: 7ziplou-dong-fu-xian-he-ji
 cover: ""
-date: 2024-05-11
+date: 2026-01-09
+categories:
+  - 漏洞复现
+tags:
+  - 7zip
 halo:
   site: http://www.hzhsec.top
-  name: 40185738-dec4-41b2-bb25-19cf36db95e5
-  publish: false
+  name: f674a903-16d6-4667-b9f6-8843367f493d
+  publish: true
 ---
 
 **概述**
