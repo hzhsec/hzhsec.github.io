@@ -9,10 +9,7 @@
     python scripts/publish.py 文章.md --git-push   # 跳过询问直接推
 """
 
-import re
-import sys
-import json
-import subprocess
+import re, sys, json, subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -72,21 +69,18 @@ def yesno(prompt, default=True):
 
 
 def add_frontmatter(filepath):
-    """如果没有 frontmatter，交互式添加"""
     raw = filepath.read_text("utf-8")
     if re.match(r"^---\s*\n.*?\n---\s*\n?", raw, re.DOTALL):
-        return True  # 已有，跳过
+        return True
 
-    title_m = re.search(r"^#\s+(.+)$", raw, re.MULTILINE)
     cfg = load_config()
-    last_cat = cfg.get("last_category", "")
     last_tags = cfg.get("last_tags", [])
 
     print(f"\n{'='*50}")
     print(f"  📝 {filepath.name}")
     print(f"{'='*50}")
 
-    title = ask("📌 标题", title_m.group(1).strip() if title_m else filepath.stem)
+    title = ask("📌 标题", filepath.stem)
     slug = ask("🔗 链接别名", slugify(title))
     cat = pick("📂 分类", CATEGORIES)
     cfg["last_category"] = cat
@@ -120,7 +114,6 @@ def main():
         print(__doc__)
         return
 
-    # 分离参数
     file_args, other_args = [], []
     for a in args:
         (other_args if a.startswith("-") else file_args).append(a)
@@ -132,7 +125,6 @@ def main():
     dry_run = "--dry-run" in other_args
     auto_push = "--git-push" in other_args
 
-    # 处理每个文件
     for fp in file_args:
         path = Path(fp)
         if not path.exists():
