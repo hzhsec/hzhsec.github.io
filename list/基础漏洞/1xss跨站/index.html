@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XSS跨站</title><meta charset="utf-8"><meta name="description" content="Ladder@➢ XSS跨站-输入输出-原理&分类&闭合 ➢ XSS跨站-分类测试-反射&存储&DOM 反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg) 储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/uplo"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/%E5%9F%BA%E7%A1%80%E6%BC%8F%E6%B4%9E/1xss%E8%B7%A8%E7%AB%99/"><meta property="og:title" content="XSS跨站" /><meta property="og:description" content="➢ XSS跨站-输入输出-原理&分类&闭合 ➢ XSS跨站-分类测试-反射&存储&DOM 反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg) 储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/uplo" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/%E5%9F%BA%E7%A1%80%E6%BC%8F%E6%B4%9E/1xss%E8%B7%A8%E7%AB%99/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2026-07-23T10:00:00+08:00" /><meta property="article:modified_time" content="2026-07-23T10:00:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="XSS跨站"/><meta name="twitter:description" content="➢ XSS跨站-输入输出-原理&分类&闭合 ➢ XSS跨站-分类测试-反射&存储&DOM 反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg) 储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/uplo"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>XSS跨站</h1></header><p><small>July 23, 2026&nbsp;· 510 words&nbsp;· 3 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><a class="toc-link" href="#xss跨站-输入输出-原理-分类-闭合">XSS跨站-输入输出-原理-分类-闭合</a></li><li class="toc-item toc-depth-1"><a class="toc-link" href="#xss跨站-分类测试-反射-存储-dom">XSS跨站-分类测试-反射-存储-DOM</a></li></ul></nav></details><section class="blog-content"><p>➢ XSS跨站-输入输出-原理&amp;分类&amp;闭合</p>
+<p>➢ XSS跨站-分类测试-反射&amp;存储&amp;DOM</p>
+<p>反射型xss攻击流程图 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg" alt="image%201.jpg"></p>
+<p>储存型xss攻击流程图 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg" alt="image1.jpg"></p>
+<p>html dom树形结构 <img src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg" alt="image2%202.jpg"></p>
+<h1 id="xss跨站-输入输出-原理-分类-闭合">XSS跨站-输入输出-原理-分类-闭合</h1>
+<p><strong>漏洞原理：</strong> 接受输入数据，输出显示数据后解析执行</p>
+<p><strong>基础类型：</strong> 反射(非持续)，存储(持续)，DOM-BASE</p>
+<p><strong>拓展类型：</strong> jquery，mxss，uxss，pdfxss，flashxss，上传xss等</p>
+<p><strong>常用标签</strong>：#https://www.freebuf.com/articles/web/340080.html</p>
+<p><strong>攻击利用：</strong> 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等</p>
+<p><strong>安全修复：</strong> 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等</p>
+<p><strong>测试流程：</strong> 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）</p>
+<h1 id="xss跨站-分类测试-反射-存储-dom">XSS跨站-分类测试-反射-存储-DOM</h1>
+<p>-数据交互的地方</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">get、post、headers
+
+反馈与浏览
+富文本编辑器
+各类标签插入和自定义</code></pre></div>
+<p>-数据输出的地方</p>
+<div class="highlight"><pre tabindex="0"><code class="language-" data-lang="">用户资料
+数据输出
+评论，留言等
+关键词、标签、说明</code></pre></div>
+<p><strong>文件上传</strong></p>
+<ul><li>反射型XSS：（某案例测试）</li></ul>
+<p>常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，</p>
+<p>由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。</p>
+<ul><li>存储型XSS：（某案例测试）</li></ul>
+<p>存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，</p>
+<p>当其他用户再次访问页面时触发，造成XSS攻击。</p>
+<ul><li>DOM-base型XSS：（某案例测试）</li></ul>
+<p>通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。</p>
+<p>页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行</p></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/%E5%B7%A5%E5%85%B7%E4%BD%BF%E7%94%A8/aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang/"><small>← 上一篇</small><span>AICryptoProxy：AI 赋能逆向Web 加密流量</span></a><a class="next" href="https://hzhsec.github.io/list/drafts/1xss%E8%B7%A8%E7%AB%99/"><small>下一篇 →</small><span>XSS跨站</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

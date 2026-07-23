@@ -47,6 +47,29 @@
       "article_body_text": "➢ XSS跨站-输入输出-原理&分类&闭合\n➢ XSS跨站-分类测试-反射&存储&DOM\n反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg)\n储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg)\nhtml dom树形结构 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg)\nXSS跨站-输入输出-原理-分类-闭合\n**漏洞原理：** 接受输入数据，输出显示数据后解析执行\n**基础类型：** 反射(非持续)，存储(持续)，DOM-BASE\n**拓展类型：** jquery，mxss，uxss，pdfxss，flashxss，上传xss等\n**常用标签**：#https://www.freebuf.com/articles/web/340080.html\n**攻击利用：** 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等\n**安全修复：** 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等\n**测试流程：** 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）\nXSS跨站-分类测试-反射-存储-DOM\n-数据交互的地方\nget、post、headers\n\n反馈与浏览\n富文本编辑器\n各类标签插入和自定义\n-数据输出的地方\n用户资料\n数据输出\n评论，留言等\n关键词、标签、说明\n**文件上传**\n反射型XSS：（某案例测试）\n常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，\n由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。\n存储型XSS：（某案例测试）\n存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，\n当其他用户再次访问页面时触发，造成XSS攻击。\nDOM-base型XSS：（某案例测试）\n通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。\n页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行"
     },
     {
+      "slug": "1xss跨站",
+      "title": "XSS跨站",
+      "source_note": "F:\\hugo\\hzhsec.github.io\\drafts\\(1)、XSS跨站.md",
+      "summary": "➢ XSS跨站-输入输出-原理&分类&闭合 ➢ XSS跨站-分类测试-反射&存储&DOM 反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg) 储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/uplo",
+      "date_iso": "2026-07-23T10:00:00+08:00",
+      "word_count": 510,
+      "reading_minutes": 3,
+      "rel_permalink": "list/基础漏洞/1xss跨站",
+      "section_path": [
+        "基础漏洞"
+      ],
+      "categories": [
+        "基础漏洞"
+      ],
+      "tags": [
+        "xss"
+      ],
+      "featured": false,
+      "body_html": "<p>➢ XSS跨站-输入输出-原理&amp;分类&amp;闭合</p>\n<p>➢ XSS跨站-分类测试-反射&amp;存储&amp;DOM</p>\n<p>反射型xss攻击流程图 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg\" alt=\"image%201.jpg\"></p>\n<p>储存型xss攻击流程图 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg\" alt=\"image1.jpg\"></p>\n<p>html dom树形结构 <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg\" alt=\"image2%202.jpg\"></p>\n<h1 id=\"xss跨站-输入输出-原理-分类-闭合\">XSS跨站-输入输出-原理-分类-闭合</h1>\n<p><strong>漏洞原理：</strong> 接受输入数据，输出显示数据后解析执行</p>\n<p><strong>基础类型：</strong> 反射(非持续)，存储(持续)，DOM-BASE</p>\n<p><strong>拓展类型：</strong> jquery，mxss，uxss，pdfxss，flashxss，上传xss等</p>\n<p><strong>常用标签</strong>：#https://www.freebuf.com/articles/web/340080.html</p>\n<p><strong>攻击利用：</strong> 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等</p>\n<p><strong>安全修复：</strong> 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等</p>\n<p><strong>测试流程：</strong> 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）</p>\n<h1 id=\"xss跨站-分类测试-反射-存储-dom\">XSS跨站-分类测试-反射-存储-DOM</h1>\n<p>-数据交互的地方</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">get、post、headers\n\n反馈与浏览\n富文本编辑器\n各类标签插入和自定义</code></pre></div>\n<p>-数据输出的地方</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">用户资料\n数据输出\n评论，留言等\n关键词、标签、说明</code></pre></div>\n<p><strong>文件上传</strong></p>\n<ul><li>反射型XSS：（某案例测试）</li></ul>\n<p>常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，</p>\n<p>由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。</p>\n<ul><li>存储型XSS：（某案例测试）</li></ul>\n<p>存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，</p>\n<p>当其他用户再次访问页面时触发，造成XSS攻击。</p>\n<ul><li>DOM-base型XSS：（某案例测试）</li></ul>\n<p>通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。</p>\n<p>页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行</p>",
+      "toc_html": "<nav id=\"TableOfContents\"><ul><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#xss跨站-输入输出-原理-分类-闭合\">XSS跨站-输入输出-原理-分类-闭合</a></li><li class=\"toc-item toc-depth-1\"><a class=\"toc-link\" href=\"#xss跨站-分类测试-反射-存储-dom\">XSS跨站-分类测试-反射-存储-DOM</a></li></ul></nav>",
+      "article_body_text": "➢ XSS跨站-输入输出-原理&分类&闭合\n➢ XSS跨站-分类测试-反射&存储&DOM\n反射型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image%201.jpg)\n储存型xss攻击流程图 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image1.jpg)\nhtml dom树形结构 ![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/image2%202.jpg)\nXSS跨站-输入输出-原理-分类-闭合\n**漏洞原理：** 接受输入数据，输出显示数据后解析执行\n**基础类型：** 反射(非持续)，存储(持续)，DOM-BASE\n**拓展类型：** jquery，mxss，uxss，pdfxss，flashxss，上传xss等\n**常用标签**：#https://www.freebuf.com/articles/web/340080.html\n**攻击利用：** 盲打，COOKIE盗取，凭据窃取，页面劫持，网络钓鱼，权限维持等\n**安全修复：** 字符过滤，实例化编码，http_only，CSP防护，WAF拦截等\n**测试流程：** 看输出想输入在哪里，更改输入代码看执行（标签，过滤决定）\nXSS跨站-分类测试-反射-存储-DOM\n-数据交互的地方\nget、post、headers\n\n反馈与浏览\n富文本编辑器\n各类标签插入和自定义\n-数据输出的地方\n用户资料\n数据输出\n评论，留言等\n关键词、标签、说明\n**文件上传**\n反射型XSS：（某案例测试）\n常见情况是攻击者通过构造一个恶意链接的形式，诱导用户传播和打开，\n由于链接内所携带的参数会回显于页面中或作为页面的处理数据源，最终造成XSS攻击。\n存储型XSS：（某案例测试）\n存储型XSS是持久化的XSS攻击方式，将恶意代码存储于服务器端，\n当其他用户再次访问页面时触发，造成XSS攻击。\nDOM-base型XSS：（某案例测试）\n通过修改原始的客户端代码，受害者浏览器的DOM环境改变，导致有效载荷的执行。\n页面本身没有变化，但由于DOM环境被恶意修改，有客户端代码被包含进了页面并执行"
+    },
+    {
       "slug": "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
       "title": "AICryptoProxy：AI 赋能逆向Web 加密流量",
       "source_note": "F:\\hugo\\bak\\halo_to_publish\\工具使用\\aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang.md",
@@ -1634,6 +1657,12 @@
       "title": "drafts",
       "parent": "list",
       "order": 12
+    },
+    "list/基础漏洞": {
+      "slug": "list/基础漏洞",
+      "title": "基础漏洞",
+      "parent": "list",
+      "order": 13
     }
   }
 }
